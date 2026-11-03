@@ -1,0 +1,83 @@
+<body class="site">
+<div class="site-wrap">
+  <header class="site-head">
+    <a class="site-brand" href="index.html"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M3 15h5l2-5 3.5 9 2-4H21"/></svg>__SITE_NAME__</a>
+    <nav class="site-nav" aria-label="Pages"><a href="index.html">Home</a><a href="__REPO_URL__" rel="noopener">Source</a></nav>
+  </header>
+  <nav class="family" aria-label="Body Signal Labs"><a href="index.html">Body Signal Labs</a><a href="../autonomic-telemetry/Autonomic_Telemetry_Console.html">Autonomic Telemetry</a><a href="endless-cockpit.html">Endless Cockpit</a><a href="biofeedback-path-cockpit.html">Biofeedback Path Cockpit</a></nav>
+  <main class="guide">
+    <div class="hero-title">
+      <p class="eyebrow">Field guide</p>
+      <h1>From your signals to the light.</h1>
+      <p>How to connect each page, what each status means, and what is measured or inferred.</p>
+    </div>
+
+    <section id="status">
+      <h2>Where this stands</h2>
+      <p>Endless Cockpit and Biofeedback Path Cockpit were tested in Chrome on a Mac with simulated Bluetooth sensors that send real packet bytes. <b>No real cadence sensor or heart-rate strap has been connected to either yet.</b> Autonomic Telemetry has its own <a href="../autonomic-telemetry/Autonomic_Telemetry_Field_Guide.html">field guide</a>.</p>
+    </section>
+
+    <section id="endless">
+      <h2>Endless Cockpit</h2>
+      <p>Endless Cockpit takes its speed from your cadence. Connect a Bluetooth cadence sensor or smart trainer from the Connect sheet, hold Space or the Hold to pedal button, or set a steady cadence. Each crank revolution sends a ring of light down the road, and the road's grade changes your speed by up to 40%.</p>
+      <p>The sensor's status reads not connected, no Bluetooth in this browser, none chosen, connected with no cadence yet, live, or disconnected. Some sensors send nothing until the crank turns.</p>
+    </section>
+
+    <section id="biofeedback">
+      <h2>Biofeedback Path Cockpit</h2>
+      <p>A Bluetooth heart-rate strap paints the weather, and a cadence sensor or smart trainer sets the speed, straight from Chrome or Edge with no helper app. A strap that reports beat intervals adds RMSSD and SDNN. A rate-only sensor, such as the Hume Band, gives an explicitly limited estimate. Muse needs Autonomic's Mac bridge and is not read here. The desktop app's window cannot show the Bluetooth list, so connect from a browser.</p>
+      <p><b>Watch:</b> the inferred index, Autonomic Telemetry's own model, makes the gas cloud wider, brighter and warmer. It needs 120 seconds of quiet data first, and it waits while you pedal. <b>Ride:</b> heart rate above your baseline adds up to 4.5% of apparent grade, shown apart from the road's grade. <b>Train:</b> follow the ring, and how far your heart rate swings with it lifts the fog. Hold it for a minute and dawn breaks.</p>
+      <p>Each sensor says whether it is not connected, waiting for you to choose, refused, missing, connected with no reading, live, or disconnected. Inferred values are never measured, and none of it is medical. It is not therapy.</p>
+    </section>
+
+    <section id="autonomic">
+      <h2>Autonomic Telemetry</h2>
+      <p>A labeled synthetic demo runs in any browser. Live heart, pulse and brain signals reach it through a small bridge that runs on a Mac and handles Bluetooth, and an iPhone on the same Wi-Fi can show the picture. Its <a href="../autonomic-telemetry/Autonomic_Telemetry_Field_Guide.html">field guide</a> covers the setup, the estimate and its limits.</p>
+    </section>
+
+    <section id="browsers">
+      <h2>Browsers</h2>
+      <table>
+        <thead><tr><th>Browser</th><th>Bluetooth sensors in the cockpits</th><th>The demos</th></tr></thead>
+        <tbody>
+          <tr><th>Chrome, Edge</th><td>Yes, on a computer, after you choose the sensor in the browser's list</td><td>Yes</td></tr>
+          <tr><th>Firefox</th><td>No. Firefox has no Web Bluetooth</td><td>Yes</td></tr>
+          <tr><th>Safari</th><td>No. Safari has no Web Bluetooth</td><td>Yes</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:12px">Only Chrome has been tested so far. Web Bluetooth needs a secure page, which the published pages are.</p>
+    </section>
+
+    <section id="states">
+      <h2>What the status means</h2>
+      <table>
+        <tbody>
+          <tr><th><span class="statechip"><i style="background:#8d93ad"></i>Ambient</span></th><td>Nothing is connected. The picture is idling, not responding to anything.</td></tr>
+          <tr><th><span class="statechip"><i style="background:#f4a3a3"></i>Refused or missing</span></th><td>The browser or the system refused, or no sensor was chosen. The Connect sheet says which.</td></tr>
+          <tr><th><span class="statechip"><i style="background:#f1cf8e"></i>Connected, no reading</span></th><td>The sensor is connected and nothing is arriving yet. Turn the crank, or wet a strap's contacts and put it on.</td></tr>
+          <tr><th><span class="statechip"><i style="background:#bfe8a6"></i>Live</span></th><td>Readings are arriving. The label shows the value.</td></tr>
+          <tr><th><span class="statechip"><i style="background:#e6c7a3"></i>Demo</span></th><td>A synthetic ride or body, not yours. The label stays up as long as it runs.</td></tr>
+          <tr><th><span class="statechip"><i style="background:#a8c6f4"></i>Replay</span></th><td>A file you loaded. Nothing in it is live.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="safety">
+      <h2>Safety and privacy</h2>
+      <p>A limiter slows any large change in brightness, and the cockpits measure under the WCAG limit of three flashes a second, even in each page's hardest tested case. That is a measured screen, not a medical guarantee. If flashing or moving light affects you, take care, and turn on your system's reduced-motion setting, which tightens the limiter and calms the camera.</p>
+      <p>In the cockpits, readings are handled in your browser and never sent anywhere. A session file holds your readings over time, such as cadence or heart rate, and stays on your computer unless you share it. No page here is a medical device.</p>
+    </section>
+
+    <section id="credits">
+      <h2>Credits</h2>
+      <p>No outside code is included, apart from Autonomic Telemetry's own engine, which Biofeedback Path Cockpit carries under the same license. Ideas came from these projects:</p>
+      <ul>
+        <li><a href="https://github.com/jberg/butterchurn" rel="noopener">Butterchurn</a> (MIT): Milkdrop's feedback warp, behind the road's trails.</li>
+        <li><a href="https://github.com/brendangooden/j2208-band-tools" rel="noopener">j2208-band-tools</a> (MIT): the Hume Band's commands, through Autonomic's bridge.</li>
+      </ul>
+    </section>
+  </main>
+  <footer class="site-foot"><span>Procedural visuals with stated rules, and estimates labeled as estimates. No page here is a medical device.</span><span><a href="index.html">Home</a> · MIT license</span></footer>
+</div>
+</body>
+</html>
