@@ -26,7 +26,12 @@ with sync_playwright() as p:
         pg.click('#demo-button'); pg.wait_for_timeout(4000)
         if pg.get_attribute('#source-badge', 'data-source') != 'demo': bad.append(f'{page}: demo is not labeled')
         if page == 'biofeedback-path-cockpit.html':
-            pg.click('[data-mode=ride]'); pg.wait_for_timeout(4000)
+            pg.click('[data-mode=ride]')
+        # Motion runs on frames, and software rendering on the CI runner can take seconds per frame, so wait for it
+        try:
+            pg.wait_for_function(f'{moving} >= 3', polling=500, timeout=90000)
+        except Exception:
+            pass
         v = pg.evaluate(moving)
         if v < 3: bad.append(f'{page}: the demo did not move it ({v})')
         if pg.evaluate("typeof createKit !== 'undefined' || typeof mountShell !== 'undefined'"): bad.append(f'{page}: a drum engine is on the page')
