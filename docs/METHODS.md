@@ -2,40 +2,56 @@
 
 Everything in Endless Cockpit is a stated rule. Nothing is learned, and it uses no model. Biofeedback Path Cockpit's methods are in [its own page](BIOFEEDBACK.md), and Autonomic Telemetry's in [its repository](https://github.com/patrickiben/autonomic-telemetry/blob/main/docs/METHODS.md).
 
-## Endless Cockpit
+## Shared cycling scenes
 
-The five terrestrial landscapes have separate terrain functions, blended with normalized scene weights: the coast cuts down to a sea plane and adds isolated rock stacks; the tropical preserve has a low rolling forest floor; the meadows have broad field banks; the alpine route opens onto a lake between distant ridges; and the canyon has stepped walls. Rainbow orbit adds a sixth route with a finite-width skyway over open space. The road's width, curvature, wavelength and elevation amplitude also vary by landscape. The camera, terrain shader, elevation preview and cadence-derived grade use the same route parameters.
+Both cockpits use the eight-scene catalog and renderer in `src/cyclingscene.js`: Golden coast, Tropical preserve, Meadow lanes, New England Autumn, Red canyon, Rainbow orbit, Misty pines and Snake Way. The coast has open water and rock stacks; the preserve has a rolling forest floor; the meadows have field banks; New England Autumn has a lake, rocky bluffs and deciduous woodland mixed with evergreens; the canyon has stepped walls. Misty pines retains the original Biofeedback mountain road. Rainbow orbit crosses open space, and Snake Way follows a scaled, spiny road above golden clouds. New England Autumn occupies the former Alpine lake slot.
 
-Palms, broadleaf vegetation, colorful flowers, alpine pines, round country trees, farm buildings, cacti and occasional small wildlife are seeded world-space silhouettes with perspective, parallax and terrain occlusion. They are stylized procedural shapes rather than photorealistic assets. Roadside rails are ray-intersected 3D segments. Objects are evaluated over a bounded distance so riding indefinitely does not grow memory. Scene thumbnails use the same renderer and the correct camera for each route.
+Scene weights blend evaluated route positions. Width, curvature, wavelength and elevation vary by landscape, and the camera, terrain shader, elevation preview and grade calculation use those same parameters. Biofeedback retains Watch's inferred weather and Train's breathing/fog controls without changing their signal model.
+
+Palms, broadleaf vegetation, flowers, conifers, autumn trees, farm buildings, cacti and occasional small wildlife are seeded world-space shapes with perspective and terrain occlusion. They are stylized procedural geometry rather than photographic assets. Roadside rails are ray-intersected 3D segments. Objects are evaluated over bounded distances so travel does not accumulate an ever-growing scene. Endless thumbnails use the same renderer and route camera.
 
 Flower clusters and occasional perched or ground birds and lizards stay at fixed seeded positions beside the route. Wildlife is static; passing it creates parallax, without an animal behavior simulation. All landscapes share a fixed placement grid so scene transitions do not reseed these details. Smaller flowers and wildlife are evaluated only near their roadside bounds, and their colors use the landscape's existing lighting and fog.
 
-Terrestrial roads and terrain are a raymarched height field. Rainbow orbit separately intersects a finite ribbon: a ray that misses one crossing keeps searching for later hills, leaving stars visible outside the track. Its road fades by 680 m, with raised capsule rails and sparse arch frames evaluated over bounded distances. The rainbow runs along the road, while stars, a moon and the ringed planet stay fixed in sky direction. Fine star coverage is filtered by pixel size; stars do not blink on a timer.
+Land roads and terrain are raymarched height fields. Rainbow orbit and Snake Way separately intersect a finite road ribbon: a ray that misses one crossing keeps searching for later hills, leaving space or clouds visible outside the track. Rainbow orbit has raised rails and sparse arch frames; Snake Way has a pale scaled surface and raised spines beside it. The rainbow runs along the road, while its stars, moon and ringed planet stay fixed in sky direction. Fine star coverage is filtered by pixel size; the orbit stars do not blink on a timer.
 
 The scene passes through a feedback loop like Milkdrop's: the last frame is zoomed toward the vanishing point, slightly warped, and mixed under the new frame. Only emitters leave long trails, tracked in the alpha channel, so the sun and sky never smear over the land.
 
-`motion01(rpm)` maps cadence to a 0 to 1 motion value with a set idle, top and response curve. Zoom per frame is exactly that value times the maximum. The road's grade changes speed by a factor from 0.6 to 1.35 after the mapping, so the curve stays truthful. Motion runs on a fixed 1/120 s step. Ride files now include the starting scene, route seed, visual position, distance, time of day and cadence mapping. Playback reproduces those settings and the recorded cadence; timing, smoothing and older files can still produce a different traveled distance. Distance counts driven speed only, never the slow drift shown at rest.
+## Cadence motion
 
-The base visual speed reaches 7 m/s (about 15.7 mph) at the top of the cadence mapping, before the grade factor. This touring pace replaces the previous 18 m/s cap so nearby planting and wildlife remain readable. The displayed speed, accumulated distance and camera travel use the same driven speed. It is a procedural pace, not a measurement of real bicycle speed.
+Both apps use the pure functions in `src/cadence-motion.js`, preserving Biofeedback's cadence motion. Simulation runs at 1/120-second steps independently of rendering. Cadence approaches the selected target with a 0.32-second time constant for both Bluetooth and manual input; a small final decay brings it to exact zero. The mapping is:
 
-Cadence comes from a Bluetooth CSC or FTMS sensor, the hold-to-pedal button at 88 rpm, or a steady setting, in that order. A sensor reading older than 3 seconds counts as stopped. On the five land routes, each full crank revolution sends one ring of light down the road, and dashes are spaced one per revolution. Rainbow orbit keeps continuous color bands and steady edge lighting. The ridge on the horizon is stated value noise that drifts past as you ride. It is not a measurement.
+```text
+motion = clamp((rpm − idle) / max(1, top − idle), 0, 1) ^ (1 / gamma)
+zoom = motion × maxZoom
+speed = motion × 18 m/s × clamp(1 − 5 × grade, 0.6, 1.35)
+```
+
+Defaults are idle 25 rpm, top 95 rpm, gamma 1.6 and maxZoom 0.018. The nominal top speed is 18 m/s before grade (about 40.3 mph), matching Biofeedback. This is simulated travel, not measured bicycle speed. Biofeedback adds its separately labeled heart-rate grade-load to route grade; Endless uses route grade alone. The grade multiplier affects speed, never the cadence-to-zoom curve. At rest, visual position drifts at 2.2 m/s in Ride, weighted by `1 − motion`; that drift never adds to the distance counter. Biofeedback Train retains its 1.5 m/s idle drift.
+
+Replay cadence has priority. Otherwise a running demo or live sensor supplies cadence, followed by a steady manual setting, the held pedal at 88 rpm, and Biofeedback's manual workout. A fresh reported zero is a stopped source, not permission to switch to manual input. Endless uses sensor readings only while they are less than three seconds old; after signal loss, an active manual setting can take over. Its held Space/pedal input uses the same smooth response; it adds no camera kick, surge velocity or cadence-triggered road-light bars. The Endless horizon ridge is procedural noise, not a measurement.
+
+Biofeedback's optional EEG drive remains separate: it uses its own 7 m/s maximum and signal-quality handling, without cadence, heart grade-load or idle drift. See [Biofeedback methods](BIOFEEDBACK.md).
+
+The [cadence regression suite](../tests/cadence_motion.cjs) compares the shared implementation with the preserved Biofeedback equations, including acceleration, braking, grade, input priority and fixed-step travel grouped into different rendering frame rates.
+
+## Endless presentation
 
 Known software WebGL renderers start with an approximately 80,000-pixel scenery buffer and smaller thumbnails; interface text stays at screen resolution. Sustained slow frames reduce scenery resolution promptly, including on devices that hide renderer metadata. Hardware renderers retain the normal starting budget.
 
 The default Clear look keeps the scenery legible, with low feedback and no floating motes. Dreamy and Wild retain the more abstract light treatments.
 
-With New scenery every mile on, the next of the six scenes blends in each time the distance ridden passes another mile. Distance counts only the speed your cadence makes, so a stopped ride keeps its scene, and a replay keeps the scenes it recorded. A blend takes six seconds, and a scene chosen mid-blend starts from what is on screen, so the picture never jumps. The scene tiles are drawn by the road's own shader at 336 by 196 pixels, sharp on 2x and 3x screens, at the current time of day, and redrawn when the sky has moved on.
+With New scenery every mile on, the next of the eight scenes blends in each time driven distance passes another mile. A stopped ride keeps its scene, and a replay keeps its recorded scene changes. A blend takes six seconds; choosing a scene mid-blend starts from the currently blended route. Thumbnails use the road renderer and current time of day, with a smaller rendering budget on known software renderers.
 
 ## What is stored
 
 A ride file holds cadence ten times a second, a starting route/settings snapshot, and scene, time-of-day and route changes. It holds no audio and no other reading. Video capture runs only if you tick it, and saves to your own computer. The scene, time of day, look and the every-mile switch stay in the browser's local storage, so the next visit starts where the last one ended.
 
+New exports identify the shared catalog as `cycling-scenes@1` and the cadence mapping as `routeStart.motionVersion: "biofeedback-cadence@1"`. Endless recordings without that motion marker retain their former 7 m/s nominal scale during replay. Recorded cadence was already smoothed; replay timing and re-smoothing can still change traveled distance, and old recordings do not encode sensor-specific response times. This is compatibility playback, not exact reconstruction. Biofeedback recordings without the new scene-catalog marker keep their original five-scene catalog and renderer; their scene numbers are not reinterpreted as the new environments.
+
 ## Safety
 
-A limiter in the final pass tracks local average luminance on a grid 128 cells wide, allowing changes of 0.36 per second in either direction, or 0.16 with reduced motion. It adjusts the finished picture from those regional averages. This does not bound every pixel: moving high-contrast silhouettes can still change rapidly within a region, so the rendered result must be measured. Reduced motion also removes the crash flash and reduces the camera's shake, surge and rotation.
+A limiter in the final pass tracks local average luminance on a grid 128 cells wide, allowing changes of 0.36 per second in either direction, or 0.16 with reduced motion. It adjusts the finished picture from those regional averages. This does not bound every pixel: moving high-contrast silhouettes can still change rapidly within a region, so the rendered result must be measured. Reduced motion also calms camera rotation, bob and visual feedback.
 
 Endless Cockpit caps this adjustment's brightness gain at 1: it can dim the image but cannot brighten passing foliage. The previous gain of up to 4 could amplify moving contrast into bright flashes. Foliage edges use projected pixel coverage, with fine leaflet patterns fading toward their average once too small to resolve. These changes keep the Clear view sharp. Biofeedback retains its existing gain setting.
 
-Endless Cockpit's far range is slow procedural noise, and its rings of light fade before they reach the horizon, where they would stack.
-
-`tests/flash_check.py` measures the result on the rendered page with the WCAG 2.2 general flash definition. See [Validation](VALIDATION.md).
+`tests/flash_check.py` measures sampled rendered cases using the WCAG 2.2 general flash definition. Results apply to the recorded scene, speed and settings; earlier tests of the former 7 m/s Endless build do not validate every combination at the shared 18 m/s scale. See the dated results and limitations in [Validation](VALIDATION.md).

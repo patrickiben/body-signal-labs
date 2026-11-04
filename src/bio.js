@@ -8,6 +8,7 @@
   const median = (a) => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
   const HUME = { service: '0000fff0-0000-1000-8000-00805f9b34fb', write: '0000fff6-0000-1000-8000-00805f9b34fb', notify: '0000fff7-0000-1000-8000-00805f9b34fb', renewMs: 20000 };
   const FRESH_MS = 5000, QUIET_MS = 8000, CRANK_STOP_MS = 2500, RR_WINDOW_MS = 32000, PEDALING_RPM = 15, INHALE_SHARE = 0.4;
+  const SCENE_CATALOG = 'cycling-scenes@1', LEGACY_SCENE_CATALOG = 'biofeedback-pathscene@1';
 
   /* ---- pure functions, so known answers can test them ---- */
   const BioMath = {
@@ -146,13 +147,17 @@
     const finite = (v, lo, hi) => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
     const fail = (what) => { throw new Error(`Invalid session ${what}.`); };
     if (!object(raw) || !finite(raw.durationMs, 0, Number.MAX_SAFE_INTEGER) || !object(raw.lanes)) fail('duration or lanes');
+    // Original Biofeedback IDs belong to PathScene (1=Misty, 2=Neon), not
+    // CyclingScene (1=Tropical, 2=Meadow). Keep their numbers and renderer.
+    const sceneCatalog = raw.sceneCatalog == null ? LEGACY_SCENE_CATALOG : raw.sceneCatalog;
+    if (![SCENE_CATALOG, LEGACY_SCENE_CATALOG].includes(sceneCatalog)) fail('scene catalog');
     if (raw.synthetic != null && typeof raw.synthetic !== 'boolean') fail('source label');
     if (raw.distanceRelative != null && typeof raw.distanceRelative !== 'boolean') fail('distance format');
     const bounds = { rpm: [0, 250], hr: [0, 300], rmssd: [0, 500], sdnn: [0, 500], idx: [0, 100], swing: [0, 300], clarity: [0, 1], dawn: [0, 1], hold: [0, 1e9], dist: [0, 1e12], vis: [-1e12, 1e12], seed: [-1e6, 1e6], baseHr: [0, 300], gradeLoad: [0, .045] };
     const optional = new Set(['hr', 'rmssd', 'sdnn', 'idx', 'swing', 'baseHr']);
     const mode = (v) => ['watch', 'ride', 'train'].includes(v);
     const drivePower = (v) => ['cadence', 'brainwaves'].includes(v);
-    const biome = (v) => Number.isInteger(v) && v >= 0 && v < 5;
+    const biome = (v) => Number.isInteger(v) && v >= 0 && v < (sceneCatalog === SCENE_CATALOG ? 8 : 5);
     const map = (v) => object(v) && Object.entries({ idle: [0, 60], max: [60, 130], maxZoom: [.004, .04], gamma: [.6, 3.2] }).every(([k, lim]) => finite(v[k], ...lim));
     if (raw.start != null) {
       const s = raw.start;
@@ -180,7 +185,8 @@
         }
       }
     }
-    return includesSyntheticEEG && raw.synthetic !== true ? { ...raw, synthetic: true } : raw;
+    return raw.sceneCatalog !== sceneCatalog || (includesSyntheticEEG && raw.synthetic !== true)
+      ? { ...raw, sceneCatalog, ...(includesSyntheticEEG ? { synthetic: true } : {}) } : raw;
   }
 
   function createBio() {
@@ -480,13 +486,18 @@
     };
 
     /* ---- recording and replay ---- */
-    bio.startRecording = (appName, start) => { session = { t0: performance.now(), app: appName, created: new Date().toISOString(), lanes: {}, start: start ? JSON.parse(JSON.stringify(start)) : undefined, synthetic: !!demo || !!(replay && replay.s.synthetic) }; emit('state'); };
+    bio.startRecording = (appName, start, sceneCatalog = SCENE_CATALOG) => {
+      if (![SCENE_CATALOG, LEGACY_SCENE_CATALOG].includes(sceneCatalog)) throw new Error('Invalid session scene catalog.');
+      session = { t0: performance.now(), app: appName, created: new Date().toISOString(), lanes: {}, sceneCatalog,
+        start: start ? JSON.parse(JSON.stringify(start)) : undefined, synthetic: !!demo || !!(replay && replay.s.synthetic) };
+      emit('state');
+    };
     bio.noteLane = (name, value) => { if (session) { session.synthetic = session.synthetic || !!demo || !!(replay && replay.s.synthetic) || !!(name === 'eeg' && value && value.simulated); (session.lanes[name] = session.lanes[name] || []).push([Math.round(performance.now() - session.t0), value]); } };
     bio.stopRecording = () => {
       if (!session) return null;
       const s = session; session = null;
       emit('state');
-      return { schema: 'body-signal-labs/biofeedback-session@1', app: s.app, created: s.created, durationMs: Math.round(performance.now() - s.t0), synthetic: s.synthetic, start: s.start, distanceRelative: !!s.start, note: 'Readings once a second; cadence and any EEG game control ten times a second. EEG control is a derived beta/alpha game proxy, not a measured mental state. Inferred values are inferred, not measured. Not a medical record.', lanes: s.lanes };
+      return { schema: 'body-signal-labs/biofeedback-session@1', app: s.app, created: s.created, durationMs: Math.round(performance.now() - s.t0), synthetic: s.synthetic, sceneCatalog: s.sceneCatalog, start: s.start, distanceRelative: !!s.start, note: 'Readings once a second; cadence and any EEG game control ten times a second. EEG control is a derived beta/alpha game proxy, not a measured mental state. Inferred values are inferred, not measured. Not a medical record.', lanes: s.lanes };
     };
     bio.readSession = (raw) => {
       if (raw && /\/biofeedback-session@1$/.test(raw.schema || '')) return validateBioSession(raw);
@@ -496,7 +507,7 @@
         if (!Number.isFinite(dt) || dt <= 0 || !Number.isFinite(ad) || ad <= 0) throw new Error('Invalid session sample interval.');
         const lane = (a, f) => (Array.isArray(a) ? a.map((v, i) => [Math.round(i * ad), f ? f(v) : v]) : []);
         const lanes = { rpm: raw.timeline.rpm.map((v, i) => [Math.round(i * dt), v]), idx: lane(au.idx), hr: lane(au.HR), clarity: lane(au.clarity), dawn: lane(au.dawn), mode: [[0, raw.mode === 'train' || raw.mode === 'ride' ? raw.mode : 'watch']], biome: [[0, ((m.promptIdx || 0) % 5 + 5) % 5]], seed: [[0, m.route && typeof m.route.seed === 'number' ? m.route.seed % 40 : 0]] };
-        return validateBioSession({ schema: 'body-signal-labs/biofeedback-session@1', app: 'biofeedback-path-cockpit', created: raw.createdAt, durationMs: Math.max(raw.timeline.rpm.length * dt, ...Object.values(lanes).map((a) => a.length ? a[a.length-1][0] : 0)), synthetic: true, note: 'Converted from a ride saved by the older page.', lanes });
+        return validateBioSession({ schema: 'body-signal-labs/biofeedback-session@1', sceneCatalog: LEGACY_SCENE_CATALOG, app: 'biofeedback-path-cockpit', created: raw.createdAt, durationMs: Math.max(raw.timeline.rpm.length * dt, ...Object.values(lanes).map((a) => a.length ? a[a.length-1][0] : 0)), synthetic: true, note: 'Converted from a ride saved by the older page.', lanes });
       }
       throw new Error('This is not a session file from this page.');
     };

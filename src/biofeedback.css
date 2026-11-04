@@ -17,6 +17,10 @@
 .quiet-pill { justify-self: start; background: transparent; }
 #pedal { min-height: 40px; }
 #pedal.on { background: var(--ink); }
+#biome-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+#biome-row .pill { min-height: 42px; white-space: normal; }
+#biome-row .pill[aria-pressed="true"] { border-color: var(--accent); background: var(--soft); }
+#scene-description { min-height: 2.8em; margin-bottom: 4px; }
 
 .reading { position: absolute; left: 16px; right: 16px; top: 12.5%; text-align: center; pointer-events: none; text-shadow: 0 1px 3px rgba(4, 6, 16, 0.6), 0 2px 26px rgba(4, 6, 16, 0.85); }
 .reading::before { content: ""; position: absolute; left: 50%; top: 48%; width: min(760px, 118%); height: 136%; transform: translate(-50%, -50%); background: radial-gradient(ellipse at center, rgba(8, 10, 22, 0.42), rgba(8, 10, 22, 0.24) 46%, transparent 72%); z-index: -1; }

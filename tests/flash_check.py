@@ -106,10 +106,24 @@ with sync_playwright() as p:
                     pg.evaluate(f"__app.setLook('{look}');__app.setBiome({orbit},true);__app.S.vis=240;__app.S.steady=130;__app.setTod({tod},true)")
                     pg.wait_for_function(f'Math.abs(__app.S.dusk-({0.18 if tod == 1 else 1}))<.015 && __app.S.rpm>125', timeout=20000)
                     capture(f'Rainbow orbit {look} held {label}')
+                # New dense autumn foliage and Snake Way's raised edges also need
+                # steady-light coverage at the shared, faster cadence mapping.
+                for name in ('New England Autumn', 'Snake Way'):
+                    biome = scene_names.index(name)
+                    pg.evaluate(f"__app.setLook('clear');__app.setBiome({biome},true);__app.S.vis=240;__app.S.steady=130;__app.setTod(1,true)")
+                    pg.wait_for_function('Math.abs(__app.S.dusk-.18)<.015 && __app.S.rpm>125', timeout=20000)
+                    capture(f'{name} clear top cadence')
             else:
                 for mode in ('ride', 'train'):
                     pg.click(f'[data-mode={mode}]'); pg.wait_for_timeout(2500)
                     capture(mode, 9000)
+                pg.click('#demo-button')
+                pg.click('[data-mode=ride]')
+                pg.evaluate('__app.S.steady=130;__app.S.dream=.9;__app.S.wild=1;__app.S.duskHold=.18')
+                for biome, name in enumerate(pg.evaluate('__app.BIOMES.map(b=>b.name)')):
+                    pg.evaluate('(i)=>{__app.setBiome(i,true);__app.S.vis=240}', biome)
+                    pg.wait_for_timeout(1200)
+                    capture(f'{name} cadence Ride high feedback')
             ctx.close()
     b.close()
 srv.shutdown()
