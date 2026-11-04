@@ -1,10 +1,10 @@
 
 /* Endless Cockpit: the scenery on the main screen */
-.scenebar { position: absolute; top: max(92px, calc(env(safe-area-inset-top) + 66px)); left: 50%; transform: translateX(-50%); width: min(780px, calc(100% - 24px)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.scenebar { position: absolute; top: max(92px, calc(env(safe-area-inset-top) + 66px)); left: 50%; transform: translateX(-50%); width: min(900px, calc(100% - 24px)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .scene-tiles { display: flex; gap: 10px; justify-content: center; max-width: 100%; padding: 3px; }
 /* each tile is the scene itself, with its name on a dark fade so it reads over any sky */
 .scene-tile { flex: none; position: relative; display: block; padding: 0; border-radius: 13px; transition: transform 0.25s; }
-.scene-tile canvas { display: block; width: 132px; height: 77px; border-radius: 13px; border: 1px solid var(--line); box-shadow: 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
+.scene-tile canvas { display: block; width: 126px; height: 74px; border-radius: 13px; border: 1px solid var(--line); box-shadow: 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
 .scene-tile::after { content: ""; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 58%; border-radius: 0 0 12px 12px; background: linear-gradient(transparent, rgba(6, 8, 18, 0.78)); pointer-events: none; }
 .scene-tile span { position: absolute; left: 9px; right: 6px; bottom: 6px; z-index: 1; text-align: left; font-size: 11px; letter-spacing: 0.2px; color: rgba(238, 237, 251, 0.82); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (hover: hover) { .scene-tile:hover { transform: translateY(-2px); } }
@@ -24,11 +24,11 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
 
 .scene-row .short { display: none; }
 
-/* upright phones and narrow windows: all five scenes in one row that fits, names under the pictures,
+/* upright phones and narrow windows: all six scenes in one row that fits, names under the pictures,
    and the options on two rows. Nothing scrolls sideways and nothing is cut off. */
 @media (max-width: 860px) {
   .scenebar { top: max(62px, calc(env(safe-area-inset-top) + 50px)); width: 100%; gap: 8px; padding: 0 12px; }
-  .scene-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 560px; padding: 0; }
+  .scene-tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 660px; padding: 0; }
   .scene-tile { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
   .scene-tile canvas { width: 100%; height: auto; aspect-ratio: 336 / 196; border-radius: 10px; box-shadow: none; }
   .scene-tile[aria-pressed="true"] canvas { box-shadow: 0 0 0 1px var(--accent); }
@@ -56,8 +56,18 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
   .scenebar { top: max(50px, calc(env(safe-area-inset-top) + 42px)); gap: 6px; }
   .scene-tiles { display: flex; justify-content: center; width: auto; max-width: none; gap: 6px; }
   .scene-tile { display: block; position: relative; }
-  .scene-tile canvas { width: 96px; height: 52px; aspect-ratio: auto; border-radius: 9px; }
+  .scene-tile canvas { width: clamp(46px, calc((100vw - 66px) / 6), 96px); height: auto; aspect-ratio: 96 / 52; border-radius: 9px; }
   .scene-tile::after { display: block; border-radius: 0 0 8px 8px; }
   .scene-tile span { position: absolute; left: 7px; right: 4px; bottom: 4px; width: auto; font-size: 9px; text-align: left; white-space: nowrap; color: rgba(238, 237, 251, 0.85); }
   .seg button, .seg-solo { padding: 5px 10px; min-height: 30px; font-size: 11px; }
+}
+
+.route-caption { margin: 0; color: var(--ink); font-size: 11px; line-height: 1.4; text-align: center; text-shadow: 0 1px 5px #101820; padding: 4px 12px; border-radius: 12px; background: rgba(12,22,25,.62); backdrop-filter: blur(8px); }
+@media (max-width: 860px) { .route-caption { max-width: 95%; font-size: 10px; padding: 3px 9px; } }
+@media (max-height: 520px) { .route-caption { display: none; } }
+/* Compact landscape phones need the options on one row above the ride readouts. */
+@media (min-width: 480px) and (max-height: 360px) {
+  .scene-row { gap: 4px; }
+  .seg { padding: 2px; }
+  .seg button, .seg-solo { padding: 4px 7px; min-height: 28px; font-size: 10px; }
 }

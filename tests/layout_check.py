@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Every control on screen, nothing overlapping, no sideways scroll: both cockpits at desktop, short laptop, phones upright and sideways."""
-import http.server, threading, json, sys, tempfile
+import http.server, threading, json, sys, tempfile, os
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 from playwright.sync_api import sync_playwright
@@ -37,10 +37,14 @@ bad = 0
 with sync_playwright() as p:
     b = p.chromium.launch(channel='chrome', args=['--enable-gpu', '--use-angle=metal', '--ignore-gpu-blocklist'])
     for page in PAGES:
-        for name, w, h, dpr, mobile in SIZES:
+        sizes = SIZES + ([('compact-upright', 320, 568, 2, True), ('compact-sideways', 568, 320, 2, True)] if page == 'endless-cockpit.html' else [])
+        for name, w, h, dpr, mobile in sizes:
             c = b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=dpr, is_mobile=mobile, has_touch=mobile)
             pg = c.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)[:120]))
-            pg.goto(f'http://127.0.0.1:{srv.server_port}/{page}'); pg.wait_for_timeout(2600)
+            pg.goto(f'http://127.0.0.1:{srv.server_port}/{page}')
+            if page == 'endless-cockpit.html' and 'LAYOUT_SCENE' in os.environ:
+                pg.evaluate('(scene) => __app.setBiome(scene, true)', int(os.environ['LAYOUT_SCENE']))
+            pg.wait_for_timeout(2600)
             r = pg.evaluate(JS)
             if r['scrollW'] > r['w']: r['problems'].append(f"page scrolls sideways ({r['scrollW']} > {r['w']})")
             if errs: r['problems'].append('page error: ' + errs[0])

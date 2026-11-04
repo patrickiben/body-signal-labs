@@ -60,7 +60,7 @@ def static(out, src, title, description):
 
 
 if __name__ == "__main__":
-    page("endless-cockpit.html", "Endless Cockpit", "A procedural road at dusk that keeps your pace: your cadence sets the speed, from a Bluetooth sensor, the keyboard or a steady setting.", ["ride.js", "endless.js"], extra_css=(SRC / "endless.css").read_text())
-    page("biofeedback-path-cockpit.html", "Biofeedback Path Cockpit", "A road whose weather, grade and fog follow your body. Cadence is measured from a sensor, and everything about your state is inferred. Not a medical device.", ["vendor/autonomic/research-math.js", "vendor/autonomic/multivariate-engine.js", "bio.js", "pathscene.js", "biofeedback.js"], extra_css=(SRC / "biofeedback.css").read_text())
+    page("endless-cockpit.html", "Endless Cockpit", "Six procedural cycling routes: coastal cliffs, a tropical preserve, country lanes, an alpine lake, a sandstone canyon and a rainbow skyway through space, moving at your cadence.", ["ride.js", "endless.js"], extra_css=(SRC / "endless.css").read_text())
+    page("biofeedback-path-cockpit.html", "Biofeedback Path Cockpit", "A road whose weather, grade and fog follow your body, with cadence-powered riding or an optional Muse S Athena EEG balance game control. Not a medical device.", ["vendor/autonomic/research-math.js", "vendor/autonomic/multivariate-engine.js", "bio.js", "eeg-drive.js", "pathscene.js", "biofeedback.js"], extra_css=(SRC / "biofeedback.css").read_text())
     static("index.html", "index.src.html", "Body Signal Labs", "Autonomic Telemetry, Endless Cockpit and Biofeedback Path Cockpit: immersive scenes that follow signals from your body, in the browser.")
     static("field-guide.html", "field-guide.src.html", "Field Guide", "How to connect a cadence or heart-rate sensor to these pages, what each status means, and what is measured or inferred.")

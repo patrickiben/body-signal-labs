@@ -1,6 +1,6 @@
 # Biofeedback Path Cockpit
 
-A road whose weather, grade and fog follow your body. It runs in Chrome or Edge with no helper app, and it is not a medical device.
+A road whose weather, grade and fog follow your body. Heart and cadence input run directly in Chrome or Edge. Optional Muse S brainwave drive uses the local Mac bridge. It is not a medical device.
 
 Cadence is **measured** when a sensor reports it. Everything about your state is **inferred**, and the page labels it so. It replaces the older local page `Biofeedback_Path_Cockpit.html`, whose arousal weather always came from a hidden synthetic script.
 
@@ -8,9 +8,10 @@ Cadence is **measured** when a sensor reports it. Everything about your state is
 
 | Signal | Mode | Effect | Kind |
 |---|---|---|---|
-| Cadence | all | Speed and zoom, through the same curve as Endless Cockpit | Measured from a sensor; the slider, pedal button and workout are labeled manual |
+| Cadence | default drive | Speed and zoom, through the same curve as Endless Cockpit | Measured from a sensor; the slider, pedal button and workout are labeled manual |
+| Muse S EEG balance | Ride with Brainwaves | Calibrated speed and steadiness, with no cadence requirement | Experimental game proxy, not measured mental clarity |
 | Inferred arousal index | Watch | The gas cloud grows wider, brighter and warmer, the sky charges toward dusk by up to 0.2, and warp rises by up to 0.5 | Inferred |
-| Heart rate above baseline | Ride | Up to 4.5% of apparent grade, which slows you. Shown apart from the road's own grade. The zoom never changes | Inferred |
+| Heart rate above baseline | Ride with cadence | Up to 4.5% of apparent grade, which slows you. Shown apart from the road's own grade. The zoom never changes | Inferred |
 | Swing at pace | Train | Clarity lifts the fog. A held clarity of 0.6 brings dawn | Proxy |
 | Heart rate history | all | The horizon ridge is the last two minutes, newest in the middle | Measured |
 | Heart rate | all | Rings of light run down the road at the current rate | Measured rate, not beat timing |
@@ -39,6 +40,14 @@ Pedaling raises heart rate on its own, so any cadence above 15 rpm is passed to 
 
 Grade-load is `clamp((HR − baseline) / full, 0, 1) × 4.5%`. The baseline is your reference's mean heart rate when one exists, and otherwise the lowest 10-second mean since the sensor connected. Full is +60 bpm by default and adjustable. Speed is `motion × 18 m/s × clamp(1 − 5 × (route grade + grade-load), 0.6, 1.35)`, and zoom is `motion × max zoom`, so nothing inferred touches the zoom.
 
+## Brainwaves drive
+
+Choose **Brainwaves** in Ride and follow [EEG setup](EEG_SETUP.md). This drive uses the bridge’s EEG beta/alpha ratio and quality fields, independently of heart rate, optical pulse and cadence. The bridge checks four-second EEG windows and requires at least two eligible standard channels. The app collects 20 distinct eligible samples, at least 950 ms apart, into an eyes-open personal reference. In log(beta/alpha) space, its fixed center is the median and its scale is 1.4826 × MAD with a floor of 0.15. The bounded game score is `clamp(0.5 + (center − logRatio) / (6 × scale), 0, 1)`. Zero beta is floored at 0.000001 only for the logarithm. Lower beta/alpha relative to that reference increases the game score. The reference is not a mental-state classifier. Eye closure and muscle activity can affect this ratio.
+
+EEG drive uses a separate 7 m/s maximum, with a two-second rise and 1.5-second fall toward the target control. Higher control also reduces camera roll/bob and visual feedback. It does not use heart grade-load, cadence, a manual pedal or ambient road drift.
+
+Only fresh, eligible EEG contributes. Changing the channel/protocol reference requires calibration again. Calibration pauses when data is unusable, and signal loss makes the ride smoothly coast to a stop with a reason. The game score and synthetic/replay provenance are shown separately from cadence. The optional bridge serves the cockpit and stream under the same private local address; no public CORS endpoint or cloud EEG service is added.
+
 ## Train
 
 The pacer breathes in for 40% of each breath, 6 breaths a minute by default (4 seconds in, 6 out, as in Autonomic's Rest), from 4.5 to 7. There is no breath sensor. The swing is read at the pacer's own frequency: heart rate over the last two breaths is resampled at 4 Hz, a level, a straight-line drift and a sine at the pacer's frequency are fitted together by least squares, and the swing is twice the sine's amplitude. Fitting the drift alone first would absorb part of the sine. On known inputs it reads a 10 bpm swing as 9.97, a pure drift as 0, and a swing at twice the pace as 0.85.
@@ -51,7 +60,7 @@ A stated script, sent as real packet bytes through the same parsers: a rest that
 
 ## Sessions and the Ghost Deck
 
-A session file holds cadence ten times a second, distance twice a second, and heart rate, RMSSD, SDNN, the index, the swing, clarity, the hold and dawn once a second, with the mode, scene and route seed. It is your own record, not a medical record, and nothing leaves the computer unless you share it. Replay plays back what was computed, without re-running the model. The Ghost Deck races a session on the same hills as a light on the road, with the gap in meters. A ride saved by the older page also replays and races, marked synthetic.
+A session file holds cadence ten times a second, distance twice a second, and heart rate, RMSSD, SDNN, the index, the swing, clarity, the hold and dawn once a second, with the mode, scene and route seed. It is your own record, not a medical record, and nothing leaves the computer unless you share it. Replay plays back what was computed, without re-running the model. New files include the starting route, cadence mapping and baseline/settings. Their distance begins at zero when recording starts. The Ghost Deck restores that start and races the recorded distance as a light on the road, with the gap in meters. Older files are rebased to zero and label their starting position as approximate. A ride saved by the older page also replays and races, marked synthetic.
 
 ## Not verified
 

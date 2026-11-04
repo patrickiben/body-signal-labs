@@ -19,6 +19,7 @@
 
     ride.startRecording = (app, synthetic) => {
       session = { t0: performance.now(), app, created: new Date().toISOString(), synthetic: !!synthetic, lanes: {} };
+      emit('recording', true);
       emit('state');
     };
     ride.noteLane = (name, value) => { if (session) (session.lanes[name] = session.lanes[name] || []).push([Math.round(performance.now() - session.t0), value]); };
@@ -31,8 +32,33 @@
 
     // Rides saved by the earlier page used another schema with the same lanes, so they replay too.
     ride.readSession = (raw) => {
-      if (raw && raw.lanes && typeof raw.durationMs === 'number' && (raw.schema === SCHEMA || /\/session@1$/.test(raw.schema || ''))) return raw;
-      throw new Error('This is not a ride file from this page.');
+      if (!raw || !(raw.schema === SCHEMA || /\/session@1$/.test(raw.schema || ''))) throw new Error('This is not a ride file from this page.');
+      const object = (v) => v && typeof v === 'object' && !Array.isArray(v);
+      const finite = (v, lo, hi) => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
+      const fail = (part) => { throw new Error(`Invalid ride ${part}.`); };
+      if (!finite(raw.durationMs, 0, Number.MAX_SAFE_INTEGER) || !object(raw.lanes)) fail('duration or lanes');
+      if (raw.synthetic != null && typeof raw.synthetic !== 'boolean') fail('source label');
+      const biome = (v) => Number.isInteger(v) && v >= 0 && v < 6;
+      const tod = (v) => Number.isInteger(v) && v >= 0 && v < 4;
+      for (const [name, lane] of Object.entries(raw.lanes)) {
+        if (!Array.isArray(lane)) fail(`${name} lane`);
+        let previous = -1;
+        for (const point of lane) {
+          if (!Array.isArray(point) || point.length !== 2 || !finite(point[0], 0, raw.durationMs) || point[0] < previous) fail(`${name} timing`);
+          previous = point[0]; const v = point[1];
+          if ((name === 'rpm' && !finite(v, 0, 250)) || (name === 'seed' && !finite(v, -1e6, 1e6)) || (name === 'biome' && !biome(v)) || (name === 'tod' && !tod(v))) fail(`${name} value`);
+          if (name === 'routeStart') {
+            if (!object(v)) fail('starting route');
+            if ((v.biome != null && !biome(v.biome)) || (v.tod != null && !tod(v.tod))) fail('starting scene');
+            for (const k of ['seed', 'vis', 'dist']) if (v[k] != null && !finite(v[k], k === 'dist' ? 0 : -1e12, 1e12)) fail(`starting ${k}`);
+            if (v.map != null) {
+              if (!object(v.map)) fail('starting cadence mapping');
+              for (const [k, lim] of Object.entries({ idle: [0, 60], max: [60, 130], maxZoom: [.004, .04], gamma: [.6, 3.2] })) if (!finite(v.map[k], ...lim)) fail(`starting ${k}`);
+            }
+          }
+        }
+      }
+      return raw;
     };
     ride.startReplay = (raw) => {
       const s = ride.readSession(raw);

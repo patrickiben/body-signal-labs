@@ -21,5 +21,18 @@ jobs:
         run: |
           python3 build.py
           git diff --exit-code -- endless-cockpit.html biofeedback-path-cockpit.html index.html field-guide.html
+      - name: Sensor freshness and session integrity
+        run: |
+          node tests/session_regressions.cjs
+          node tests/eeg_drive.cjs
+      - uses: actions/checkout@v7
+        with:
+          repository: patrickiben/autonomic-telemetry
+          ref: 6c3ce294a1623649593f2871b364a9053c719ec0
+          path: .ci-autonomic
+      - name: Optional Muse bridge HTTP contract
+        env:
+          AUTONOMIC_ROOT: ${{ github.workspace }}/.ci-autonomic
+        run: python3 -m unittest discover -s tests -p test_brainwave_bridge.py
       - run: pip install playwright && playwright install --with-deps chromium
       - run: python3 tests/smoke.py

@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#101525">
 <title>Endless Cockpit</title>
-<meta name="description" content="A procedural road at dusk that keeps your pace: your cadence sets the speed, from a Bluetooth sensor, the keyboard or a steady setting.">
+<meta name="description" content="Six procedural cycling routes: coastal cliffs, a tropical preserve, country lanes, an alpine lake, a sandstone canyon and a rainbow skyway through space, moving at your cadence.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101525'/%3E%3Cpath d='M5 17h6l2.5-6 4 11 2.5-5H27' fill='none' stroke='%23b8b7ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
 :root {
@@ -243,11 +243,11 @@ table.maptable th { color: var(--ink); font-weight: 500; white-space: nowrap; }
 @media (max-height: 640px) { .family { display: none; } }
 
 /* Endless Cockpit: the scenery on the main screen */
-.scenebar { position: absolute; top: max(92px, calc(env(safe-area-inset-top) + 66px)); left: 50%; transform: translateX(-50%); width: min(780px, calc(100% - 24px)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.scenebar { position: absolute; top: max(92px, calc(env(safe-area-inset-top) + 66px)); left: 50%; transform: translateX(-50%); width: min(900px, calc(100% - 24px)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .scene-tiles { display: flex; gap: 10px; justify-content: center; max-width: 100%; padding: 3px; }
 /* each tile is the scene itself, with its name on a dark fade so it reads over any sky */
 .scene-tile { flex: none; position: relative; display: block; padding: 0; border-radius: 13px; transition: transform 0.25s; }
-.scene-tile canvas { display: block; width: 132px; height: 77px; border-radius: 13px; border: 1px solid var(--line); box-shadow: 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
+.scene-tile canvas { display: block; width: 126px; height: 74px; border-radius: 13px; border: 1px solid var(--line); box-shadow: 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
 .scene-tile::after { content: ""; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 58%; border-radius: 0 0 12px 12px; background: linear-gradient(transparent, rgba(6, 8, 18, 0.78)); pointer-events: none; }
 .scene-tile span { position: absolute; left: 9px; right: 6px; bottom: 6px; z-index: 1; text-align: left; font-size: 11px; letter-spacing: 0.2px; color: rgba(238, 237, 251, 0.82); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (hover: hover) { .scene-tile:hover { transform: translateY(-2px); } }
@@ -267,11 +267,11 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
 
 .scene-row .short { display: none; }
 
-/* upright phones and narrow windows: all five scenes in one row that fits, names under the pictures,
+/* upright phones and narrow windows: all six scenes in one row that fits, names under the pictures,
    and the options on two rows. Nothing scrolls sideways and nothing is cut off. */
 @media (max-width: 860px) {
   .scenebar { top: max(62px, calc(env(safe-area-inset-top) + 50px)); width: 100%; gap: 8px; padding: 0 12px; }
-  .scene-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 560px; padding: 0; }
+  .scene-tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 660px; padding: 0; }
   .scene-tile { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
   .scene-tile canvas { width: 100%; height: auto; aspect-ratio: 336 / 196; border-radius: 10px; box-shadow: none; }
   .scene-tile[aria-pressed="true"] canvas { box-shadow: 0 0 0 1px var(--accent); }
@@ -299,17 +299,27 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
   .scenebar { top: max(50px, calc(env(safe-area-inset-top) + 42px)); gap: 6px; }
   .scene-tiles { display: flex; justify-content: center; width: auto; max-width: none; gap: 6px; }
   .scene-tile { display: block; position: relative; }
-  .scene-tile canvas { width: 96px; height: 52px; aspect-ratio: auto; border-radius: 9px; }
+  .scene-tile canvas { width: clamp(46px, calc((100vw - 66px) / 6), 96px); height: auto; aspect-ratio: 96 / 52; border-radius: 9px; }
   .scene-tile::after { display: block; border-radius: 0 0 8px 8px; }
   .scene-tile span { position: absolute; left: 7px; right: 4px; bottom: 4px; width: auto; font-size: 9px; text-align: left; white-space: nowrap; color: rgba(238, 237, 251, 0.85); }
   .seg button, .seg-solo { padding: 5px 10px; min-height: 30px; font-size: 11px; }
+}
+
+.route-caption { margin: 0; color: var(--ink); font-size: 11px; line-height: 1.4; text-align: center; text-shadow: 0 1px 5px #101820; padding: 4px 12px; border-radius: 12px; background: rgba(12,22,25,.62); backdrop-filter: blur(8px); }
+@media (max-width: 860px) { .route-caption { max-width: 95%; font-size: 10px; padding: 3px 9px; } }
+@media (max-height: 520px) { .route-caption { display: none; } }
+/* Compact landscape phones need the options on one row above the ride readouts. */
+@media (min-width: 480px) and (max-height: 360px) {
+  .scene-row { gap: 4px; }
+  .seg { padding: 2px; }
+  .seg button, .seg-solo { padding: 4px 7px; min-height: 28px; font-size: 10px; }
 }
 
 </style>
 </head>
 <body>
 <main class="scene" id="scene" aria-label="Endless Cockpit">
-<canvas id="stage" role="img" aria-label="A procedural road at dusk that keeps your pace: your cadence sets the speed, from a Bluetooth sensor, the keyboard or a steady setting."></canvas>
+<canvas id="stage" role="img" aria-label="Six procedural cycling routes: coastal cliffs, a tropical preserve, country lanes, an alpine lake, a sandstone canyon and a rainbow skyway through space, moving at your cadence."></canvas>
 </main>
 <script>
 /* family.js: the same-tab bar shared by the suite's home page and its three apps, in the same order everywhere.
@@ -600,10 +610,11 @@ void main(){
   c*=1.-uVig*smoothstep(.25,.95,dot(q,q)*2.1);
   o=vec4(c,1.);
 }`;
-  // The flicker limiter. Each region of the finished picture may change brightness only so fast, in either
-  // direction, whatever made it change. Holding a 10% swing to about a quarter second keeps any large area
-  // under the WCAG limit of three flashes a second, by construction. Small sparks barely move a region's mean,
-  // so they stay instant.
+  // Regional luminance smoothing limits sampled local averages, not every pixel.
+  // Moving silhouettes can still change contrast within those regions, and upward
+  // gain can amplify that contrast. Pages may cap maxGain at 1 to keep natural
+  // scenery from brightening as it moves. Rendered flash behavior must be measured;
+  // this approximation alone cannot guarantee a threshold or personal comfort.
   const LIMIT_FS = FS_HEAD + `
 uniform sampler2D uCur,uPrev; uniform float uLod,uMax;
 void main(){
@@ -612,12 +623,12 @@ void main(){
   o=vec4(prev+clamp(cur-prev,-uMax,uMax),cur,0.,1.);
 }`;
   const OUT_FS = FS_HEAD + `
-uniform sampler2D uG,uLim; uniform float uGrain,uT; uniform vec3 uLift;
+uniform sampler2D uG,uLim; uniform float uGrain,uT,uMaxGain; uniform vec3 uLift;
 float h12(vec2 p){ vec3 q=fract(vec3(p.xyx)*.1031); q+=dot(q,q.yzx+33.33); return fract((q.x+q.y)*q.z); }
 void main(){
   vec3 c=texture(uG,vUv).rgb;
   vec2 L=texture(uLim,vUv).rg;
-  c*=clamp((L.x+.003)/(L.y+.003),.05,4.);
+  c*=clamp((L.x+.003)/(L.y+.003),.05,uMaxGain);
   c=pow(min(c,vec3(1.)),vec3(1./2.2))+uLift;
   c+=(h12(gl_FragCoord.xy+fract(uT)*97.)-.5)*uGrain;
   o=vec4(c,1.);
@@ -667,7 +678,7 @@ void main(){
       return mips[0].tex;
     }
     function finish(sceneTex, bloomTex, vals, dt) {
-      const v = Object.assign({ uBloomK: 0.6, uExposure: 1, uFlash: 0, uFlashC: [1, 0.94, 0.84], uVig: 0.5, uSat: 1, uGrain: 0.02, uT: 0, uLift: [0, 0, 0], rate: 0.36 }, vals);
+      const v = Object.assign({ uBloomK: 0.6, uExposure: 1, uFlash: 0, uFlashC: [1, 0.94, 0.84], uVig: 0.5, uSat: 1, uGrain: 0.02, uT: 0, uLift: [0, 0, 0], rate: 0.36, maxGain: 4 }, vals);
       gl.disable(gl.BLEND);
       G.into(graded);
       G.bindTex(0, sceneTex); G.bindTex(1, bloomTex);
@@ -683,7 +694,7 @@ void main(){
       limFresh = false;
       G.into(null);
       G.bindTex(0, graded.tex); G.bindTex(1, limA.tex);
-      G.use(out, { uG: 0, uLim: 1, uGrain: v.uGrain, uT: v.uT, uLift: v.uLift });
+      G.use(out, { uG: 0, uLim: 1, uGrain: v.uGrain, uT: v.uT, uLift: v.uLift, uMaxGain: v.maxGain });
       G.draw();
     }
     return { resize, bloom, finish };
@@ -720,6 +731,7 @@ void main(){
 
     ride.startRecording = (app, synthetic) => {
       session = { t0: performance.now(), app, created: new Date().toISOString(), synthetic: !!synthetic, lanes: {} };
+      emit('recording', true);
       emit('state');
     };
     ride.noteLane = (name, value) => { if (session) (session.lanes[name] = session.lanes[name] || []).push([Math.round(performance.now() - session.t0), value]); };
@@ -732,8 +744,33 @@ void main(){
 
     // Rides saved by the earlier page used another schema with the same lanes, so they replay too.
     ride.readSession = (raw) => {
-      if (raw && raw.lanes && typeof raw.durationMs === 'number' && (raw.schema === SCHEMA || /\/session@1$/.test(raw.schema || ''))) return raw;
-      throw new Error('This is not a ride file from this page.');
+      if (!raw || !(raw.schema === SCHEMA || /\/session@1$/.test(raw.schema || ''))) throw new Error('This is not a ride file from this page.');
+      const object = (v) => v && typeof v === 'object' && !Array.isArray(v);
+      const finite = (v, lo, hi) => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
+      const fail = (part) => { throw new Error(`Invalid ride ${part}.`); };
+      if (!finite(raw.durationMs, 0, Number.MAX_SAFE_INTEGER) || !object(raw.lanes)) fail('duration or lanes');
+      if (raw.synthetic != null && typeof raw.synthetic !== 'boolean') fail('source label');
+      const biome = (v) => Number.isInteger(v) && v >= 0 && v < 6;
+      const tod = (v) => Number.isInteger(v) && v >= 0 && v < 4;
+      for (const [name, lane] of Object.entries(raw.lanes)) {
+        if (!Array.isArray(lane)) fail(`${name} lane`);
+        let previous = -1;
+        for (const point of lane) {
+          if (!Array.isArray(point) || point.length !== 2 || !finite(point[0], 0, raw.durationMs) || point[0] < previous) fail(`${name} timing`);
+          previous = point[0]; const v = point[1];
+          if ((name === 'rpm' && !finite(v, 0, 250)) || (name === 'seed' && !finite(v, -1e6, 1e6)) || (name === 'biome' && !biome(v)) || (name === 'tod' && !tod(v))) fail(`${name} value`);
+          if (name === 'routeStart') {
+            if (!object(v)) fail('starting route');
+            if ((v.biome != null && !biome(v.biome)) || (v.tod != null && !tod(v.tod))) fail('starting scene');
+            for (const k of ['seed', 'vis', 'dist']) if (v[k] != null && !finite(v[k], k === 'dist' ? 0 : -1e12, 1e12)) fail(`starting ${k}`);
+            if (v.map != null) {
+              if (!object(v.map)) fail('starting cadence mapping');
+              for (const [k, lim] of Object.entries({ idle: [0, 60], max: [60, 130], maxZoom: [.004, .04], gamma: [.6, 3.2] })) if (!finite(v.map[k], ...lim)) fail(`starting ${k}`);
+            }
+          }
+        }
+      }
+      return raw;
     };
     ride.startReplay = (raw) => {
       const s = ride.readSession(raw);
@@ -760,8 +797,9 @@ void main(){
 </script>
 <script>
 /* endless.js: Endless Cockpit. A procedural road that keeps pace with your pedaling.
-   The scene is raymarched each frame, then fed through a zoom-feedback loop toward the vanishing point.
-   Cadence sets the speed, and each crank revolution sends a ring of light down the road. */
+   Six landscapes have their own terrain, roadside objects and route profiles, with an optional dream-feedback loop.
+   Cadence sets the speed; on the five land routes, each crank revolution sends a ring of light down the road.
+   Plants and occasional wildlife have fixed seeded world positions across the landscapes; animals are static. */
 (function () {
   'use strict';
   const { createGL, createPost, FS_HEAD, srgb } = GLKit;
@@ -771,22 +809,34 @@ void main(){
   const RM = matchMedia('(prefers-reduced-motion: reduce)');
 
   const BIOMES = [
-    { name: 'Golden coast', skyTop: '#2e4f8a', skyHz: '#ffb077', sun: '#ffd49a', ground: '#55452e', rock: '#7a5a3c', fog: '#ffc898', edge: '#ffd36b', amp: 58, ridge: 0.38, trees: 0.25, sea: 1, snow: 0, strata: 0, grid: 0, fogK: 0.0034, sunAz: 0.12, sunEl: 0.1 },
-    { name: 'Misty pines', skyTop: '#1f3a50', skyHz: '#a7c9c2', sun: '#ffe8c6', ground: '#1e3a2f', rock: '#39494a', fog: '#b0d3cc', edge: '#7ff0dd', amp: 64, ridge: 0.22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: 0.0062, sunAz: -0.3, sunEl: 0.16 },
-    { name: 'Neon forest', skyTop: '#120829', skyHz: '#5e2496', sun: '#ff74d4', ground: '#120b26', rock: '#28144d', fog: '#7c42bb', edge: '#ef86ff', amp: 48, ridge: 0.55, trees: 0.8, sea: 0, snow: 0, strata: 0, grid: 1, fogK: 0.0052, sunAz: 0.02, sunEl: 0.07 },
-    { name: 'High alpine', skyTop: '#23548f', skyHz: '#c6def2', sun: '#fff2d8', ground: '#465660', rock: '#56626e', fog: '#d6e7f5', edge: '#9fe0ff', amp: 66, ridge: 0.7, trees: 0.1, sea: 0, snow: 1, strata: 0, grid: 0, fogK: 0.0027, sunAz: 0.42, sunEl: 0.26 },
-    { name: 'Red canyon', skyTop: '#472833', skyHz: '#d27f5c', sun: '#f2bd8c', ground: '#7a3b24', rock: '#a9522c', fog: '#eaa27a', edge: '#ff8f70', amp: 54, ridge: 0.8, trees: 0, sea: 0, snow: 0, strata: 1, grid: 0, fogK: 0.0039, sunAz: -0.16, sunEl: 0.09 },
-  ].map((b) => ({ ...b, c: { skyTop: srgb(b.skyTop), skyHz: srgb(b.skyHz), sun: srgb(b.sun), ground: srgb(b.ground), rock: srgb(b.rock), fog: srgb(b.fog), edge: srgb(b.edge) } }));
+    { name: 'Golden coast', description: 'Cliffside cycleway · open sea, rock stacks and white guardrails', skyTop: '#397ab1', skyHz: '#abd6eb', sun: '#ffe7be', ground: '#6c8247', rock: '#a58d70', fog: '#9bbbc9', edge: '#e6c985', amp: 45, ridge: .38, trees: 0, sea: 1, snow: 0, strata: 0, grid: 0, fogK: .0018, sunAz: -.65, sunEl: .55, coast: 1, forest: 0, meadow: 0, alpine: 0, canyon: 0, width: 2.25, turn: 1.25, rise: .4, winding: .8 },
+    { name: 'Tropical preserve', description: 'Tropical nature preserve · palms, flowering understory and a warm earth trail', skyTop: '#368ca8', skyHz: '#bee1cc', sun: '#ffedbc', ground: '#467642', rock: '#b99b6a', fog: '#a9c7ad', edge: '#e0b887', amp: 22, ridge: .22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0028, sunAz: -.5, sunEl: .52, coast: 0, forest: 1, meadow: 0, alpine: 0, canyon: 0, width: 1.65, turn: .75, rise: .3, winding: 1.15 },
+    { name: 'Meadow lanes', description: 'Country lane · rolling fields, split-rail fences and farmsteads', skyTop: '#5596c6', skyHz: '#d8e8d2', sun: '#fff0c6', ground: '#91a84e', rock: '#87965c', fog: '#cedbc0', edge: '#e4d59a', amp: 14, ridge: .1, trees: .2, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0016, sunAz: -.7, sunEl: .55, coast: 0, forest: 0, meadow: 1, alpine: 0, canyon: 0, width: 2, turn: .95, rise: .5, winding: .7 },
+    { name: 'Alpine lake', description: 'Lakeside pass · turquoise water, snowy peaks and mountain pines', skyTop: '#367bb3', skyHz: '#d3e7ee', sun: '#fff3d9', ground: '#6b8968', rock: '#8c9699', fog: '#c2d9df', edge: '#b4dbe2', amp: 128, ridge: .7, trees: .2, sea: 1, snow: 1, strata: 0, grid: 0, fogK: .0016, sunAz: .7, sunEl: .5, coast: 0, forest: 0, meadow: 0, alpine: 1, canyon: 0, width: 2.1, turn: 1.4, rise: .7, winding: .65 },
+    { name: 'Red canyon', description: 'Desert passage · sandstone walls, layered mesas and saguaro cacti', skyTop: '#5c9db7', skyHz: '#f5cba0', sun: '#ffe1b0', ground: '#c18a55', rock: '#c67246', fog: '#d8b18a', edge: '#ecc39a', amp: 72, ridge: .8, trees: 0, sea: 0, snow: 0, strata: 1, grid: 0, fogK: .0022, sunAz: -.9, sunEl: .5, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 1, width: 2.35, turn: .75, rise: .25, winding: 1.45 },
+    { name: 'Rainbow orbit', description: 'Rainbow skyway · a suspended ribbon through stars and a ringed planet', skyTop: '#171b42', skyHz: '#302449', sun: '#e0e8ff', ground: '#654a92', rock: '#6c80a8', fog: '#181b35', edge: '#aba9ff', amp: 0, ridge: 0, trees: 0, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0008, sunAz: -.4, sunEl: .6, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 1, width: 3.5, turn: 2.1, rise: 1.05, winding: .55 },
+  ].map((b) => ({ orbit: 0, ...b, c: { skyTop: srgb(b.skyTop), skyHz: srgb(b.skyHz), sun: srgb(b.sun), ground: srgb(b.ground), rock: srgb(b.rock), fog: srgb(b.fog), edge: srgb(b.edge) } }));
 
   /* ---- the same road in JS and GLSL, so the camera, the grade readout and the picture agree ---- */
   const S = {
     rpm: 0, rev: 0, demo: false, demoT: 0, bleT: -1e12, bt: 'idle', btName: '', speed: 0, dist: 0, vis: 40, zoom: 0, grade: 0, surge: 0, shake: 0, shakeV: 0, roll: 0,
-    map: { idle: 25, max: 95, maxZoom: 0.018, gamma: 1.6 }, dream: 0.55, wild: 0.35, seed: 0,
+    map: { idle: 25, max: 95, maxZoom: 0.018, gamma: 1.6 }, dream: 0.15, wild: 0.1, seed: 0,
     pedal: false, steady: null, ble: null, bleName: '', biome: 0, biomeNext: 0, biomeT: 1, dusk: 0.3, ambient: 2.2,
   };
-  const MAX_SPEED = 18, M_PER_MI = 1609.34, GRADE_K = 5;
-  const pathX = (z) => 14 * Math.sin(z * 0.0113 + 1 + S.seed) + 6.5 * Math.sin(z * 0.0271 + 2.2 + S.seed * 1.7);
-  const roadY = (z) => 7 * Math.sin(z * 0.0071 + 0.4 + S.seed) + 3.4 * Math.sin(z * 0.0193 + 1.9 + S.seed * 2.3) + 1.1 * Math.sin(z * 0.0471 + 3.1);
+  const MAX_SPEED = 7, M_PER_MI = 1609.34, GRADE_K = 5;
+  const routeValue = (key) => { const t = S.biomeT * S.biomeT * (3 - 2 * S.biomeT); return lerp((S.fromMix || BIOMES[S.biome])[key], BIOMES[S.biomeNext][key], t); };
+  const WORLD_KEYS = ['coast', 'forest', 'meadow', 'alpine', 'canyon', 'orbit'];
+  const routeBlend = (z, scene, elevation) => BIOMES.reduce((sum, b, i) => {
+    const weight = scene ? scene[WORLD_KEYS[i]] : routeValue(WORLD_KEYS[i]);
+    if (weight < .000001) return sum;
+    const q = z * b.winding;
+    const v = elevation ? b.rise * (7*Math.sin(q*.0071+.4+S.seed)+3.4*Math.sin(q*.0193+1.9+S.seed*2.3)+1.1*Math.sin(q*.0471+3.1)) : b.turn * (14*Math.sin(q*.0113+1+S.seed)+6.5*Math.sin(q*.0271+2.2+S.seed*1.7));
+    return sum + weight * v;
+  }, 0);
+  // Blend evaluated route positions. Interpolating a sine's frequency would whip
+  // the camera through many cycles when scenery changes late in a long ride.
+  const pathX = (z, b) => routeBlend(z, b, false);
+  const roadY = (z, b) => routeBlend(z, b, true);
   const gradeAt = (z) => (roadY(z + 3) - roadY(z - 3)) / 6;
   const gradeFactor = (g) => clamp(1 - g * GRADE_K, 0.6, 1.35);
   const motion01 = (rpm) => {
@@ -802,39 +852,304 @@ uniform vec3 uCam,uRight,uUp,uFwd;
 uniform sampler2D uN,uS;
 uniform vec3 uSkyTop,uSkyHz,uSunC,uGround,uRock,uFog,uEdge,uSunDir;
 uniform float uAmp,uRidge,uSea,uSnow,uStrata,uGrid,uTrees,uDusk,uFogK;
-uniform float uSpark;
+uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uOrbit,uWidth;
 uniform vec4 uRing[RINGS];
-float pathX(float z){return 14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7);}
-float roadY(float z){return 7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1);}
+uniform vec4 uRouteA; uniform float uRouteB,uRouteC;
+float routeX(float z,float turn,float winding){z*=winding;return turn*(14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7));}
+float routeY(float z,float rise,float winding){z*=winding;return rise*(7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1));}
+float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);return v;}
+float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);return v;}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return textureLod(uN,(i+f+.5)/256.,0.).r;}
 const mat2 R=mat2(.8,.6,-.6,.8);
 float fbm2(vec2 p){return (vn(p)+.5*vn(R*p*2.03+3.1))/1.5;}
 float fbm4(vec2 p){float a=.5,s=0.;for(int i=0;i<4;i++){s+=a*vn(p);p=R*p*2.03+1.7;a*=.5;}return s/.9375;}
+// Static, seeded world-space vegetation and wildlife. No frame-random color or motion.
+// Analytic world-pixel footprint: derivatives are undefined inside the row/leaf
+// branches, whose neighboring pixels may be evaluating different billboards.
+float foliageAA=.006;
+float foliageEdge(float d){return 1.-smoothstep(-foliageAA,foliageAA,d);}
+// Integrate a finite strip across one projected pixel. Unlike an SDF edge alone,
+// this preserves coverage when a stem or leaflet becomes narrower than a pixel.
+float foliageBand(float center,float halfWidth,float aa){
+  return clamp((center+halfWidth+aa)/(2.*aa),0.,1.)-clamp((center-halfWidth+aa)/(2.*aa),0.,1.);
+}
+float foliageSpan(float value,float lo,float hi,float aa){return foliageBand(value-(lo+hi)*.5,(hi-lo)*.5,aa);}
+void foliagePaint(inout vec3 c,inout float alpha,vec3 pigment,float mask){
+  float a=mask+alpha*(1.-mask);
+  c=(pigment*mask+c*alpha*(1.-mask))/max(a,.00001);alpha=a;
+}
+float line2(vec2 p,vec2 a,vec2 b){vec2 q=p-a,v=b-a;return length(q-v*clamp(dot(q,v)/dot(v,v),0.,1.));}
+float leaf2(vec2 p,vec2 a,vec2 b,float width){
+  vec2 axis=b-a,q=p-a;float t=dot(q,axis)/dot(axis,axis);
+  float crossD=abs(q.x*axis.y-q.y*axis.x)/length(axis);
+  return foliageBand(crossD,width*sin(3.14159*clamp(t,0.,1.)),foliageAA)*foliageSpan(t*length(axis),0.,length(axis),foliageAA);
+}
+vec4 tropicalTree(vec2 p,float h,float side){
+  vec3 c=vec3(0.);float alpha=0.;
+  float H=6.5+h*4.,bend=-side*(.5+h*1.4);
+  float yf=clamp(p.y/H,0.,1.),tx=bend*yf*yf;
+  float trunk=foliageBand(p.x-tx,.22-.09*yf,foliageAA)*foliageSpan(p.y,0.,H,foliageAA);
+  float trunkDetail=1.-smoothstep(.35,1.4,foliageAA*15.);
+  if(trunk>.001)foliagePaint(c,alpha,vec3(.29,.19,.105)*(.78+.18*cos(p.y*15.)*trunkDetail+.2*clamp((p.x-tx)/.22,-1.,1.)),trunk);
+  vec2 crown=vec2(bend,H);
+  if(h<.78){
+    // Six drooping pinnate fronds plus an upright spear. Curved rachises and
+    // alternating narrow leaflets give palms an unmistakable open silhouette.
+    for(int f=0;f<6;f++){
+      float sideF=f<3?-1.:1.,layer=mod(float(f),3.);
+      float span=3.+layer*.55+h*.65,t=(p.x-crown.x)*sideF/span;
+      if(t< -foliageAA/span||t>1.+foliageAA/span)continue;
+      float tc=clamp(t,0.,1.);
+      float axisY=H+(2.-layer*.62)*tc-(2.25+layer*.38)*tc*tc;
+      // Leaflet notches converge to their mean coverage once unresolved instead
+      // of alternately appearing and disappearing as a subpixel frond moves.
+      float resolved=1.-smoothstep(.35,1.4,foliageAA*38./span);
+      float leafWidth=(.12+.29*sin(tc*3.14159))*mix(.803775,.46+.54*abs(sin(tc*38.+h*4.)),resolved);
+      float slope=((2.-layer*.62)-2.*(2.25+layer*.38)*tc)/span;
+      float normalScale=inversesqrt(1.+slope*slope);
+      float frond=foliageBand((p.y-axisY)*normalScale,leafWidth*normalScale,foliageAA)*foliageSpan(t*span,0.,span,foliageAA);
+      if(frond>.001)foliagePaint(c,alpha,mix(vec3(.025,.13,.055),vec3(.11,.29,.075),.35+.35*sideF+.15*layer)*(.88+.12*cos(tc*38.)*resolved),frond);
+    }
+    float spear=leaf2(p,crown,crown+vec2(.4*side,2.3),.18);
+    if(spear>.001)foliagePaint(c,alpha,vec3(.12,.31,.09),spear);
+    float fruit=step(length((p-crown-vec2(.12,-.18))/vec2(.25,.2)),1.);
+    if(fruit>.5){alpha=1.;c=vec3(.19,.13,.055);}
+  }else{
+    // Broad, overlapping leaves form a lower, rounded tropical canopy.
+    for(int f=0;f<9;f++){
+      float angle=float(f)*2.4+h*8.;
+      vec2 base=crown+vec2(sin(angle)*.35,cos(angle)*.25-.65);
+      vec2 tip=base+vec2(sin(angle)*2.25,cos(angle)*1.45+.35);
+      float leaf=leaf2(p,base,tip,.72);
+      if(leaf>.001){float vein=1.-smoothstep(.012,.045,line2(p,base,tip));foliagePaint(c,alpha,mix(vec3(.035,.18,.065),vec3(.12,.29,.075),fract(float(f)*.37+h))+vec3(.05,.06,.01)*vein,leaf);}
+    }
+  }
+  return vec4(c,alpha);
+}
+vec4 tropicalBorder(vec2 p,float h,float sight){
+  vec3 c=vec3(0.);float alpha=0.;
+  // Ferns and colorful cordyline-like leaves grow in layered clumps.
+  if(h<.78)for(int f=0;f<7;f++){
+    float a=(float(f)-3.)*.4;
+    vec2 base=vec2(-.75,0.),tip=base+vec2(sin(a)*1.45,cos(a)*(1.25+.25*h));
+    float leaf=leaf2(p,base,tip,.2);
+    float t=dot(p-base,tip-base)/dot(tip-base,tip-base);
+    float phaseAA=foliageAA*27./length(tip-base);
+    float resolved=1.-smoothstep(.35,1.4,phaseAA);
+    leaf*=mix(.85879,smoothstep(.22-phaseAA,.22+phaseAA,abs(sin(t*27.))),resolved);
+    if(leaf>.001)foliagePaint(c,alpha,mix(vec3(.035,.19,.075),vec3(.12,.32,.09),float(f)/7.),leaf);
+  }
+  if(h>.2&&h<.72)for(int f=0;f<5;f++){
+    vec2 base=vec2(.7,0.),tip=base+vec2((float(f)-2.)*.42,1.1+.3*sin(float(f)+h));
+    float leaf=leaf2(p,base,tip,.22);
+    if(leaf>.001)foliagePaint(c,alpha,mix(vec3(.24,.045,.085),vec3(.44,.12,.16),float(f)/5.),leaf);
+  }
+  if(h<.3){
+    // Upright heliconia stems with alternating boat-shaped orange/red bracts.
+    for(int stem=0;stem<2;stem++){
+      float sx=-.13+float(stem)*.48,top=1.45+float(stem)*.3;
+      if(line2(p,vec2(sx,.05),vec2(sx,top))<.025){alpha=1.;c=vec3(.08,.23,.065);}
+      for(int k=0;k<4;k++){
+        float sideK=mod(float(k+stem),2.)*2.-1.,by=.55+float(k)*.23+float(stem)*.1;
+        vec2 base=vec2(sx,by),tip=base+vec2(sideK*.5,.21);
+        if(leaf2(p,base,tip,.13)>.5){alpha=1.;c=mix(vec3(.65,.055,.03),vec3(.95,.27,.035),float(k)/4.);}
+      }
+    }
+  }else if(h>.62&&h<.9){
+    // Recognizable five-petalled flowers in pink and purple roadside clusters.
+    for(int fl=0;fl<5;fl++){
+      vec2 center=vec2((float(fl)-2.)*.28,.65+.42*sin(float(fl)*1.4+h));
+      if(line2(p,vec2(center.x*.7,0.),center)<.018){alpha=1.;c=vec3(.05,.2,.055);}
+      for(int petal=0;petal<5;petal++){
+        float a=float(petal)*1.2566;vec2 d=p-center-vec2(sin(a),cos(a))*.105;
+        if(length(d/vec2(.095,.095))<1.){alpha=1.;c=mix(vec3(.47,.07,.31),vec3(.68,.19,.44),h);}
+      }
+      if(length(p-center)<.04){alpha=1.;c=vec3(.95,.63,.11);}
+    }
+  }
+  // Occasional toucan-like bird, resting on a woody branch above the flowers.
+  if(sight<.055){
+    vec2 perch=vec2(.25,1.9);
+    if(line2(p,vec2(.8,.1),perch+vec2(.35,-.08))<.045||line2(p,perch-vec2(.1,.1),perch+vec2(.55,-.1))<.035){alpha=1.;c=vec3(.22,.13,.07);}
+    vec2 q=p-perch;
+    float bird=step(length((q-vec2(0.,.22))/vec2(.24,.3)),1.);
+    bird=max(bird,leaf2(q,vec2(-.04,.08),vec2(-.34,-.28),.085));
+    if(bird>.5){alpha=1.;c=vec3(.025,.055,.085);}
+    if(length((q-vec2(.12,.47))/vec2(.16,.17))<1.){alpha=1.;c=vec3(.035,.07,.08);}
+    if(length((q-vec2(.1,.3))/vec2(.1,.13))<1.){alpha=1.;c=vec3(.9,.72,.23);}
+    if(leaf2(q,vec2(.2,.5),vec2(.68,.42),.13)>.5){alpha=1.;c=vec3(.94,.36,.035);}
+    if(length(q-vec2(.17,.5))<.025){alpha=1.;c=vec3(.005);}
+  }
+  // A small lizard rests on a low rock, off the riding surface.
+  if(sight>.94){
+    vec2 q=p-vec2(.2,.24);
+    if(length((p-vec2(.15,.09))/vec2(.72,.22))<1.){alpha=1.;c=vec3(.26,.23,.17);}
+    float liz=step(length(q/vec2(.27,.09)),1.);
+    liz=max(liz,step(length((q-vec2(.29,.03))/vec2(.1,.075)),1.));
+    float tailY=.04*sin((q.x+.27)*7.);
+    liz=max(liz,step(-.85,q.x)*step(q.x,-.18)*step(abs(q.y-tailY),.035*(q.x+.9)/.72));
+    for(int leg=0;leg<4;leg++){
+      float sideL=mod(float(leg),2.)*2.-1.,lx=leg<2?-.13:.14;
+      liz=max(liz,step(line2(q,vec2(lx,0.),vec2(lx-.08,sideL*.19)),.025));
+    }
+    if(liz>.5){alpha=1.;c=vec3(.15,.27,.08)*(1.+.18*sin(q.x*31.));}
+  }
+  return vec4(c,alpha);
+}
+
+// Small, non-emissive roadside details. p is metres from a roadside ground point:
+// x across the path, y up. h is the existing stable per-row random number in [0,1].
+// Call AFTER the row's depth/terrain rejection, only within abs(p.x)<1.5 and -.16<p.y<1.35.
+// Returns straight RGB + coverage; multiply RGB by the scene's existing lighting/fog.
+// Fixed upper bound: three stems, five petals each, one small animal. No texture reads.
+float epHash(float v){return fract(sin(v*127.13+3.7)*43758.5453);}
+float epCross(vec2 a,vec2 b){return a.x*b.y-a.y*b.x;}
+float epLine(vec2 p,vec2 a,vec2 b,float width,float aa){
+  vec2 ab=b-a;float q=clamp(dot(p-a,ab)/max(dot(ab,ab),.00001),0.,1.);
+  return foliageBand(length(p-a-ab*q),width,aa);
+}
+float epOval(vec2 p,vec2 r,float aa){
+  float d=(length(p/r)-1.)*min(r.x,r.y);
+  return (1.-smoothstep(-aa,aa,d))*min(1.,min(r.x,r.y)/aa);
+}
+float epTriangle(vec2 p,vec2 a,vec2 b,vec2 c,float aa){
+  vec2 e0=b-a,e1=c-b,e2=a-c;float side=sign(epCross(e0,c-a));
+  float d=min(side*epCross(e0,p-a)/length(e0),min(side*epCross(e1,p-b)/length(e1),side*epCross(e2,p-c)/length(e2)));
+  return smoothstep(-aa,aa,d);
+}
+vec4 epPaint(vec4 base,vec3 pigment,float mask){
+  float m=clamp(mask,0.,1.),a=m+base.a*(1.-m);
+  return vec4((pigment*m+base.rgb*base.a*(1.-m))/max(a,.00001),a);
+}
+// A lance-shaped leaf or petal: pointed at both ends, widest halfway along its length.
+float epLance(vec2 p,vec2 root,vec2 tip,float width,float aa){
+  vec2 d=tip-root;float len=length(d);d/=max(len,.0001);
+  vec2 q=vec2(epCross(d,p-root),dot(d,p-root));
+  float w=width*sin(3.14159265*clamp(q.y/len,0.,1.));
+  return foliageBand(q.x,w,aa)*foliageSpan(q.y,0.,len,aa);
+}
+vec4 seasonalPlants(vec2 p,float h,float coast,float meadow,float alpine,float canyon){
+  vec4 outp=vec4(0.);
+  float floral=clamp(coast*.8+meadow+alpine*.75,0.,1.);
+  if(abs(p.x)>1.5||p.y<-.16||p.y>1.35||floral+canyon<.002)return outp;
+  float aa=foliageAA;
+  vec3 stem=vec3(.085,.15,.035);
+  if(floral>.002&&h>.18){
+    for(int i=0;i<3;i++){
+      float v=epHash(h*81.+float(i)*7.3),x=-.72+float(i)*.61+(v-.5)*.18;
+      float tall=(.38+v*.4)*(1.-alpine*.35),lean=(v-.5)*.26;
+      vec2 foot=vec2(x,0.),tip=vec2(x+lean,tall);
+      outp=epPaint(outp,stem,epLine(p,foot,tip,.012,aa)*floral);
+      vec2 leaf=foot+(tip-foot)*.35;
+      outp=epPaint(outp,stem*1.12,epLance(p,leaf,leaf+vec2(-.17,.13),.034,aa)*floral);
+      leaf=foot+(tip-foot)*.57;
+      outp=epPaint(outp,stem*.9,epLance(p,leaf,leaf+vec2(.15,.12),.028,aa)*floral);
+      vec3 flower=v<.34?vec3(.62,.36,.055):v<.68?vec3(.42,.075,.19):vec3(.28,.09,.36);
+      // Alpine patches are mostly violet and butter yellow; coastal flowers include pink thrift.
+      if(alpine>.5)flower=v<.52?vec3(.31,.12,.38):vec3(.61,.39,.075);
+      float size=.105+v*.035;
+      for(int k=0;k<5;k++){
+        float angle=float(k)*1.256637+v*3.;vec2 dir=vec2(cos(angle),sin(angle));
+        outp=epPaint(outp,flower,epLance(p,tip,tip+dir*size,.038,aa)*floral);
+      }
+      outp=epPaint(outp,vec3(.35,.20,.035),epOval(p-tip,vec2(.025),aa)*floral);
+    }
+  }
+  // A low prickly pear complements the tall canyon saguaros; blooms are small and seasonal.
+  if(canyon>.002&&h>.36&&h<.86){
+    float x=-.25+(h-.5)*.7;
+    float pad=epOval(p-vec2(x,.24),vec2(.15,.25),aa);
+    pad=max(pad,epOval(p-vec2(x-.15,.43),vec2(.12,.19),aa));
+    pad=max(pad,epOval(p-vec2(x+.17,.34),vec2(.13,.18),aa));
+    outp=epPaint(outp,vec3(.12,.22,.115),pad*canyon);
+    outp=epPaint(outp,vec3(.065,.115,.055),epLine(p,vec2(x,.05),vec2(x,.44),.007,aa)*canyon);
+    vec2 top=vec2(x-.15,.62);
+    for(int k=0;k<5;k++){
+      float angle=.2+float(k)*.68;vec2 dir=vec2(cos(angle),sin(angle));
+      outp=epPaint(outp,vec3(.64,.22,.075),epLance(p,top,top+dir*.085,.024,aa)*canyon);
+    }
+  }
+  float birdWeight=coast*step(.91,h)+meadow*step(.88,h)+alpine*step(.955,h);
+  if(birdWeight>.002){
+    // Ground/perched bird: two fine legs, pointed tail and beak, layered wing, separate head.
+    vec2 b=p-vec2(.38,.13);b.x*=h>.96?-1.:1.;
+    float scale=1.+coast*.3;b/=scale;
+    vec3 feather=mix(vec3(.23,.145,.085),vec3(.49,.52,.49),coast);
+    feather=mix(feather,vec3(.24,.255,.24),alpine);
+    outp=epPaint(outp,vec3(.18,.11,.045),max(epLine(b,vec2(-.055,.07),vec2(-.065,-.1),.011,aa),epLine(b,vec2(.035,.07),vec2(.055,-.1),.011,aa))*birdWeight);
+    outp=epPaint(outp,feather*.65,epTriangle(b,vec2(-.12,.15),vec2(-.39,.26),vec2(-.19,.035),aa)*birdWeight);
+    outp=epPaint(outp,feather,epOval(b-vec2(0.,.18),vec2(.21,.135),aa)*birdWeight);
+    outp=epPaint(outp,feather*.64,epLance(b,vec2(.09,.22),vec2(-.21,.12),.07,aa)*birdWeight);
+    outp=epPaint(outp,mix(vec3(.38,.105,.04),feather,coast+alpine),epOval(b-vec2(.12,.16),vec2(.075,.09),aa)*birdWeight);
+    outp=epPaint(outp,feather*1.05,epOval(b-vec2(.17,.32),vec2(.09,.085),aa)*birdWeight);
+    outp=epPaint(outp,vec3(.33,.22,.055),epTriangle(b,vec2(.235,.345),vec2(.36,.31),vec2(.23,.29),aa)*birdWeight);
+    outp=epPaint(outp,vec3(.012,.016,.01),epOval(b-vec2(.20,.34),vec2(.012),aa)*birdWeight);
+  }
+  if(canyon>.002&&h>.91){
+    // A small desert lizard on a sun-warmed rock, with tapered tail and four angular legs.
+    vec2 b=p-vec2(.15,.11);b.x*=h>.96?-1.:1.;
+    outp=epPaint(outp,vec3(.30,.21,.13),epOval(b-vec2(0.,-.06),vec2(.53,.18),aa)*canyon);
+    vec3 skin=vec3(.29,.27,.11);
+    for(int k=0;k<2;k++){
+      float side=k==0?-1.:1.;
+      float legs=epLine(b,vec2(-.11,.04),vec2(-.21,.04+side*.13),.015,aa);
+      legs=max(legs,epLine(b,vec2(-.21,.04+side*.13),vec2(-.29,.02+side*.15),.012,aa));
+      legs=max(legs,epLine(b,vec2(.13,.04),vec2(.18,.04+side*.12),.015,aa));
+      legs=max(legs,epLine(b,vec2(.18,.04+side*.12),vec2(.28,.02+side*.16),.012,aa));
+      outp=epPaint(outp,skin*.8,legs*canyon);
+    }
+    outp=epPaint(outp,skin,epTriangle(b,vec2(-.16,-.015),vec2(-.65,.10),vec2(-.15,.09),aa)*canyon);
+    outp=epPaint(outp,skin,epOval(b-vec2(0.,.04),vec2(.23,.067),aa)*canyon);
+    outp=epPaint(outp,skin*1.16,epTriangle(b,vec2(.17,-.015),vec2(.37,.045),vec2(.17,.11),aa)*canyon);
+    outp=epPaint(outp,vec3(.11,.12,.045),epLine(b,vec2(-.17,.04),vec2(.24,.055),.012,aa)*canyon);
+    outp=epPaint(outp,vec3(.012,.014,.006),epOval(b-vec2(.265,.069),vec2(.011),aa)*canyon);
+  }
+  return outp;
+}
+
 const float SEA=-14.;
 float height(vec2 p,bool hi){
-  float px=pathX(p.y),ry=roadY(p.y),d=abs(p.x-px);
-  float t=smoothstep(4.,46.,d);
+  float px=pathX(p.y),ry=roadY(p.y),dx=p.x-px,d=abs(dx);
+  float shoulder=smoothstep(uWidth+.35,uWidth+3.,d);
   vec2 q=p*.0088+uSeed*3.;
-  q+=.55*vec2(vn(q*.73+1.3),vn(q*.73+4.1));          // bends the noise lattice out of sight
-  float n=hi?fbm4(q):fbm2(q);
-  float r=1.-abs(2.*fbm2(q*.63+9.)-1.);
-  float m=mix(n,r*r,uRidge);
-  float mid=vn(q*4.3+5.3)-.5;
-  float h=ry+t*max(0.,m-.27+mid*.16)*uAmp*(1.+d*.0016);
-  float far=smoothstep(110.,430.,d);
-  if(far>0.){float rr=1.-abs(2.*fbm2(q*.31+2.7)-1.);h+=far*rr*rr*uAmp*1.5;}
-  if(uTrees>0.)h+=smoothstep(4.,22.,d)*uTrees*pow(vn(p*.19),3.)*5.;
-  if(uSea>0.){float side=smoothstep(7.,70.,p.x-px);h=mix(h,SEA-5.,side*uSea);}
-  return h;
-}
-float surface(vec2 p,bool hi){float h=height(p,hi);return uSea>0.?max(h,SEA):h;}
-float march(vec3 ro,vec3 rd,out float last){
-  float t=.8,h=0.;last=0.;
-  for(int i=0;i<76;i++){
-    vec3 p=ro+rd*t;h=p.y-surface(p.xz,false);
-    if(h<.002*t||t>680.)break;
-    last=t;t+=max(h*.62,.03+t*.011);
+  float n=fbm2(q),h=0.;
+  // Distinct landforms; uniform branches skip the inactive worlds on the GPU.
+  if(uCoast>.001){
+    float coast=ry+shoulder*(4.+n*16.)*smoothstep(2.,60.,-dx);
+    coast=mix(coast,SEA-5.,smoothstep(5.,21.,dx));
+    vec2 stack=vec2(dx-58.,mod(p.y+uSeed*17.,135.)-67.5);
+    coast=max(coast,SEA-4.+26.*(1.-smoothstep(7.,15.,length(stack))));
+    h+=coast*uCoast;
   }
+  if(uForest>.001)h+=(ry+shoulder*(.2+n*.9)+smoothstep(35.,150.,d)*n*6.)*uForest;
+  if(uMeadow>.001)h+=(ry+shoulder*(n-.35)*5.+smoothstep(20.,180.,d)*n*14.)*uMeadow;
+  if(uAlpine>.001){
+    float peaks=.6+.4*fbm2(vec2(p.y*.012,uSeed+5.));
+    float left=max(0.,1.-abs(dx+190.)/165.)*(72.+48.*peaks);
+    float right=max(0.,1.-abs(dx-320.)/145.)*(90.+55.*fbm2(q+7.));
+    float distant=smoothstep(320.,540.,d)*(40.+75.*fbm2(q*.7+2.));
+    float mountain=ry+shoulder*1.2+left+right+distant;
+    float lake=smoothstep(5.,23.,dx)*(1.-smoothstep(170.,245.,dx));
+    h+=mix(mountain,SEA-7.,lake)*uAlpine;
+  }
+  if(uCanyon>.001){
+    float wall=smoothstep(12.+n*12.,23.+n*16.,d);
+    h+=(ry+shoulder*1.2+wall*(22.+floor(n*5.)*7.))*uCanyon;
+  }
+  // Land weights sum to 1-uOrbit during a space transition; preserve the
+  // full shared route elevation so the temporary ground stays under the camera.
+  return h+ry*uOrbit;
+}
+float surface(vec2 p,bool hi){float h=height(p,hi);return mix(h,max(h,SEA),uSea);}
+float march(vec3 ro,vec3 rd,out float last){
+  float t=.8,h=0.;last=0.;bool found=false;
+  for(int i=0;i<140;i++){
+    vec3 p=ro+rd*t;h=p.y-surface(p.xz,false);
+    if(h<.002*t){found=true;break;}
+    if(t>680.)break;
+    last=t;t+=max(.3,t*.045);
+  }
+  if(!found)return 1e4;
   if(t<680.&&last>0.){float a=last,b=t;for(int i=0;i<5;i++){float m=.5*(a+b);vec3 q=ro+rd*m;if(q.y-surface(q.xz,false)>0.)a=m;else b=m;}t=.5*(a+b);}
   return t;
 }
@@ -843,12 +1158,12 @@ vec3 sky(vec3 rd,vec2 sv){
   float y=max(rd.y,0.);
   vec3 c=mix(uSkyHz,uSkyTop,pow(y,.52));
   float s=max(dot(rd,uSunDir),0.);
-  c+=uSunC*(pow(s,380.)*5.+pow(s,26.)*.42+pow(s,5.)*.2);
+  c+=uSunC*(pow(s,950.)*2.5+pow(s,56.)*.15);
   // cloud deck
   if(rd.y>.004){
     vec2 cp=rd.xz/(rd.y+.13)*1.25+vec2(uT*.006,uCam.z*.0009);
     float cl=fbm4(cp);
-    float cov=smoothstep(.46,.84,cl);
+    float cov=smoothstep(.57,.88,cl);
     vec3 cc=mix(uFog*.9,uSunC*1.02,.3+.55*pow(s,3.));
     c=mix(c,cc,cov*.62*smoothstep(.004,.13,rd.y));
   }
@@ -872,19 +1187,146 @@ vec3 sky(vec3 rd,vec2 sv){
   skyTrail=exp(-abs(rd.y-top)*90.)*a*.35*smoothstep(-.02,.01,rd.y);
   return c;
 }
+// A sky-fixed star field and original ringed planet. No animated sparkle or
+// repeating transverse track stripes: the rainbow runs along the direction of travel.
+vec3 orbitSky(vec3 rd){
+  vec3 c=mix(vec3(.006,.009,.032),vec3(.018,.013,.055),.5+.5*rd.y);
+  vec2 cloud=vec2(rd.x*3.2+rd.z*.8,rd.y*3.4+rd.z*.3)+uSeed*.17;
+  float mist=fbm4(cloud+4.2), dust=fbm2(cloud*1.8-2.);
+  float band=exp(-pow((rd.y-.18-rd.x*.22)*3.2,2.));
+  c+=mix(vec3(.014,.025,.07),vec3(.065,.013,.065),dust)*band*smoothstep(.26,.78,mist);
+  vec2 uv=vec2(atan(rd.x,rd.z),asin(clamp(rd.y,-1.,1.)))*vec2(62.,55.);
+  vec2 cell=floor(uv),f=fract(uv)-.5;
+  float h=fract(sin(dot(cell,vec2(127.1,311.7))+uSeed)*43758.54);
+  if(h>.92){
+    float radius=.025+.055*fract(h*91.);
+    float aa=max(.025,70./uRes.y);
+    float star=(1.-smoothstep(radius-aa,radius+aa,length(f)))*min(1.,radius*radius/(aa*aa));
+    c+=mix(vec3(.3,.46,.7),vec3(.7,.53,.3),fract(h*33.))*star*.7;
+  }
+  vec3 center=normalize(vec3(.64,.34,1.));
+  vec3 pr=normalize(cross(vec3(0.,1.,0.),center)),pu=cross(center,pr);
+  float face=dot(rd,center);
+  if(face>0.){
+    vec2 q=vec2(dot(rd,pr),dot(rd,pu))/face;
+    vec2 r=mat2(.94,.342,-.342,.94)*q;
+    float aa=2./uRes.y,rad=length(vec2(r.x,r.y/.26));
+    float ring=smoothstep(.25-aa,.25+aa,rad)*(1.-smoothstep(.42-aa,.42+aa,rad));
+    vec3 ringC=mix(vec3(.12,.18,.28),vec3(.31,.25,.16),smoothstep(.26,.41,rad));
+    ringC*=.8+.2*sin(rad*75.);
+    if(r.y>0.)c=mix(c,ringC,ring*.78);
+    float disk=1.-smoothstep(.202-aa,.202+aa,length(q));
+    if(disk>0.){
+      vec2 p=q/.202;
+      vec3 n=vec3(p,sqrt(max(0.,1.-dot(p,p))));
+      float light=.22+.78*max(0.,dot(n,normalize(vec3(-.6,.7,.8))));
+      float bands=.5+.5*sin(p.y*17.+sin(p.x*3.)*.8);
+      vec3 planet=mix(vec3(.14,.24,.31),vec3(.48,.31,.2),smoothstep(.3,.75,bands))*light;
+      planet+=vec3(.04,.09,.15)*pow(1.-n.z,3.);
+      c=mix(c,planet,disk);
+    }
+    if(r.y<=0.)c=mix(c,ringC,ring*.88);
+  }
+  vec3 moonDir=normalize(vec3(-.68,.14,1.));
+  float md=length(rd-moonDir),maa=2./uRes.y;
+  float moon=1.-smoothstep(.052-maa,.052+maa,md);
+  c=mix(c,vec3(.12,.18,.27)*(.6+.4*smoothstep(-.052,.052,rd.x-moonDir.x)),moon);
+  return c;
+}
+vec3 orbitRainbow(float x){
+  float s=clamp(x,0.,.9999)*6.,i=floor(s),f=s-i;
+  vec3 a,b;
+  if(i<1.){a=vec3(.56,.035,.075);b=vec3(.72,.19,.025);}
+  else if(i<2.){a=vec3(.72,.19,.025);b=vec3(.64,.53,.035);}
+  else if(i<3.){a=vec3(.64,.53,.035);b=vec3(.035,.36,.13);}
+  else if(i<4.){a=vec3(.035,.36,.13);b=vec3(.025,.36,.55);}
+  else if(i<5.){a=vec3(.025,.36,.55);b=vec3(.065,.12,.58);}
+  else{a=vec3(.065,.12,.58);b=vec3(.37,.065,.49);}
+  return mix(a,b,smoothstep(.22,.78,f));
+}
+// Intersect a finite ribbon, without an infinite ground plane below it. A missed
+// crossing continues to the next hill so the track can curve across open space.
+float orbitMarch(vec3 ro,vec3 rd){
+  float a=.2,ga=ro.y+rd.y*a-roadY(ro.z+rd.z*a);
+  for(int i=0;i<120;i++){
+    if(a>=680.)break;
+    float b=min(680.,a+max(.55,a*.042));
+    vec3 p=ro+rd*b;float gb=p.y-roadY(p.z);
+    if(ga*gb<=0.){
+      float lo=a,hi=b,glo=ga;
+      for(int j=0;j<6;j++){
+        float m=(lo+hi)*.5;vec3 q=ro+rd*m;float gm=q.y-roadY(q.z);
+        if(glo*gm>0.){lo=m;glo=gm;}else hi=m;
+      }
+      float hit=(lo+hi)*.5;vec3 q=ro+rd*hit;
+      if(abs(q.x-pathX(q.z))<uWidth)return hit;
+    }
+    a=b;ga=gb;
+  }
+  return 1e4;
+}
+vec3 orbitWorld(vec3 ro,vec3 rd){
+  vec3 space=orbitSky(rd),c=space;
+  float t=orbitMarch(ro,rd);
+  if(t<680.){
+    vec3 p=ro+rd*t;float dx=p.x-pathX(p.z),d=abs(dx);
+    c=orbitRainbow((dx/uWidth+1.)*.5)*(.8+.12*pow(1.-d/uWidth,2.));
+    float seam=1.-smoothstep(.025,.07,uWidth-d);
+    c=mix(c,vec3(.36,.42,.58),seam*.8);
+    // A calm continuous edge glow gives the floating road a visible boundary.
+    c+=vec3(.055,.09,.15)*exp(-pow((d-uWidth+.14)/.12,2.));
+    c=mix(c,space,smoothstep(370.,680.,t));
+  }
+  if(rd.z>.02){
+    // Sparse orbital gantries repeat every 140 m, with open centers and a low
+    // blue-metal frame. Their fixed positions give depth without a flashing pattern.
+    for(int k=4;k>=0;k--){
+      float z=(floor(ro.z/140.)+float(k)+1.)*140.;
+      float ot=(z-ro.z)/rd.z;
+      if(ot>t||ot>620.||ot<.3)continue;
+      vec3 p=ro+rd*ot;vec2 q=vec2(p.x-pathX(z),p.y-roadY(z));
+      float aa=max(.004,ot/(uRes.y*uFocal));
+      float radius=uWidth+.32;
+      float frame=foliageBand(length(q)-radius,.085,aa)*smoothstep(-aa,aa,q.y);
+      float inset=foliageBand(length(q)-(radius-.12),.025,aa)*smoothstep(-aa,aa,q.y);
+      vec3 arch=mix(vec3(.035,.07,.15),vec3(.16,.24,.4),clamp(q.y/radius,0.,1.));
+      c=mix(c,arch,frame*(1.-smoothstep(420.,620.,ot)));
+      c=mix(c,vec3(.22,.34,.51),inset*.65*(1.-smoothstep(420.,620.,ot)));
+    }
+    // Continuous low guardrails are real capsules above the ribbon, so open
+    // space is visible between their illuminated tops and the track surface.
+    for(int k=0;k<22;k++){
+      float za=(floor(ro.z/14.)+float(k))*14.,zb=za+14.;
+      for(int side=0;side<2;side++){
+        float sg=side==0?-1.:1.;
+        vec3 a=vec3(pathX(za)+sg*(uWidth+.08),roadY(za)+.38,za);
+        vec3 b=vec3(pathX(zb)+sg*(uWidth+.08),roadY(zb)+.38,zb);
+        vec3 ba=b-a,oa=ro-a;
+        float bb=dot(ba,ba),br=dot(ba,rd),bo=dot(ba,oa),rr=dot(rd,oa);
+        float aa=bb-br*br,ab=bb*rr-bo*br,ac=bb*dot(oa,oa)-bo*bo-.0036*bb;
+        float disc=ab*ab-aa*ac;if(disc<0.||aa<.001)continue;
+        float rt=(-ab-sqrt(disc))/aa,y=bo+rt*br;
+        if(rt<.1||rt>t||y<0.||y>bb)continue;
+        c=mix(c,vec3(.19,.27,.42),1.-smoothstep(180.,310.,rt));
+      }
+    }
+  }
+  return c*(1.-uDusk*.24);
+}
+
 void main(){
   vec2 sv=vUv*2.-1.;float asp=uRes.x/uRes.y;
   vec3 rd=normalize(uFwd*uFocal+uRight*sv.x*asp+uUp*sv.y);
   vec3 ro=uCam;
   skyTrail=0.;
-  vec3 skyc=sky(rd,sv);
+  vec3 skyc=uOrbit>.999?vec3(0.):sky(rd,sv);
   float trail=0.;
   vec3 col=skyc;
   float last;
-  float t=rd.y<.32?march(ro,rd,last):1e4;
+  float t=uOrbit>.999?1e4:march(ro,rd,last);
   if(t<680.){
     vec3 p=ro+rd*t;
-    bool water=uSea>0.&&p.y<=SEA+.02;
+    bool water=uSea>.5&&height(p.xz,false)<SEA+.25;
     float e=.05+t*.0018;
     vec3 N=normalize(vec3(surface(p.xz-vec2(e,0.),true)-surface(p.xz+vec2(e,0.),true),2.*e,surface(p.xz-vec2(0.,e),true)-surface(p.xz+vec2(0.,e),true)));
     float px=pathX(p.z),d=abs(p.x-px),rel=p.y-roadY(p.z);
@@ -892,7 +1334,8 @@ void main(){
     vec3 alb=mix(uGround*.75,uGround*1.55,dn);
     float sl=1.-N.y;
     alb=mix(alb,uRock,smoothstep(.1,.42,sl+dn*.14-.07));
-    if(uSnow>0.)alb=mix(alb,vec3(.84,.88,.96),uSnow*smoothstep(14.,44.,rel+dn*22.)*smoothstep(.62,.22,sl));
+    if(uSnow>0.)alb=mix(alb,vec3(.84,.88,.96),uSnow*smoothstep(33.,65.,rel+dn*15.)*(1.-smoothstep(.3,.68,sl)));
+    if(uMeadow>0.) { float field=step(.48,fract(p.x*.024+sin(p.z*.012)*.2)); alb=mix(alb,mix(vec3(.19,.28,.055),vec3(.34,.39,.08),field),uMeadow*.65*smoothstep(4.,9.,d)); }
     if(uStrata>0.)alb*=mix(1.,.74+.3*sin(rel*.85+dn*3.5),uStrata);
     if(uGrid>0.){vec2 g=abs(fract(p.xz*.12)-.5);float gl=smoothstep(.47,.5,max(g.x,g.y));alb+=uEdge*gl*.32*uGrid*exp(-t*.012);}
     float dif=clamp(dot(N,uSunDir),0.,1.);
@@ -903,23 +1346,25 @@ void main(){
     if(water){
       vec3 W=normalize(vec3((vn(p.xz*.3+uT*.5)-.5)*.14,1.,(vn(p.xz*.27-uT*.4)-.5)*.14));
       vec3 rf=reflect(rd,W);
-      float keep=skyTrail;c=mix(uFog*.22+uSkyTop*.18,sky(vec3(rf.x,abs(rf.y),rf.z),vec2(0.)),.72);skyTrail=keep;
+      float keep=skyTrail;c=mix(mix(vec3(.015,.16,.26),vec3(.015,.26,.25),uAlpine),sky(vec3(rf.x,abs(rf.y),rf.z),vec2(0.)),.22+.3*pow(1.-max(0.,dot(-rd,W)),3.));
+      c+=vec3(.12,.22,.19)*pow(max(0.,sin(p.z*.8+p.x*.17+uT)),12.)*.2;skyTrail=keep;
       c+=uSunC*pow(max(dot(rf,uSunDir),0.),190.)*7.;
     }
     // the road
-    float rm=1.-smoothstep(2.,2.55,d);
+    float rm=1.-smoothstep(uWidth-.12,uWidth+.12,d);
     if(!water){
-      vec3 asphalt=mix(vec3(.022,.023,.03),uFog*.05,.4)+alb*.04;
+      vec3 asphalt=mix(vec3(.07,.075,.07),vec3(.31,.25,.16),uCanyon*.35)*( .88+.18*dn);
+      asphalt=mix(asphalt,vec3(.44,.32,.17)*(.9+.14*dn),uForest);
       c=mix(c,asphalt*(uSunC*dif*1.2+amb),rm);
     }
     float em=0.;vec3 emC=vec3(0.);
     if(rm>0.){
       float dash=step(fract(p.z/max(uBeat*.5,1.)),.5)*(1.-smoothstep(.05,.1,abs(p.x-px)));
-      emC+=uEdge*dash*.32*rm*smoothstep(2.,16.,t);
+      emC+=uEdge*dash*.045*rm*smoothstep(2.,16.,t)*(1.-uForest);
     }
-    float side=exp(-pow((d-2.25)/.09,2.));
+    float side=exp(-pow((d-uWidth)/.045,2.));
     float spark=pow(vn(vec2(p.z*.9,uT*1.3)),6.)*7.;
-    emC+=uEdge*side*(.3+uSpark*spark*.75);
+    emC+=uEdge*side*(.055+uSpark*spark*.2);
     // rings of light that run ahead of you
     for(int i=0;i<RINGS;i++){
       vec4 r=uRing[i];
@@ -930,7 +1375,7 @@ void main(){
       float g=exp(-pow((p.z-zr)/w,2.))*exp(-r.y*(wide?2.6:1.9))*r.z;
       g*=exp(-d*(wide?.03:.3))*(.12+.88*smoothstep(1.,20.,t));
       g*=smoothstep(46.,14.,zr-uCam.z);    // rings fade before the horizon, where they would stack into a flashing band
-      emC+=(wide?mix(uEdge,vec3(1.),.25):uEdge*1.2)*g*(wide?.22:1.25);
+      emC+=(wide?mix(uEdge,vec3(1.),.25):uEdge*1.2)*g*(wide?.15:.5);
     }
     float fog=1.-exp(-pow(t*uFogK,1.55));
     vec3 fogC=mix(uFog,uSunC,pow(max(dot(rd,uSunDir),0.),7.)*.55)*(1.-uDusk*.55);
@@ -938,6 +1383,132 @@ void main(){
     col=mix(col,skyc,smoothstep(590.,680.,t));
     trail=clamp(dot(emC,vec3(.4))*exp(-t*.0085),0.,1.);
   }
+  // World-space roadside silhouettes: each has a fixed seeded position, parallax and terrain occlusion.
+  // A bounded set of planes avoids expensive per-step tree geometry on mobile GPUs.
+  if(rd.z>.02&&uOrbit<.999){
+    for(int row=21;row>=0;row--){
+      float spacing=14.; // fixed grid: scenery blends never rehash object positions
+      float cell=floor(ro.z/spacing)+float(row)+1.;
+      float z=cell*spacing;
+      float ot=(z-ro.z)/rd.z;
+      if(ot>t||ot>300.||ot<.2)continue;
+      vec3 hit=ro+rd*ot;
+      // Project the actual ray/pixel derivatives onto this fixed-z billboard.
+      // The footprint grows with distance and oblique viewing; capping it in
+      // world metres leaves far-away foliage undersampled and shimmering.
+      float pixelFactor=2.*ot*dot(rd,uFwd)/(uRes.y*uFocal);
+      vec2 pixelX=pixelFactor*(uRight.xy-rd.xy*uRight.z/rd.z);
+      vec2 pixelY=pixelFactor*(uUp.xy-rd.xy*uUp.z/rd.z);
+      float worldAA=max(.003,.5*max(abs(pixelX.x)+abs(pixelY.x),abs(pixelX.y)+abs(pixelY.y)));
+      foliageAA=worldAA;
+      for(int sideI=0;sideI<2;sideI++){
+        float signX=sideI==0?-1.:1.;
+        float h=fract(sin(cell*12.71+signX*91.+uSeed)*43758.54);
+        float offset=uWidth+mix(2.4,2.,uForest)+h*mix(7.,5.,uForest);
+        float x=pathX(z)+signX*offset;
+        float dx=hit.x-x;
+        float nearX=pathX(z)+signX*(uWidth+1.25+h*1.3);
+        float farX=pathX(z)+signX*(uWidth+11.+h*7.);
+        // Separate bounds keep near-road flowers and wildlife visible even when
+        // the row's main tree happens to be far from the trail.
+        if(abs(dx)>6.&&abs(hit.x-nearX)>1.5&&(uForest<.001||abs(hit.x-farX)>5.))continue;
+        float base=height(vec2(x,z),false), y=hit.y-base;
+        float treeH=7.+h*9., treeW=1.8+h*1.6;
+        float pine=0.;
+        for(int tier=0;tier<4;tier++){
+          float by=1.4+float(tier)*treeH*.16, top=by+treeH*.48;
+          float radius=treeW*(1.-float(tier)*.17)*(top-y)/(top-by);
+          radius*=.86+.14*sin(y*8.+h*29.)+.06*sin(y*23.+h*7.);
+          pine=max(pine,step(by,y)*step(y,top)*step(abs(dx),radius));
+        }
+        float trunk=step(abs(dx),.16)*step(0.,y)*step(y,treeH*.66);
+        float forestAlpha=uAlpine*step(h,.65)*step(signX,0.);
+        float silhouette=max(pine,trunk)*forestAlpha;
+        vec3 obj=mix(vec3(.14,.085,.04),vec3(.025,.13,.075)*(.8+.28*h+.3*dx/treeW+.16*sin(y*5.)+.18*step(0.,dx)),pine);
+        if(uForest>.001){
+          if(abs(hit.x-farX)<5.){
+            vec2 farP=vec2(hit.x-farX,hit.y-height(vec2(farX,z),false));
+            foliageAA=worldAA/.78;
+            vec4 foliage=tropicalTree(farP/vec2(1.35,.78),.8+h*.18,signX);
+            if(foliage.a*uForest>silhouette){silhouette=foliage.a*uForest;obj=foliage.rgb*.82;}
+            if(farP.y<3.2){
+              foliageAA=worldAA/.25;
+              vec4 understory=tropicalTree(farP/vec2(1.25,.25),.8+h*.18,signX);
+              if(understory.a>.0){silhouette=understory.a*uForest;obj=understory.rgb*.72;}
+            }
+          }
+          foliageAA=worldAA;
+          vec4 palm=tropicalTree(vec2(dx,y),h,signX);
+          if(palm.a>.0&&palm.a*uForest>=silhouette){silhouette=palm.a*uForest;obj=palm.rgb;}
+          vec2 plant=vec2(hit.x-nearX,hit.y-height(vec2(nearX,z),false));
+          float sight=fract(sin(cell*37.7+signX*5.9+uSeed*3.)*878.31);
+          float cluster=fract(sin(cell*19.31+signX*17.7+uSeed)*1237.2);
+          // Natural gaps and varied clump sizes instead of one repeated bouquet.
+          if(abs(plant.x)<1.5&&plant.y<2.4&&plant.y>-.2&&(cluster>.22||sight<.055||sight>.94)){
+            float scale=.65+.2*h;
+            foliageAA=worldAA/scale;
+            vec4 border=tropicalBorder(plant/scale,h,sight);
+            if(border.a*uForest>0.){silhouette=border.a*uForest;obj=border.rgb;}
+          }
+        }
+        if(uCoast+uMeadow+uAlpine+uCanyon>.001&&h>mix(.55,.78,uAlpine)&&abs(hit.x-nearX)<1.5){
+          vec2 detail=vec2(hit.x-nearX,hit.y-height(vec2(nearX,z),false));
+          if(detail.y>-.16&&detail.y<1.35){
+            foliageAA=worldAA;
+            vec4 small=seasonalPlants(detail,h,uCoast,uMeadow,uAlpine,uCanyon);
+            if(small.a>.001){obj=mix(obj,small.rgb,small.a);silhouette=max(silhouette,small.a);}
+          }
+        }
+        // Country trees have round crowns; farms sit behind the split-rail fence.
+        float crownShape=length(vec2(dx/(2.7+h*1.5),(y-5.2)/(2.7+h)));
+        float crown=step(crownShape,1.+.06*sin(dx*8.)*sin(y*7.));
+        float country=(max(trunk*step(y,5.),crown))*step(h,.35)*uMeadow;
+        if(country>silhouette){silhouette=country;obj=mix(vec3(.16,.1,.04),vec3(.11,.24,.035)*(.8+.22*sin(dx*3.)*cos(y*2.)+.2*(1.-crownShape)),crown);}
+        float house=step(abs(dx),3.3)*step(0.,y)*step(y,3.1);
+        float roof=step(3.1,y)*step(y,5.-abs(dx)*.56)*step(abs(dx),3.6);
+        float farm=max(house,roof)*step(.82,h)*uMeadow;
+        if(farm>silhouette){silhouette=farm;obj=mix(vec3(.66,.55,.34),vec3(.28,.12,.065),roof);float window=step(abs(abs(dx)-1.5),.42)*step(abs(y-1.8),.6);obj=mix(obj,vec3(.05,.09,.09),window);}
+        // Upright cacti have actual arms and a stem in the desert passage.
+        float stem=step(length(vec2(dx,y-clamp(y,0.,3.+h*2.5))),.22);
+        float arm=step(length(vec2(abs(dx)-.9,y-clamp(y,2.1,2.6+h))),.17);
+        float join=step(abs(dx),1.05)*step(abs(y-2.2),.17);
+        float cactus=max(stem,max(arm,join))*uCanyon;
+        if(cactus>silhouette){silhouette=cactus;obj=vec3(.11,.22,.12)*(.7+.3*cos(dx*7.)+.15*dx);}
+        if(silhouette>.001){
+          float fog=1.-exp(-pow(ot*uFogK,1.55));
+          vec3 lit=obj*(uSunC*.8+uFog*.65)*(1.-uDusk*.5);
+          col=mix(col,mix(lit,uFog*(1.-uDusk*.3),fog),clamp(silhouette,0.,1.));
+        }
+      }
+      // Fence and guardrail posts frame the route; they remain outside the riding surface.
+      float railX=abs(hit.x-pathX(z)), railY=hit.y-roadY(z);
+      float post=step(abs(railX-(uWidth+.65)),.09)*step(0.,railY)*step(railY,.95);
+      float railWeight=uCoast+uMeadow+uAlpine;
+      if(post*railWeight>.01){vec3 c=mix(vec3(.65,.65,.53),vec3(.26,.18,.09),uMeadow)*(uSunC*.7+uFog*.5);col=mix(col,mix(c,uFog,1.-exp(-ot*uFogK)),post*railWeight);}
+    }
+    // The rails are continuous 3D capsules, with curved segments and true perspective.
+    float railWeight=uCoast+uMeadow+uAlpine;
+    if(railWeight>.01){
+      for(int r=0;r<22;r++){
+        float za=(floor(ro.z/14.)+float(r))*14., zb=za+14.;
+        for(int sideI=0;sideI<2;sideI++){
+          float side=sideI==0?-1.:1.;
+          vec3 a=vec3(pathX(za)+side*(uWidth+.65),roadY(za)+.75,za);
+          vec3 b=vec3(pathX(zb)+side*(uWidth+.65),roadY(zb)+.75,zb);
+          vec3 ba=b-a,oa=ro-a;
+          float bb=dot(ba,ba),br=dot(ba,rd),bo=dot(ba,oa),rr=dot(rd,oa);
+          float aa=bb-br*br,ab=bb*rr-bo*br,ac=bb*dot(oa,oa)-bo*bo-.004*bb;
+          float disc=ab*ab-aa*ac;
+          if(disc<0.||aa<.001)continue;
+          float rt=(-ab-sqrt(disc))/aa, y=bo+rt*br;
+          if(rt<.1||rt>t||y<0.||y>bb)continue;
+          vec3 c=mix(vec3(.65,.65,.53),vec3(.26,.18,.09),uMeadow)*(uSunC*.7+uFog*.5);
+          col=mix(col,mix(c,uFog,1.-exp(-rt*uFogK)),railWeight);
+        }
+      }
+    }
+  }
+  if(uOrbit>.001){col=mix(col,orbitWorld(ro,rd),uOrbit);trail*=1.-uOrbit;skyTrail*=1.-uOrbit;}
   // alpha marks what may leave a trail: emitters and the spectrum ridge, never the sun or the sky
   o=vec4(col,max(trail,skyTrail));
 }`;
@@ -947,8 +1518,11 @@ precision highp float;
 uniform vec3 uCam,uRight,uUp,uFwd; uniform float uFocal,uAsp,uZ,uPx,uSeed,uSpeedN;
 out float vA;
 float h(float n){return fract(sin(n)*43758.5453);}
-float pathX(float z){return 14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7);}
-float roadY(float z){return 7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1);}
+uniform vec4 uRouteA; uniform float uRouteB,uRouteC;
+float routeX(float z,float turn,float winding){z*=winding;return turn*(14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7));}
+float routeY(float z,float rise,float winding){z*=winding;return rise*(7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1));}
+float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);return v;}
+float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);return v;}
 void main(){
   float i=float(gl_VertexID);
   float a=h(i*1.13),b=h(i*2.71),c=h(i*4.33);
@@ -1020,11 +1594,12 @@ void main(){
   const sceneBar = `
     <div class="scenebar chrome" id="scenebar">
       <div class="scene-tiles" id="scene-tiles" role="group" aria-label="Scenery">
-        ${BIOMES.map((b, i) => `<button class="scene-tile" data-b="${i}" aria-pressed="${i === 0}"><canvas width="336" height="196" aria-hidden="true" style="background:linear-gradient(${b.skyTop},${b.skyHz} 54%,${b.ground} 55%)"></canvas><span>${b.name}</span></button>`).join('')}
+        ${BIOMES.map((b, i) => `<button class="scene-tile" data-b="${i}" aria-pressed="${i === 0}" title="${b.description}"><canvas width="336" height="196" aria-hidden="true" style="background:linear-gradient(${b.skyTop},${b.skyHz} 54%,${b.ground} 55%)"></canvas><span>${b.name}</span></button>`).join('')}
       </div>
+      <p class="route-caption" id="route-caption">${BIOMES[0].description}</p>
       <div class="scene-row">
         <div class="seg" role="group" aria-label="Time of day">${TOD.map((t, i) => `<button data-tod="${i}" aria-pressed="${i === 0}"${t.title ? ` title="${t.title}"` : ''}${t.short ? ` aria-label="${t.label}"><span class="long">${t.label}</span><span class="short">${t.short}</span>` : `>${t.label}`}</button>`).join('')}</div>
-        <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'dreamy'}">${l.label}</button>`).join('')}</div>
+        <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'clear'}">${l.label}</button>`).join('')}</div>
         <button class="seg-solo" id="auto-scene" aria-pressed="true" aria-label="Auto scenery: new scenery every mile" title="A new scene blends in after each mile you ride"><span class="long">New scenery every mile</span><span class="short">Auto scenery</span></button>
         <button class="seg-solo" id="new-route">New route</button>
       </div>
@@ -1063,10 +1638,10 @@ void main(){
     <p class="sheet-intro">Everything you see here is a stated rule. There is no model and no server.</p>
     <table class="maptable"><tbody>
       <tr><th>Cadence</th><td>Sets the speed, and the zoom of the picture each frame, through the curve under Route.</td></tr>
-      <tr><th>Each revolution</th><td>Sends a ring of light down the road.</td></tr>
+      <tr><th>Each revolution</th><td>Sends a ring of light down the five land routes.</td></tr>
       <tr><th>Grade</th><td>The procedural road's slope changes your speed by up to 40%, never the zoom curve.</td></tr>
       <tr><th>Distance</th><td>Counts only the speed your cadence makes, never the slow drift at rest.</td></tr>
-      <tr><th>Scenery</th><td>Five scenes on the main screen. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
+      <tr><th>Scenery</th><td>Five different routes: a cliffside coast, a tropical nature preserve, country lanes, an alpine lake and a sandstone canyon. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
       <tr><th>Time of day</th><td>A four-minute cycle from golden hour to night, or held where you choose.</td></tr>
       <tr><th>Look</th><td>Clear, Dreamy and Wild set how much of the last frame stays and how much it warps. The sliders under Scenery fine-tune both.</td></tr>
     </tbody></table>
@@ -1085,7 +1660,7 @@ void main(){
 
   const aboutHtml = `${about}
     <details><summary>Safety and privacy</summary>
-      <p>A limiter slows any large change in brightness, and this page measures under the WCAG limit of three flashes a second, even at top cadence. That is a measured screen, not a medical guarantee. If flashing or moving light affects you, take care, and turn on your system's reduced-motion setting, which tightens the limiter and calms the camera.</p>
+      <p>A limiter slows large changes in brightness. The automated flicker check measures this build against the WCAG general-flash threshold. That is a measured screen, not a medical guarantee. If flashing or moving light affects you, take care, and turn on your system's reduced-motion setting, which tightens the limiter and calms the camera.</p>
       <p>Cadence is read in this browser and never sent anywhere. The page makes no network requests after it loads. Your scene and settings stay in this browser's storage.</p>
     </details>
     <details><summary>Ideas credited</summary>
@@ -1173,14 +1748,43 @@ void main(){
 
   const cv = $('stage');
   const G = createGL(cv);
+  // A CPU WebGL renderer cannot afford the hardware pixel budget even for its
+  // first frame. UI remains full resolution; only the scenery is scaled.
+  const softwareRenderer = (() => {
+    if (!G) return false;
+    const g = G.gl, ext = g.getExtension('WEBGL_debug_renderer_info');
+    const renderer = g.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : g.RENDERER) || '';
+    return /swiftshader|llvmpipe|softpipe|software rasterizer|microsoft basic render/i.test(renderer);
+  })();
+  const sceneBudget = softwareRenderer ? 80000 : 1.35e6;
+  const minScale = (softwareRenderer ? 20000 : 60000) / sceneBudget;
+  const maxScale = softwareRenderer ? 1 : 1.9;
   let gl, Post, pScene, pDream, pMote, tNoise, tSpec;
   let scene, dreamA, dreamB, rw = 0, rh = 0, frameIdx = 0, lastScale = 1;
   const specBytes = new Uint8Array(BANDS), ridge = new Float32Array(BANDS);
 
   const ringData = new Float32Array(12 * 4);
   const rings = [];
+  ride.on('recording', () => {
+    ride.noteLane('routeStart', { biome: S.biomeNext, seed: S.seed, tod: S.tod, vis: S.vis, dist: S.dist, map: { ...S.map } });
+  });
   ride.on('lane', (l) => {
-    if (l.name === 'rpm') S.replayRpm = l.value;
+    if (l.name === 'routeStart') {
+      const v = l.value;
+      if (!v || typeof v !== 'object') return;
+      if (BIOMES[v.biome]) setBiome(v.biome, true);
+      if (TOD[v.tod]) setTod(v.tod, true);
+      for (const k of ['seed','vis','dist']) if (Number.isFinite(v[k])) S[k] = v[k];
+      const limits = { idle: [0,60], max: [60,130], maxZoom: [.004,.04], gamma: [.6,3.2] };
+      if (v.map) for (const k of Object.keys(limits)) if (Number.isFinite(v.map[k])) S.map[k] = clamp(v.map[k], ...limits[k]);
+      for (const [id,key,scale,label,suffix] of [['idle','idle',1,'v-idle',' rpm'],['max','max',1,'v-max',' rpm'],['zoom','maxZoom',1000,'v-zoom','%'],['gamma','gamma',100,'v-gamma','']]) {
+        const input = $('m-'+id); input.value = S.map[key]*scale; shell.syncRange(input);
+        $(label).textContent = (id==='zoom' ? (S.map[key]*100).toFixed(1) : id==='gamma' ? S.map[key].toFixed(2) : S.map[key]) + suffix;
+      }
+      S.nextSceneAt = S.dist + M_PER_MI;
+      thumbAt = 0;
+    }
+    else if (l.name === 'rpm') S.replayRpm = l.value;
     else if (l.name === 'biome') setBiome(l.value);
     else if (l.name === 'seed') { S.seed = l.value; thumbAt = 0; }
     else if (l.name === 'tod') setTod(l.value, true);
@@ -1198,6 +1802,7 @@ void main(){
     ride.noteLane('biome', i);
     pressOnly('.scene-tile', (b) => +b.dataset.b === i);
     document.body.style.setProperty('--accent', BIOMES[i].edge);
+    $('route-caption').textContent = BIOMES[i].description;
     save();
   }
   function nextBiome() { setBiome((S.biomeNext + 1) % BIOMES.length); }
@@ -1226,7 +1831,7 @@ void main(){
   document.querySelectorAll('[data-look]').forEach((b) => b.addEventListener('click', () => setLook(b.dataset.look)));
   $('auto-scene').addEventListener('click', () => setAuto(!S.autoScene));
   $('new-route').addEventListener('click', () => { S.seed = (Math.random() * 40) | 0; thumbAt = 0; ride.noteLane('seed', S.seed); shell.toast('New route'); });
-  S.tod = 0; S.look = 'dreamy'; S.autoScene = true; S.nextSceneAt = M_PER_MI;
+  S.tod = 0; S.look = 'clear'; S.autoScene = true; S.nextSceneAt = M_PER_MI;
   document.body.style.setProperty('--accent', BIOMES[0].edge);
 
   /* ---- sheet controls ---- */
@@ -1270,8 +1875,10 @@ void main(){
   ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => pedalBtn.addEventListener(ev, pedalOff));
   addEventListener('keydown', (e) => { if (e.code === 'Space' && !e.repeat && !e.target.closest('dialog[open], input, select, button')) { e.preventDefault(); pedalOn(); } });
   addEventListener('keyup', (e) => { if (e.code === 'Space') pedalOff(); });
+  addEventListener('blur', pedalOff);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pedalOff(); });
   /* ---- recording and replay: cadence, scene and route, with an optional video of the screen ---- */
-  let recorder = null, recChunks = [];
+  let recorder = null;
   const stamp = () => new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
   $('rec-toggle').addEventListener('click', () => {
     if (!ride.recording) {
@@ -1281,11 +1888,15 @@ void main(){
         const sound = rideSoundStream();
         if (sound) sound.getAudioTracks().forEach((t) => st.addTrack(t));
         const mime = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported(m));
-        recChunks = [];
-        recorder = new MediaRecorder(st, mime ? { mimeType: mime, videoBitsPerSecond: 14e6 } : {});
-        recorder.ondataavailable = (e) => { if (e.data.size) recChunks.push(e.data); };
-        recorder.onstop = () => shell.download(new Blob(recChunks, { type: recorder.mimeType }), `endless-cockpit-${stamp()}.${(recorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm'}`);
-        recorder.start(1000);
+        const chunks = [];
+        const activeRecorder = new MediaRecorder(st, mime ? { mimeType: mime, videoBitsPerSecond: 14e6 } : {});
+        recorder = activeRecorder;
+        activeRecorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+        activeRecorder.onstop = () => {
+          shell.download(new Blob(chunks, { type: activeRecorder.mimeType }), `endless-cockpit-${stamp()}.${(activeRecorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm'}`);
+          st.getVideoTracks().forEach((track) => track.stop());
+        };
+        activeRecorder.start(1000);
       }
       $('rec-toggle').textContent = 'Stop and save';
       $('session-button').classList.add('rec');
@@ -1362,7 +1973,7 @@ void main(){
   if (!navigator.bluetooth) S.bt = 'unsupported';
 
   /* ---- ride sound: cadence-driven atoms, ported from the first version, off by default ---- */
-  const ATOMS = [[98, 130.81, 196, 246.94, 293.66, 392, 493.88], [110, 146.83, 220, 277.18, 329.63, 440, 554.37], [130.81, 164.81, 196, 261.63, 392, 523.25, 659.25], [123.47, 164.81, 246.94, 329.63, 493.94, 659.25, 987.77], [82.41, 110, 164.81, 220, 277.18, 329.63, 415.3]];
+  const ATOMS = [[98, 130.81, 196, 246.94, 293.66, 392, 493.88], [110, 146.83, 220, 277.18, 329.63, 440, 554.37], [130.81, 164.81, 196, 261.63, 392, 523.25, 659.25], [123.47, 164.81, 246.94, 329.63, 493.94, 659.25, 987.77], [82.41, 110, 164.81, 220, 277.18, 329.63, 415.3], [146.83, 196, 246.94, 293.66, 392, 493.88, 587.33]];
   let AC = null, sndOn = false, sndGain = null, sndDest = null, nextGrain = 0;
   const rideSoundStream = () => (sndOn && sndDest ? sndDest.stream : null);
   function curAtoms() { const a = ATOMS[S.biome], b = ATOMS[S.biomeNext], t = S.biomeT; return a.map((v, i) => lerp(v, b[i], t)); }
@@ -1455,7 +2066,7 @@ void main(){
   }
 
   /* ---- one scene's sky and land at a time of day: the road and the scene tiles both draw from this ---- */
-  const NUMS = ['amp', 'ridge', 'trees', 'sea', 'snow', 'strata', 'grid', 'fogK', 'sunAz', 'sunEl'];
+  const NUMS = ['amp', 'ridge', 'trees', 'sea', 'snow', 'strata', 'grid', 'fogK', 'sunAz', 'sunEl', 'coast', 'forest', 'meadow', 'alpine', 'canyon', 'orbit', 'width', 'turn', 'rise', 'winding'];
   // The scene on screen right now, frozen, so a new choice blends from it instead of jumping back to a scene's start.
   function sceneNow() {
     const a = S.fromMix || BIOMES[S.biome], b = BIOMES[S.biomeNext], t = S.biomeT * S.biomeT * (3 - 2 * S.biomeT);
@@ -1478,13 +2089,14 @@ void main(){
       uSunC: mix3('sun').map((v, i) => lerp(v, [0.26, 0.29, 0.44][i], night * 0.96)),
       uGround: mix3('ground'), uRock: mix3('rock'), uFog: mix3('fog').map((v) => v * (1 - dusk * 0.86)), uEdge: mix3('edge'),
       uSunDir: [sx / sl, sunEl / sl, sz / sl],
+      uCoast: mixN('coast'), uForest: mixN('forest'), uMeadow: mixN('meadow'), uAlpine: mixN('alpine'), uCanyon: mixN('canyon'), uOrbit: mixN('orbit'), uWidth: mixN('width'), uRouteA: ['coast','forest','meadow','alpine'].map(mixN), uRouteB: mixN('canyon'), uRouteC: mixN('orbit'),
       uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: dusk, uFogK: mixN('fogK'),
     };
   }
   /* ---- the camera on the road at z, looking ahead along it, toward the low sun ---- */
-  function camAt(z, roll) {
-    const cx = pathX(z), cy = roadY(z) + 1.55, look = 26;
-    let fx = pathX(z + look) - cx, fy = roadY(z + look) + 1.0 - cy, fz = look;
+  function camAt(z, roll, b) {
+    const cx = pathX(z, b), cy = roadY(z, b) + 1.65, look = 26;
+    let fx = pathX(z + look, b) - cx, fy = roadY(z + look, b) + 1.1 - cy, fz = look;
     const fl = Math.hypot(fx, fy, fz); fx /= fl; fy /= fl; fz /= fl;
     let rx = fz, ry = 0, rz = -fx;
     const rl = Math.hypot(rx, rz); rx /= rl; rz /= rl;
@@ -1499,16 +2111,20 @@ void main(){
 uniform sampler2D uScene; uniform float uExposure;
 vec3 aces(vec3 x){ return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.); }
 void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1.-.45*smoothstep(.25,.95,dot(q,q)*2.1); o=vec4(pow(c,vec3(1./2.2)),1.); }`;
-  const TW = 336, TH = 196, noRings = new Float32Array(12 * 4);
+  const noRings = new Float32Array(12 * 4);
   let pThumb = null, thumbHDR = null, thumbLDR = null, thumbPx = null, thumbAt = 0, thumbDusk = -1;
   function drawThumbs(now) {
-    if (!pThumb) {
-      pThumb = G.program(THUMB_FS); thumbHDR = G.target(TW, TH);
+    const small = softwareRenderer || lastScale < .2, TW = small ? 144 : 336, TH = small ? 84 : 196;
+    if (!pThumb) pThumb = G.program(THUMB_FS);
+    if (!thumbHDR || thumbHDR.w !== TW) {
+      if (thumbHDR) { G.freeTarget(thumbHDR); G.freeTarget(thumbLDR); }
+      thumbHDR = G.target(TW, TH);
       thumbLDR = G.target(TW, TH, { internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE }); thumbPx = new Uint8Array(TW * TH * 4);
     }
-    const z = S.vis + 60, cam = camAt(z, 0), tiles = document.querySelectorAll('.scene-tile canvas');
+    const z = S.vis + 60, tiles = document.querySelectorAll('.scene-tile canvas');
     gl.disable(gl.BLEND);
     BIOMES.forEach((b, i) => {
+      const cam = camAt(z, 0, b);
       G.into(thumbHDR); G.bindTex(0, tNoise); G.bindTex(1, tSpec);
       G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uRing: noRings }, landAt(b, b, 1, S.dusk)));
       G.draw();
@@ -1516,6 +2132,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       G.use(pThumb, { uScene: 0, uExposure: 0.98 + S.dusk * 0.25 });
       G.draw();
       gl.readPixels(0, 0, TW, TH, gl.RGBA, gl.UNSIGNED_BYTE, thumbPx);
+      tiles[i].width = TW; tiles[i].height = TH;
       const c = tiles[i].getContext('2d'), img = c.createImageData(TW, TH);
       for (let y = 0; y < TH; y++) img.data.set(thumbPx.subarray((TH - 1 - y) * TW * 4, (TH - y) * TW * 4), y * TW * 4);     // GL rows run bottom up
       c.putImageData(img, 0, 0);
@@ -1527,7 +2144,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
   function resize() {
     const dpr = Math.min(devicePixelRatio || 1, 2), W = Math.max(320, Math.min(3840, Math.round(cv.clientWidth * dpr))), Hh = Math.max(240, Math.min(2160, Math.round(cv.clientHeight * dpr)));
     if (cv.width !== W || cv.height !== Hh) { cv.width = W; cv.height = Hh; }
-    const budget = 1.35e6 * lastScale, asp = W / Hh;
+    const budget = sceneBudget * lastScale, asp = W / Hh;
     let h = Math.round(Math.sqrt(budget / asp)), w = Math.round(h * asp);
     if (w > W) { w = W; h = Hh; }
     if (w === rw && h === rh) return;
@@ -1537,11 +2154,11 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
     Post.resize(rw, rh, 5);
   }
 
-  let last = performance.now(), slow = 0, fast = 0, fails = 0;
+  let last = performance.now(), slow = 0, fast = 0, stalled = 0, fails = 0;
   function render(now) {
     requestAnimationFrame(render);
     try {
-      const dtMs = Math.min(100, now - last);
+      const frameMs = now - last, dtMs = Math.min(100, frameMs);
       last = now;
       ride.tick(now);
       pageFrame(now);
@@ -1562,10 +2179,19 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       if (frameIdx > 2 && (!thumbAt || (now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
       S.dusk = S.duskHold != null ? S.dusk + (S.duskHold - S.dusk) * Math.min(1, dtMs / 900) : RM.matches ? S.dusk : 0.5 - 0.5 * Math.cos((now / 1000 / 240 + 0.14) * Math.PI * 2);
 
-      // Adapt the render size to the machine. The readings never depend on this.
-      if (dtMs > 26) slow++; else if (dtMs < 12) fast++;
-      if (++frameIdx % 90 === 0) {
-        if (slow > 30 && lastScale > 0.35) { lastScale *= 0.75; resize(); } else if (fast > 80 && lastScale < 1.9) { lastScale *= 1.2; resize(); }
+      // React to sustained stalls before waiting 90 expensive frames. This also
+      // covers browsers that hide renderer metadata and genuinely weak GPUs.
+      if (frameMs > 120) stalled++; else stalled = 0;
+      if (frameMs > 26) slow++; else if (frameMs < 20) fast++;
+      frameIdx++;
+      if (stalled >= 2 && lastScale > minScale) {
+        lastScale = Math.max(minScale, lastScale * .5); resize();
+        stalled = 0; slow = 0; fast = 0;
+      } else if (frameIdx % 15 === 0 && slow > 10 && lastScale > minScale) {
+        lastScale = Math.max(minScale, lastScale * .75); resize();
+        slow = 0; fast = 0;
+      } else if (frameIdx % 90 === 0) {
+        if (fast > 80 && lastScale < maxScale) { lastScale = Math.min(maxScale, lastScale * 1.2); resize(); }
         slow = 0; fast = 0;
       }
 
@@ -1608,8 +2234,8 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
 
       /* motes */
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
-      G.use(pMote, { uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: rw / rh, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpeedN: motion01(S.rpm), uEdge: land.uEdge });
-      gl.drawArrays(gl.POINTS, 0, 1500);
+      G.use(pMote, { uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: rw / rh, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpeedN: motion01(S.rpm), uEdge: land.uEdge, uRouteA: land.uRouteA, uRouteB: land.uRouteB, uRouteC: land.uRouteC });
+      if(S.look !== 'clear') gl.drawArrays(gl.POINTS, 0, 650);
       gl.disable(gl.BLEND);
 
       /* feedback */
@@ -1628,8 +2254,8 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       /* bloom and grade */
       const bloom = Post.bloom(dreamA.tex, 1.15);
       Post.finish(dreamA.tex, bloom, {
-        uBloomK: 0.55, uExposure: 0.98 + S.dusk * 0.25,
-        uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000, uVig: 0.55, uSat: 1.06, rate: RM.matches ? 0.16 : 0.36,
+        uBloomK: 0.25, uExposure: 0.98 + S.dusk * 0.25,
+        uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000, uVig: 0.25, uSat: 1.02, rate: RM.matches ? 0.16 : 0.36, maxGain: 1,
       }, dtMs / 1000);
 
       if (lumaRec) lumaRec(now);
@@ -1692,6 +2318,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
   /* for the checks: read what is really on the canvas and in the engine */
   window.__app = {
     S, ride, BIOMES, pathX, roadY, gradeAt, motion01, recordLuma, setBiome, nextBiome, setTod, setLook, setAuto, drawThumbs,
+    get renderInfo() { return { softwareRenderer, width: rw, height: rh, pixelBudget: sceneBudget * lastScale }; },
     pixel() {
       const c = document.createElement('canvas'); c.width = 32; c.height = 18;
       const g = c.getContext('2d');
