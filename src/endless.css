@@ -1,0 +1,48 @@
+
+/* Endless Cockpit: the scenery on the main screen */
+.scenebar { position: absolute; top: max(92px, calc(env(safe-area-inset-top) + 66px)); left: 50%; transform: translateX(-50%); width: min(780px, calc(100% - 24px)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.scene-tiles { display: flex; gap: 10px; justify-content: center; max-width: 100%; padding: 3px; }
+.scene-tiles::-webkit-scrollbar, .scene-row::-webkit-scrollbar { display: none; }
+/* each tile is the scene itself, with its name on a dark fade so it reads over any sky */
+.scene-tile { flex: none; position: relative; display: block; padding: 0; border-radius: 13px; scroll-snap-align: center; transition: transform 0.25s; }
+.scene-tile canvas { display: block; width: 132px; height: 77px; border-radius: 13px; border: 1px solid var(--line); box-shadow: 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
+.scene-tile::after { content: ""; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 58%; border-radius: 0 0 12px 12px; background: linear-gradient(transparent, rgba(6, 8, 18, 0.78)); pointer-events: none; }
+.scene-tile span { position: absolute; left: 9px; right: 6px; bottom: 6px; z-index: 1; text-align: left; font-size: 11px; letter-spacing: 0.2px; color: rgba(238, 237, 251, 0.82); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (hover: hover) { .scene-tile:hover { transform: translateY(-2px); } }
+.scene-tile[aria-pressed="true"] canvas { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 22px color-mix(in srgb, var(--accent) 35%, transparent), 0 10px 30px var(--shadow); }
+.scene-tile[aria-pressed="true"] span { color: #fff; font-weight: 500; }
+.scene-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; max-width: 100%; }
+.seg { display: flex; padding: 3px; border: 1px solid var(--line); border-radius: 22px; background: var(--glass); backdrop-filter: blur(12px); }
+.seg button, .seg-solo { padding: 7px 13px; min-height: 32px; border-radius: 18px; font-size: 12px; color: var(--muted); white-space: nowrap; transition: background 0.3s, color 0.3s; }
+.seg button:hover, .seg-solo:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.seg-solo { border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(12px); }
+.seg-solo[aria-pressed]::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--faint); vertical-align: 1px; }
+.seg-solo[aria-pressed="true"] { color: var(--ink); }
+.seg-solo[aria-pressed="true"]::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+body[data-app="endless-cockpit"] .intro { top: 37%; }
+#pedal { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; }
+
+@media (max-width: 860px) {
+  .scenebar { top: max(64px, calc(env(safe-area-inset-top) + 52px)); width: 100%; gap: 8px; }
+  /* rows that scroll sideways when they do not fit, and sit centered when they do */
+  .scene-tiles, .scene-row { justify-content: flex-start; width: 100%; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; touch-action: pan-x; }
+  .scene-tiles::before, .scene-tiles::after, .scene-row::before, .scene-row::after { content: ""; margin: auto; }
+  .scene-tiles { gap: 8px; padding: 4px 16px 6px; }
+  .scene-tile canvas { width: 110px; height: 62px; border-radius: 11px; box-shadow: none; }
+  .scene-tile[aria-pressed="true"] canvas { box-shadow: 0 0 0 1px var(--accent); }
+  .scene-tile::after { border-radius: 0 0 10px 10px; }
+  .scene-tile span { font-size: 10px; left: 8px; bottom: 5px; }
+  .scene-row { flex-wrap: nowrap; padding: 2px 16px; }
+  .seg, .seg-solo { flex: none; }
+  .seg button, .seg-solo { padding: 7px 12px; min-height: 34px; font-size: 11px; }
+  body[data-app="endless-cockpit"] .intro { top: 34%; }
+}
+/* phones held sideways, and other short screens: one slim row of scenes, the controls beside the readouts */
+@media (max-height: 520px) {
+  .scenebar { top: max(52px, calc(env(safe-area-inset-top) + 44px)); gap: 6px; }
+  .scene-tile canvas { width: 92px; height: 44px; border-radius: 9px; }
+  .scene-tile::after { border-radius: 0 0 8px 8px; }
+  .scene-tile span { left: 7px; bottom: 4px; font-size: 9px; }
+  .seg button, .seg-solo { padding: 5px 10px; min-height: 30px; font-size: 11px; }
+}

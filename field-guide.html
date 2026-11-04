@@ -41,7 +41,7 @@ button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke
 a { color: var(--accent); }
 [hidden] { display: none !important; }
 
-.scene { position: relative; height: 100svh; min-height: 540px; isolation: isolate; overflow: hidden; }
+.scene { position: relative; height: 100svh; min-height: 320px; isolation: isolate; overflow: hidden; }
 #stage { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; display: block; touch-action: none; }
 .vignette { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(5, 8, 18, 0.5) 0%, transparent 18%, transparent 58%, rgba(5, 8, 18, 0.72) 100%); }
 .chrome { transition: opacity 0.7s ease; }
@@ -49,7 +49,7 @@ body.quiet .chrome { opacity: 0; }
 body.quiet .chrome:focus-within { opacity: 1; }
 body.quiet .chip { display: none; }
 
-.header { position: absolute; left: 42px; right: 42px; top: max(28px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.header { position: absolute; left: max(42px, env(safe-area-inset-left)); right: max(42px, env(safe-area-inset-right)); top: max(28px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 .brand { display: flex; align-items: center; gap: 12px; font-size: 16px; letter-spacing: -0.35px; color: var(--ink); text-shadow: 0 1px 14px rgba(0, 0, 0, 0.6); text-decoration: none; }
 .brand svg { width: 24px; height: 28px; stroke: var(--accent); fill: none; stroke-width: 1.15; }
 .brand span { font-weight: 500; }
@@ -203,6 +203,34 @@ table.maptable th { color: var(--ink); font-weight: 500; white-space: nowrap; }
   .truth { display: none; }
   #hit-strip { display: none; }
 }
+/* the narrowest phones: the brand gives way so the header's buttons stay on screen */
+@media (max-width: 380px) {
+  .header { gap: 10px; }
+  .brand { gap: 8px; font-size: 14px; min-width: 0; }
+  .brand span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .top-action { padding: 9px 12px; }
+}
+/* phones held sideways and other short screens: everything on one screen, nothing pushed below the edge */
+@media (max-height: 520px) {
+  .header { top: max(8px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); }
+  .top-action { padding: 7px 12px; }
+  .top-action.icon { padding: 7px; }
+  .mode-switch { top: max(8px, env(safe-area-inset-top)); }
+  .mode-switch button { padding: 6px 16px; min-height: 30px; }
+  .dock-wrap { bottom: max(6px, env(safe-area-inset-bottom)); gap: 5px; }
+  #hud { gap: 14px; }
+  .gauge { min-width: 54px; }
+  .gauge .k { font-size: 8px; letter-spacing: 1.8px; margin-bottom: 2px; }
+  .gauge .v { font-size: 15px; }
+  .gauge.hero .v { font-size: 30px; }
+  .dock { padding: 3px; border-radius: 18px; }
+  .dock button { padding: 5px 10px 4px; gap: 2px; min-width: 52px; }
+  .dock button svg { width: 16px; height: 16px; }
+  .dock button span { font-size: 9px; }
+  .dock-divider { height: 22px; }
+  .source-badge, .chip { padding: 5px 9px; font-size: 10px; }
+  #pedal { min-height: 30px; padding-top: 5px; padding-bottom: 5px; }
+}
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
 }
@@ -292,6 +320,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
     <section id="endless">
       <h2>Endless Cockpit</h2>
       <p>Endless Cockpit takes its speed from your cadence. Connect a Bluetooth cadence sensor or smart trainer from the Connect sheet, hold Space or the Hold to pedal button, or set a steady cadence. Each crank revolution sends a ring of light down the road, and the road's grade changes your speed by up to 40%.</p>
+      <p>The scenery is on the main screen: Golden coast, Misty pines, Neon forest, High alpine and Red canyon, each tile drawn by the page itself. Beside them are the time of day (Moving, a four-minute cycle, or held at golden hour, dusk or night), a look (Clear, Dreamy or Wild), New scenery every mile, and New route. The page remembers your choices for the next visit. On a phone, swipe the rows sideways, and hold the pedal button with a finger.</p>
       <p>The sensor's status reads not connected, no Bluetooth in this browser, none chosen, connected with no cadence yet, live, or disconnected. Some sensors send nothing until the crank turns.</p>
     </section>
 

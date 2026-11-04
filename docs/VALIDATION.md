@@ -20,8 +20,12 @@ Endless Cockpit takes its speed from cadence only. `tests/endless_states.py` dri
 | Sensor connected, sending nothing | **Stubbed** |
 | Live sensor at 80 rpm | **Stubbed**, with real CSC Measurement bytes |
 | Sensor disconnects | **Stubbed** |
+| Scene tiles, time of day and looks | Real clicks; each tile's picture is read back and must not be blank |
+| New scenery every mile, on and off | Real riding at a steady cadence, with the next change brought close |
+| Remembered on the next visit | A real reload |
+| A phone upright and held sideways | Phone-sized pages with touch; a finger held on the pedal button |
 
-All 19 checks passed on 2026-11-03, including that the page says nothing about drums, MIDI or tempo, carries no drum engine, and shows the suite bar with itself as the current page. These checks found one defect, fixed on 2026-11-03: a sensor that connected in the page's first three seconds, before sending anything, read as live at 0 rpm. The check now connects right after load, where the old code failed every time.
+All 33 checks passed on 2026-11-03, including that the page says nothing about drums, MIDI or tempo, carries no drum engine, and shows the suite bar with itself as the current page. These checks found one defect, fixed on 2026-11-03: a sensor that connected in the page's first three seconds, before sending anything, read as live at 0 rpm. The check now connects right after load, where the old code failed every time.
 
 Known answers: the zoom curve is 0 below idle and 1 at the top, the grade's effect on speed is bounded, and distance does not count the idle drift.
 
@@ -46,18 +50,26 @@ Known answers: heart-rate packets in 8 and 16 bits with beat intervals, crank ca
 
 ## Flicker
 
-`tests/flash_check.py` records the rendered page's brightness on every frame and applies the WCAG 2.2 general flash definition: a flash is a pair of opposing changes of at least 10% of maximum relative luminance, with the darker image below 0.80, and the limit is three a second over no more than 25% of a 10 degree field. Each third of the screen stands in for that field. It runs each page's demo and its hardest case, with and without reduced motion. Endless Cockpit's hardest case is a steady 130 rpm. Biofeedback Path Cockpit has no hits to stack, so its hardest cases are the demo in Ride and in Train.
+`tests/flash_check.py` records the rendered page's brightness on every frame and applies the WCAG 2.2 general flash definition: a flash is a pair of opposing changes of at least 10% of maximum relative luminance, with the darker image below 0.80, and the limit is three a second over no more than 25% of a 10 degree field. Each third of the screen stands in for that field. It runs each page's demo and its hardest cases, with and without reduced motion. Endless Cockpit's are top cadence (130 rpm) in the Wild look while the scene changes every 2 seconds, and the time of day flipping between golden hour and night every 1.5 seconds, faster than anyone would tap it. Biofeedback Path Cockpit has no hits to stack, so its hardest cases are the demo in Ride and in Train.
 
 Worst share of any region flashing more than three times a second, on 2026-11-03. The limit is 25%:
 
 | Page | Demo | Hardest | Demo, reduced motion | Hardest, reduced motion |
 |---|---|---|---|---|
-| Endless Cockpit | 2% | 7% | 2% | 7% |
-| Biofeedback Path Cockpit | 0% | 15.5% in Ride, 0% in Train | 0.4% | 13.5% in Ride, 0% in Train |
+| Endless Cockpit | 2% | 6.3% changing scenes, 7.1% flipping the time of day | 2% | 6.3% changing scenes, 8.3% flipping the time of day |
+| Biofeedback Path Cockpit | 0% | 16.3% in Ride, 0% in Train | 0.4% | 0.8% in Ride, 0% in Train |
+
+The scene changes found a flaw on 2026-11-03: a scene chosen before the last blend finished jumped back to that blend's start. With scenes changing every 2 seconds that read as 21% under reduced motion. A new choice now blends from what is on screen, and the same case reads 6.3%.
 
 The whole frame never flashed in any of these runs. It is a screen, not a certificate. It does not test saturated red flashes, and it says nothing about comfort.
 
 An earlier build of this road was published on 2026-11-02 before this check existed, and it failed the check badly. It was live for about two hours before the limiter described in [Methods](METHODS.md) replaced it. The check stays in this folder so that does not recur.
+
+## Layout
+
+`tests/layout_check.py` renders both cockpits at seven sizes: a desktop, a short laptop window, three phones upright and two held sideways, with touch on the phones. Every control must be on screen, the top controls must not run into the bottom stack, and the page must never scroll sideways. All 14 renders passed on 2026-11-03.
+
+**The first public build failed this.** Held sideways, a phone showed only the demo button and half of the pedal button, because the frame kept a minimum height of 540 pixels and cut off the rest. Its text also told phone users to hold Space. Both were fixed on 2026-11-03, and on a 360-pixel phone Biofeedback's long name no longer pushes the full-screen button off the screen.
 
 ## The smoke test
 

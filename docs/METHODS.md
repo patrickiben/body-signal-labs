@@ -10,9 +10,11 @@ The road and its hills are a raymarched height field. The scene passes through a
 
 Cadence comes from a Bluetooth CSC or FTMS sensor, the hold-to-pedal button at 88 rpm, or a steady setting, in that order. A sensor reading older than 3 seconds counts as stopped. Each full crank revolution sends one ring of light down the road, and the road's dashes are spaced one per revolution. The ridge on the horizon is stated value noise that drifts past as you ride. It is not a measurement.
 
+With New scenery every mile on, the next of the five scenes blends in each time the distance ridden passes another mile. Distance counts only the speed your cadence makes, so a stopped ride keeps its scene, and a replay keeps the scenes it recorded. A blend takes six seconds, and a scene chosen mid-blend starts from what is on screen, so the picture never jumps. The scene tiles are drawn by the road's own shader at 336 by 196 pixels, sharp on 2x and 3x screens, at the current time of day, and redrawn when the sky has moved on.
+
 ## What is stored
 
-A ride file holds cadence ten times a second, with scene and route changes. It holds no audio and no other reading. Video capture runs only if you tick it, and saves to your own computer. Settings stay in the browser's local storage.
+A ride file holds cadence ten times a second, with scene, time-of-day and route changes. It holds no audio and no other reading. Video capture runs only if you tick it, and saves to your own computer. The scene, time of day, look and the every-mile switch stay in the browser's local storage, so the next visit starts where the last one ended.
 
 ## Safety
 

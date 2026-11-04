@@ -10,7 +10,7 @@ Immersive scenes that follow signals from your body, in the browser. Each page r
 
 ![Endless Cockpit during the demo](docs/endless-cockpit.jpg)
 
-**Endless Cockpit** is a road at dusk that keeps your pace. Your cadence sets the speed, from a Bluetooth cadence sensor or smart trainer connected straight from the browser, the pedal button, or a steady setting. Each crank revolution sends a ring of light down the road. The scene is raymarched each frame and fed through a zoom-feedback loop.
+**Endless Cockpit** is a road at dusk that keeps your pace. Your cadence sets the speed, from a Bluetooth cadence sensor or smart trainer connected straight from the browser, the pedal button, or a steady setting. Each crank revolution sends a ring of light down the road. Five scenes sit on the main screen, with the time of day and a look, and with New scenery every mile on, the next scene blends in as you ride. The scene is raymarched each frame and fed through a zoom-feedback loop.
 
 ![Biofeedback Path Cockpit during the demo](docs/biofeedback-path-cockpit.jpg)
 

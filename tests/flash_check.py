@@ -66,8 +66,12 @@ with sync_playwright() as p:
             pg.click('#demo-button'); pg.wait_for_timeout(1500)
             runs = [('demo', analyze(pg.evaluate('__app.recordLuma(9000)')))]
             if page == 'endless-cockpit.html':
-                pg.evaluate("__app.S.steady = 130")        # the ride's hardest case: top cadence, a ring on every revolution
-                runs.append(('hardest', analyze(pg.evaluate('__app.recordLuma(6000)'))))
+                # the ride's hardest cases: top cadence in the Wild look while the scene changes every 2 s,
+                # and the time of day flipping between golden hour and night, faster than anyone would tap it
+                pg.evaluate("__app.S.steady = 130; __app.setLook('wild'); window.__cyc = setInterval(() => __app.nextBiome(), 2000)")
+                runs.append(('hardest', analyze(pg.evaluate('__app.recordLuma(9000)'))))
+                pg.evaluate("clearInterval(window.__cyc); __app.S.steady = 100; let k = 0; window.__tod = setInterval(() => __app.setTod(k++ % 2 ? 3 : 1), 1500)")
+                runs.append(('time flips', analyze(pg.evaluate('__app.recordLuma(9000)'))))
             else:
                 # Biofeedback has no hits to stack: its hardest cases are the demo in each of its other modes
                 for mode in ('ride', 'train'):

@@ -232,9 +232,7 @@ void main(){
     <div class="gauge"><span class="k">Distance</span><span class="v"><span id="g-dist">0.00</span><small>mi</small></span></div>`;
 
   const routeSheet = `
-    <div class="field"><div class="row"><span>Scene</span><b id="scene-name">Golden coast</b></div><div class="row-actions" id="biome-row"></div></div>
-    <label class="field" style="margin-top:12px">Time of day<select id="tod"><option value="auto">Moving, a four-minute cycle</option><option value="0.18">Golden hour</option><option value="0.55">Dusk</option><option value="1">Night</option></select></label>
-    <div class="row-actions"><button class="pill" id="new-route">New route</button><button class="pill" id="ride-sound">Ride sound: off</button></div>
+    <div class="row-actions"><button class="pill" id="ride-sound">Ride sound: off</button></div>
     <div class="sig-title"><span>Route ahead</span><span id="grade-read">grade 0%</span></div>
     <canvas class="sig-canvas" id="elstrip" width="880" height="110" role="img" aria-label="Elevation of the procedural route ahead"></canvas>
     <p class="note">The route is procedural and seeded, not a real GPS track.</p>
@@ -252,6 +250,24 @@ void main(){
       <div class="sig-title" style="margin:6px 0 0"><span>Cadence to zoom</span><span>live dot</span></div>
       <canvas class="sig-canvas" id="curve" width="880" height="170" role="img" aria-label="Transfer curve from cadence to zoom, with the live value"></canvas>
     </div></details>`;
+
+  const TOD = [
+    { v: null, label: 'Moving', title: 'A four-minute cycle from golden hour to night' },
+    { v: 0.18, label: 'Golden hour' }, { v: 0.55, label: 'Dusk' }, { v: 1, label: 'Night' },
+  ];
+  const LOOKS = { clear: { label: 'Clear', dream: 0.15, wild: 0.1 }, dreamy: { label: 'Dreamy', dream: 0.55, wild: 0.35 }, wild: { label: 'Wild', dream: 0.78, wild: 0.85 } };
+  const sceneBar = `
+    <div class="scenebar chrome" id="scenebar">
+      <div class="scene-tiles" id="scene-tiles" role="group" aria-label="Scenery">
+        ${BIOMES.map((b, i) => `<button class="scene-tile" data-b="${i}" aria-pressed="${i === 0}"><canvas width="336" height="196" aria-hidden="true" style="background:linear-gradient(${b.skyTop},${b.skyHz} 54%,${b.ground} 55%)"></canvas><span>${b.name}</span></button>`).join('')}
+      </div>
+      <div class="scene-row">
+        <div class="seg" role="group" aria-label="Time of day">${TOD.map((t, i) => `<button data-tod="${i}" aria-pressed="${i === 0}"${t.title ? ` title="${t.title}"` : ''}>${t.label}</button>`).join('')}</div>
+        <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'dreamy'}">${l.label}</button>`).join('')}</div>
+        <button class="seg-solo" id="auto-scene" aria-pressed="true">New scenery every mile</button>
+        <button class="seg-solo" id="new-route">New route</button>
+      </div>
+    </div>`;
 
   const connectHtml = `
     <div class="device-card">
@@ -289,9 +305,11 @@ void main(){
       <tr><th>Each revolution</th><td>Sends a ring of light down the road.</td></tr>
       <tr><th>Grade</th><td>The procedural road's slope changes your speed by up to 40%, never the zoom curve.</td></tr>
       <tr><th>Distance</th><td>Counts only the speed your cadence makes, never the slow drift at rest.</td></tr>
+      <tr><th>Scenery</th><td>Five scenes on the main screen. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
       <tr><th>Time of day</th><td>A four-minute cycle from golden hour to night, or held where you choose.</td></tr>
+      <tr><th>Look</th><td>Clear, Dreamy and Wild set how much of the last frame stays and how much it warps. The sliders under Scenery fine-tune both.</td></tr>
     </tbody></table>
-    <p class="note">Keys: hold <b>Space</b> to pedal · <b>D</b> demo · <b>C</b> connect · <b>B</b> next scene · <b>F</b> full screen · <b>H</b> hide controls.</p>`;
+    <p class="note">Keys: hold <b>Space</b> to pedal · <b>D</b> demo · <b>C</b> connect · <b>B</b> next scene · <b>T</b> time of day · <b>F</b> full screen · <b>H</b> hide controls.</p>`;
 
   const sessionHtml = `
     <div class="row-actions">
@@ -315,6 +333,7 @@ void main(){
     <p class="note"><a href="field-guide.html#endless">Read the field guide</a> · <a href="__REPO_URL__" rel="noopener">Source</a></p>`;
 
   const ride = createRide();
+  const COARSE = matchMedia('(hover: none) and (pointer: coarse)').matches;      // a phone or tablet: no Space key to hold
   const BANDS = 64;
   const brand = '<svg viewBox="0 0 24 28" aria-hidden="true"><path d="M12 3 4 25M12 3l8 22M12 9v3M12 15v3M12 21v4"/></svg>';
   const btView = () => {
@@ -343,7 +362,8 @@ void main(){
   const toggleDemo = () => { S.demo = !S.demo; S.demoT = 0; if (S.demo && ride.replayOn) ride.stopReplay(); renderStates(); };
   const shell = mountChrome({
     id: 'endless-cockpit', name: 'Endless Cockpit', brand,
-    intro: { eyebrow: 'Endless Cockpit · a road that keeps your pace', title: 'Ride as far as you like.', subtitle: 'Connect a cadence sensor, or hold Space to pedal. No helper app, no server.' },
+    intro: { eyebrow: 'Endless Cockpit · a road that keeps your pace', title: 'Ride as far as you like.', subtitle: COARSE ? 'Connect a cadence sensor, or hold the pedal button. No helper app, no server.' : 'Connect a cadence sensor, or hold Space to pedal. No helper app, no server.' },
+    stage: sceneBar,
     hud: hudHtml,
     badges: `
       <button class="source-badge" id="source-badge" data-source="ambient" title="Open the cadence settings"><span class="dot" aria-hidden="true"></span><span id="source-label">Ambient · no cadence</span></button>
@@ -351,13 +371,13 @@ void main(){
     truth: 'Procedural road with no model. Your cadence sets the speed, and nothing leaves this browser.',
     sheets: [
       { id: 'connect', label: 'Connect', icon: 'connect', title: 'Bring your ride.', intro: 'Speed comes from your cadence: a Bluetooth sensor, the pedal button, or a steady setting.', html: connectHtml },
-      { id: 'route', label: 'Route', icon: 'route', title: 'Choose the road.', intro: 'These change how it looks and how fast it moves. They never change the readings.', html: routeSheet },
+      { id: 'route', label: 'Scenery', icon: 'route', title: 'Fine-tune the road.', intro: 'Scenes, time of day and looks are on the main screen. These fine-tune how it looks and moves, and never change the readings.', html: routeSheet },
       { id: 'session', label: 'Session', icon: 'session', title: 'Keep what you rode.', intro: 'A ride file holds your cadence, scene and route over time. Nothing leaves this computer unless you share the file.', html: sessionHtml },
       { id: 'about', label: 'About', icon: 'about', title: 'What drives what.', html: aboutHtml },
     ],
     onOpenSheet: (name) => { if (name === 'route') { drawElStrip(); drawCurve(); } },
     toggleDemo,
-    onKey: (e, key) => { if (key === 'b') nextBiome(); },
+    onKey: (e, key) => { if (key === 'b') nextBiome(); else if (key === 't') setTod((S.tod + 1) % TOD.length); },
   });
   ['source-badge', 'chip-sensor'].forEach((id) => $(id).addEventListener('click', () => shell.openSheet('connect')));
 
@@ -401,24 +421,51 @@ void main(){
   ride.on('lane', (l) => {
     if (l.name === 'rpm') S.replayRpm = l.value;
     else if (l.name === 'biome') setBiome(l.value);
-    else if (l.name === 'seed') S.seed = l.value;
+    else if (l.name === 'seed') { S.seed = l.value; thumbAt = 0; }
+    else if (l.name === 'tod') setTod(l.value, true);
   });
   ride.on('replay', (on) => { if (!on) S.replayRpm = null; });
 
-  /* ---- biomes ---- */
-  function setBiome(i) {
-    if (i === S.biomeNext) return;
-    S.biome = S.biomeNext; S.biomeNext = i; S.biomeT = 0;
+  /* ---- scenery: five scenes, the time of day and a look, all on the main screen, and remembered ---- */
+  const SAVE_KEY = 'endless-cockpit-scenery';
+  const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ b: S.biomeNext, tod: S.tod, look: S.look, dream: S.dream, wild: S.wild, auto: S.autoScene })); } catch (e) { /* storage can be off */ } };
+  const pressOnly = (sel, on) => document.querySelectorAll(sel).forEach((b) => b.setAttribute('aria-pressed', String(on(b))));
+  function setBiome(i, instant) {
+    if (i === S.biomeNext && !instant) return;
+    S.fromMix = instant ? null : sceneNow();
+    S.biome = instant ? i : S.biomeNext; S.biomeNext = i; S.biomeT = instant ? 1 : 0;
     ride.noteLane('biome', i);
-    document.querySelectorAll('#biome-row button').forEach((b, k) => b.classList.toggle('on', k === i));
+    pressOnly('.scene-tile', (b) => +b.dataset.b === i);
     document.body.style.setProperty('--accent', BIOMES[i].edge);
-    $('scene-name').textContent = BIOMES[i].name;
+    save();
   }
   function nextBiome() { setBiome((S.biomeNext + 1) % BIOMES.length); }
-  $('biome-row').innerHTML = BIOMES.map((b, i) => `<button class="pill${i === 0 ? ' on' : ''}" data-b="${i}">${b.name}</button>`).join('');
-  $('biome-row').addEventListener('click', (e) => { const b = e.target.closest('[data-b]'); if (b) setBiome(+b.dataset.b); });
-  $('tod').addEventListener('change', (e) => { S.duskHold = e.target.value === 'auto' ? null : +e.target.value; });
-  $('new-route').addEventListener('click', () => { S.seed = (Math.random() * 40) | 0; ride.noteLane('seed', S.seed); shell.toast('New route'); });
+  function setTod(i, quiet) {
+    S.tod = i; S.duskHold = TOD[i].v;
+    pressOnly('[data-tod]', (b) => +b.dataset.tod === i);
+    ride.noteLane('tod', i);
+    if (!quiet) shell.toast(`Time of day · ${TOD[i].label}`);
+    save();
+  }
+  function setLook(k, quiet) {
+    const L = LOOKS[k];
+    if (!quiet) shell.toast(`Look · ${L.label}`);
+    S.look = k; S.dream = L.dream; S.wild = L.wild;
+    ['dream', 'wild'].forEach((id) => { const r = $(id); if (!r) return; r.value = Math.round(S[id] * 100); shell.syncRange(r); $(`${id}-v`).textContent = `${r.value}%`; });
+    pressOnly('[data-look]', (b) => b.dataset.look === k);
+    save();
+  }
+  function setAuto(on) {
+    S.autoScene = on; S.nextSceneAt = S.dist + M_PER_MI;
+    $('auto-scene').setAttribute('aria-pressed', String(on));
+    save();
+  }
+  $('scene-tiles').addEventListener('click', (e) => { const b = e.target.closest('[data-b]'); if (b) setBiome(+b.dataset.b); });
+  document.querySelectorAll('[data-tod]').forEach((b) => b.addEventListener('click', () => setTod(+b.dataset.tod)));
+  document.querySelectorAll('[data-look]').forEach((b) => b.addEventListener('click', () => setLook(b.dataset.look)));
+  $('auto-scene').addEventListener('click', () => setAuto(!S.autoScene));
+  $('new-route').addEventListener('click', () => { S.seed = (Math.random() * 40) | 0; thumbAt = 0; ride.noteLane('seed', S.seed); shell.toast('New route'); });
+  S.tod = 0; S.look = 'dreamy'; S.autoScene = true; S.nextSceneAt = M_PER_MI;
   document.body.style.setProperty('--accent', BIOMES[0].edge);
 
   /* ---- sheet controls ---- */
@@ -432,6 +479,18 @@ void main(){
   };
   bind('dream', () => S.dream * 100, (v) => { S.dream = v / 100; }, (v) => `${Math.round(v)}%`, 'dream-v');
   bind('wild', () => S.wild * 100, (v) => { S.wild = v / 100; }, (v) => `${Math.round(v)}%`, 'wild-v');
+  ['dream', 'wild'].forEach((id) => $(id).addEventListener('input', () => { S.look = null; pressOnly('[data-look]', () => false); save(); }));
+  // A visit picks up where the last one left off.
+  (() => {
+    let v = null;
+    try { v = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) { /* storage can be off */ }
+    if (!v) return;
+    if (BIOMES[v.b]) setBiome(v.b, true);
+    if (TOD[v.tod]) setTod(v.tod, true);
+    if (LOOKS[v.look]) setLook(v.look, true);
+    else if (typeof v.dream === 'number' && typeof v.wild === 'number') { setLook('dreamy', true); S.look = null; S.dream = clamp(v.dream, 0, 1); S.wild = clamp(v.wild, 0, 1); pressOnly('[data-look]', () => false); ['dream', 'wild'].forEach((id) => { const r = $(id); r.value = Math.round(S[id] * 100); shell.syncRange(r); $(`${id}-v`).textContent = `${r.value}%`; }); }
+    if (typeof v.auto === 'boolean') setAuto(v.auto);
+  })();
   bind('m-idle', () => S.map.idle, (v) => { S.map.idle = v; }, (v) => `${v} rpm`, 'v-idle');
   bind('m-max', () => S.map.max, (v) => { S.map.max = v; }, (v) => `${v} rpm`, 'v-max');
   bind('m-zoom', () => S.map.maxZoom * 1000, (v) => { S.map.maxZoom = v / 1000; }, (v) => `${(v / 10).toFixed(1)}%`, 'v-zoom');
@@ -446,6 +505,7 @@ void main(){
   const pedalOn = () => { S.pedal = true; pedalBtn.classList.add('on'); };
   const pedalOff = () => { S.pedal = false; pedalBtn.classList.remove('on'); };
   pedalBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); pedalOn(); });
+  pedalBtn.addEventListener('contextmenu', (e) => e.preventDefault());     // a long press on a phone is pedaling, not a menu
   ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => pedalBtn.addEventListener(ev, pedalOff));
   addEventListener('keydown', (e) => { if (e.code === 'Space' && !e.repeat && !e.target.closest('dialog[open], input, select, button')) { e.preventDefault(); pedalOn(); } });
   addEventListener('keyup', (e) => { if (e.code === 'Space') pedalOff(); });
@@ -633,6 +693,75 @@ void main(){
     S.shakeV += -S.shake * 90 * H; S.shakeV *= Math.exp(-H / 0.09); S.shake += S.shakeV * H;
   }
 
+  /* ---- one scene's sky and land at a time of day: the road and the scene tiles both draw from this ---- */
+  const NUMS = ['amp', 'ridge', 'trees', 'sea', 'snow', 'strata', 'grid', 'fogK', 'sunAz', 'sunEl'];
+  // The scene on screen right now, frozen, so a new choice blends from it instead of jumping back to a scene's start.
+  function sceneNow() {
+    const a = S.fromMix || BIOMES[S.biome], b = BIOMES[S.biomeNext], t = S.biomeT * S.biomeT * (3 - 2 * S.biomeT);
+    const m = { c: {} };
+    Object.keys(b.c).forEach((k) => { m.c[k] = a.c[k].map((v, i) => lerp(v, b.c[k][i], t)); });
+    NUMS.forEach((k) => { m[k] = lerp(a[k], b[k], t); });
+    return m;
+  }
+  function landAt(a, b, tb, dusk) {
+    const t = tb * tb * (3 - 2 * tb);
+    const mix3 = (k) => a.c[k].map((v, i) => lerp(v, b.c[k][i], t));
+    const mixN = (k) => lerp(a[k], b[k], t);
+    // Night is a real night: the sky goes dark, the sun becomes a pale moon, and the road's lights carry the scene.
+    const night = dusk * dusk;
+    const sunEl = Math.max(0.035, mixN('sunEl') * (1 - dusk * 0.7)), sunAz = mixN('sunAz');
+    const sx = Math.sin(sunAz), sz = Math.cos(sunAz), sl = Math.hypot(sx, sunEl, sz);
+    return {
+      uSkyTop: mix3('skyTop').map((v, i) => lerp(v, [0.004, 0.006, 0.024][i], dusk * 0.94)),
+      uSkyHz: mix3('skyHz').map((v, i) => lerp(v, [0.1, 0.045, 0.11][i], dusk * 0.92)),
+      uSunC: mix3('sun').map((v, i) => lerp(v, [0.26, 0.29, 0.44][i], night * 0.96)),
+      uGround: mix3('ground'), uRock: mix3('rock'), uFog: mix3('fog').map((v) => v * (1 - dusk * 0.86)), uEdge: mix3('edge'),
+      uSunDir: [sx / sl, sunEl / sl, sz / sl],
+      uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: dusk, uFogK: mixN('fogK'),
+    };
+  }
+  /* ---- the camera on the road at z, looking ahead along it, toward the low sun ---- */
+  function camAt(z, roll) {
+    const cx = pathX(z), cy = roadY(z) + 1.55, look = 26;
+    let fx = pathX(z + look) - cx, fy = roadY(z + look) + 1.0 - cy, fz = look;
+    const fl = Math.hypot(fx, fy, fz); fx /= fl; fy /= fl; fz /= fl;
+    let rx = fz, ry = 0, rz = -fx;
+    const rl = Math.hypot(rx, rz); rx /= rl; rz /= rl;
+    let ux = -ry * fz + rz * fy, uy = rx * fz - rz * fx, uz = ry * fx - rx * fy;
+    if (uy < 0) { ux = -ux; uy = -uy; uz = -uz; }
+    const cr = Math.cos(roll), sr = Math.sin(roll);
+    return { cx, cy, fwd: [fx, fy, fz], right: [rx * cr + ux * sr, ry * cr + uy * sr, rz * cr + uz * sr], up: [ux * cr - rx * sr, uy * cr - ry * sr, uz * cr - rz * sr] };
+  }
+
+  /* ---- scene tiles: each scene drawn small by the road's own shader, at the current time of day ---- */
+  const THUMB_FS = FS_HEAD + `
+uniform sampler2D uScene; uniform float uExposure;
+vec3 aces(vec3 x){ return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.); }
+void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1.-.45*smoothstep(.25,.95,dot(q,q)*2.1); o=vec4(pow(c,vec3(1./2.2)),1.); }`;
+  const TW = 336, TH = 196, noRings = new Float32Array(12 * 4);
+  let pThumb = null, thumbHDR = null, thumbLDR = null, thumbPx = null, thumbAt = 0, thumbDusk = -1;
+  function drawThumbs(now) {
+    if (!pThumb) {
+      pThumb = G.program(THUMB_FS); thumbHDR = G.target(TW, TH);
+      thumbLDR = G.target(TW, TH, { internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE }); thumbPx = new Uint8Array(TW * TH * 4);
+    }
+    const z = S.vis + 60, cam = camAt(z, 0), tiles = document.querySelectorAll('.scene-tile canvas');
+    gl.disable(gl.BLEND);
+    BIOMES.forEach((b, i) => {
+      G.into(thumbHDR); G.bindTex(0, tNoise); G.bindTex(1, tSpec);
+      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uRing: noRings }, landAt(b, b, 1, S.dusk)));
+      G.draw();
+      G.into(thumbLDR); G.bindTex(0, thumbHDR.tex);
+      G.use(pThumb, { uScene: 0, uExposure: 0.98 + S.dusk * 0.25 });
+      G.draw();
+      gl.readPixels(0, 0, TW, TH, gl.RGBA, gl.UNSIGNED_BYTE, thumbPx);
+      const c = tiles[i].getContext('2d'), img = c.createImageData(TW, TH);
+      for (let y = 0; y < TH; y++) img.data.set(thumbPx.subarray((TH - 1 - y) * TW * 4, (TH - y) * TW * 4), y * TW * 4);     // GL rows run bottom up
+      c.putImageData(img, 0, 0);
+    });
+    thumbAt = now; thumbDusk = S.dusk;
+  }
+
   /* ---- frame ---- */
   function resize() {
     const dpr = Math.min(devicePixelRatio || 1, 2), W = Math.max(320, Math.min(3840, Math.round(cv.clientWidth * dpr))), Hh = Math.max(240, Math.min(2160, Math.round(cv.clientHeight * dpr)));
@@ -663,7 +792,13 @@ void main(){
       if (n === 24) acc = 0;
       rpmAcc += dtMs;
       if (rpmAcc > 100) { rpmAcc = 0; ride.noteLane('rpm', +S.rpm.toFixed(1)); }
-      if (S.biomeT < 1) S.biomeT = Math.min(1, S.biomeT + dtMs / 6000);
+      if (S.biomeT < 1) { S.biomeT = Math.min(1, S.biomeT + dtMs / 6000); if (S.biomeT === 1) S.fromMix = null; }
+      if (S.autoScene && !ride.replayOn && S.dist >= S.nextSceneAt) {
+        S.nextSceneAt = S.dist + M_PER_MI;
+        nextBiome();
+        shell.toast(`New scenery · ${BIOMES[S.biomeNext].name}`);
+      }
+      if (frameIdx > 2 && (!thumbAt || (now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
       S.dusk = S.duskHold != null ? S.dusk + (S.duskHold - S.dusk) * Math.min(1, dtMs / 900) : RM.matches ? S.dusk : 0.5 - 0.5 * Math.cos((now / 1000 / 240 + 0.14) * Math.PI * 2);
 
       // Adapt the render size to the machine. The readings never depend on this.
@@ -674,35 +809,12 @@ void main(){
       }
 
       /* uniforms */
-      const a = BIOMES[S.biome], b = BIOMES[S.biomeNext], t = S.biomeT * S.biomeT * (3 - 2 * S.biomeT);
-      const mix3 = (k) => a.c[k].map((v, i) => lerp(v, b.c[k][i], t));
-      const mixN = (k) => lerp(a[k], b[k], t);
-      // Night is a real night: the sky goes dark, the sun becomes a pale moon, and the road's lights carry the scene.
-      const dusk = S.dusk, night = dusk * dusk;
-      const skyTop = mix3('skyTop').map((v, i) => lerp(v, [0.004, 0.006, 0.024][i], dusk * 0.94));
-      const skyHz = mix3('skyHz').map((v, i) => lerp(v, [0.1, 0.045, 0.11][i], dusk * 0.92));
-      const fogC = mix3('fog').map((v) => v * (1 - dusk * 0.86));
-      const sunC = mix3('sun').map((v, i) => lerp(v, [0.26, 0.29, 0.44][i], night * 0.96));
-      const sunEl = Math.max(0.035, mixN('sunEl') * (1 - dusk * 0.7));
-      const sunAz = mixN('sunAz');
-
-      // Camera on the road, looking ahead along it, always facing the low sun.
-      const z = S.vis, cx = pathX(z), cy = roadY(z) + 1.55, look = 26;
-      const tx = pathX(z + look), ty = roadY(z + look) + 1.0;
-      let fx = tx - cx, fy = ty - cy, fz = look;
-      const fl = Math.hypot(fx, fy, fz); fx /= fl; fy /= fl; fz /= fl;
-      const curveRoll = RM.matches ? 0 : clamp((pathX(z + 12) - 2 * pathX(z + 6) + cx) * 0.012, -0.07, 0.07);
+      const land = landAt(S.fromMix || BIOMES[S.biome], BIOMES[S.biomeNext], S.biomeT, S.dusk);
+      const z = S.vis;
+      const curveRoll = RM.matches ? 0 : clamp((pathX(z + 12) - 2 * pathX(z + 6) + pathX(z)) * 0.012, -0.07, 0.07);
       S.roll += (curveRoll + S.shake * 0.02 - S.roll) * Math.min(1, dtMs / 200);
-      let rx = fz, ry = 0, rz = -fx;
-      const rl = Math.hypot(rx, rz); rx /= rl; rz /= rl;
-      let ux = -ry * fz + rz * fy, uy = rx * fz - rz * fx, uz = ry * fx - rx * fy;
-      if (uy < 0) { ux = -ux; uy = -uy; uz = -uz; }
-      const cr = Math.cos(S.roll), sr = Math.sin(S.roll);
-      const right = [rx * cr + ux * sr, ry * cr + uy * sr, rz * cr + uz * sr];
-      const up = [ux * cr - rx * sr, uy * cr - ry * sr, uz * cr - rz * sr];
-      const camX = cx + S.shake * 0.05, camY = cy + (RM.matches ? 0 : Math.sin(S.vis * 0.9) * 0.018 * motion01(S.rpm));
-      const fwd = [fx, fy, fz];
-      const sd = (() => { const x = Math.sin(sunAz), z2 = Math.cos(sunAz), y = sunEl, l = Math.hypot(x, y, z2); return [x / l, y / l, z2 / l]; })();
+      const cam = camAt(z, S.roll), right = cam.right, up = cam.up, fwd = cam.fwd;
+      const camX = cam.cx + S.shake * 0.05, camY = cam.cy + (RM.matches ? 0 : Math.sin(S.vis * 0.9) * 0.018 * motion01(S.rpm));
       const focal = 1.08;
 
       for (let i = 0; i < 12; i++) {
@@ -726,19 +838,16 @@ void main(){
       gl.disable(gl.BLEND);
       G.into(scene);
       G.bindTex(0, tNoise); G.bindTex(1, tSpec);
-      G.use(pScene, {
+      G.use(pScene, Object.assign({
         uN: 0, uS: 1, uRes: [rw, rh], uT: now / 1000, uFocal: focal, uBeat: beatLen, uSeed: S.seed,
         uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd,
-        uSkyTop: skyTop, uSkyHz: skyHz, uSunC: sunC, uGround: mix3('ground'), uRock: mix3('rock'), uFog: fogC, uEdge: mix3('edge'), uSunDir: sd,
-        uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: S.dusk, uFogK: mixN('fogK'),
-        uSpark: 0.12 * motion01(S.rpm),
-        uRing: ringData,
-      });
+        uSpark: 0.12 * motion01(S.rpm), uRing: ringData,
+      }, land));
       G.draw();
 
       /* motes */
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
-      G.use(pMote, { uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: rw / rh, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpeedN: motion01(S.rpm), uEdge: mix3('edge') });
+      G.use(pMote, { uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: rw / rh, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpeedN: motion01(S.rpm), uEdge: land.uEdge });
       gl.drawArrays(gl.POINTS, 0, 1500);
       gl.disable(gl.BLEND);
 
@@ -821,7 +930,7 @@ void main(){
 
   /* for the checks: read what is really on the canvas and in the engine */
   window.__app = {
-    S, ride, BIOMES, pathX, roadY, gradeAt, motion01, recordLuma,
+    S, ride, BIOMES, pathX, roadY, gradeAt, motion01, recordLuma, setBiome, nextBiome, setTod, setLook, setAuto, drawThumbs,
     pixel() {
       const c = document.createElement('canvas'); c.width = 32; c.height = 18;
       const g = c.getContext('2d');
