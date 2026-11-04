@@ -15,16 +15,19 @@ class Q(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Q)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
-bad, profiles, errors = [], [], []
+bad, profiles, errors, transitions, replays = [], [], [], [], []
 with sync_playwright() as p:
     b = p.chromium.launch(channel='chrome', headless=True, args=['--enable-gpu', '--use-angle=metal', '--ignore-gpu-blocklist', '--enable-webgl'])
     pg = b.new_page(viewport={'width':1440, 'height':900})
     pg.on('pageerror', lambda e: errors.append(str(e)))
     pg.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
     pg.goto(f'http://127.0.0.1:{srv.server_port}/endless-cockpit.html')
-    pg.wait_for_function("window.__app && document.querySelectorAll('.scene-tile').length === 5")
+    pg.wait_for_function("window.__app && document.querySelectorAll('.scene-tile').length === __app.BIOMES.length")
+    scene_count = pg.evaluate('__app.BIOMES.length')
+    orbit = pg.evaluate("__app.BIOMES.findIndex(b=>b.name==='Rainbow orbit')")
+    if orbit != 5 or scene_count != 6: bad.append(f'expected appended Rainbow orbit scene: index={orbit}, count={scene_count}')
     pg.evaluate("__app.setTod(1,true);__app.setLook('clear',true);__app.setAuto(false);__app.S.steady=75")
-    for i in range(5):
+    for i in range(scene_count):
         pg.evaluate('(i)=>{__app.setBiome(i,true);__app.S.vis=40;__app.S.dusk=.18;}', i)
         pg.wait_for_timeout(1000)
         profile = pg.evaluate("""() => ({name:__app.BIOMES[__app.S.biomeNext].name,
@@ -41,31 +44,52 @@ with sync_playwright() as p:
             pg.evaluate('(z)=>{__app.S.vis=z}',z);pg.wait_for_timeout(150)
             pix=pg.evaluate('__app.pixel()')
             if pix['mean'] < 8 or pix['max']-pix['min'] < 25: bad.append(f'{i} at {z}: blank frame')
-    if len({json.dumps(p['path']) for p in profiles}) != 5: bad.append('route profiles are not distinct')
+    if len({json.dumps(p['path']) for p in profiles}) != scene_count: bad.append('route profiles are not distinct')
     if len({p['width'] for p in profiles}) < 4: bad.append('path widths do not vary')
     # At long distances, transitions must interpolate positions without frequency sweeps.
-    for z in (1600,10000,100000):
-        values=pg.evaluate("""(z)=>{__app.setBiome(3,true);__app.setBiome(4);
-          return Array.from({length:51},(_,i)=>{__app.S.biomeT=i/50;return [__app.pathX(z),__app.roadY(z)]})}""",z)
-        for axis in range(2):
-            variation=sum(abs(values[i+1][axis]-values[i][axis]) for i in range(50))
-            if variation > abs(values[-1][axis]-values[0][axis])+.001: bad.append(f'route oscillates during transition at {z}')
+    pairs = [(3,4)] + ([(4,orbit),(orbit,0),(1,orbit),(orbit,3)] if orbit >= 0 else [])
+    for start, end in pairs:
+        for z in (1600,10000,100000):
+            values=pg.evaluate("""([start,end,z])=>{__app.setBiome(start,true);__app.setBiome(end);
+              return Array.from({length:51},(_,i)=>{__app.S.biomeT=i/50;return [__app.pathX(z),__app.roadY(z)]})}""",[start,end,z])
+            transitions.append({'from':start,'to':end,'z':z,'start':values[0],'end':values[-1]})
+            for axis in range(2):
+                if not all(math.isfinite(v[axis]) for v in values): bad.append(f'nonfinite route during {start}->{end} at {z}')
+                variation=sum(abs(values[i+1][axis]-values[i][axis]) for i in range(50))
+                if variation > abs(values[-1][axis]-values[0][axis])+.001: bad.append(f'route oscillates during {start}->{end} at {z}')
     # Interrupted transitions must start from the current route, not jump back to a prior route.
-    pg.evaluate('__app.setBiome(0,true);__app.setBiome(1);__app.S.biomeT=.35')
-    before=pg.evaluate('[__app.pathX(150),__app.roadY(150)]')
-    pg.evaluate('__app.setBiome(3)')
-    after=pg.evaluate('[__app.pathX(150),__app.roadY(150)]')
-    if max(abs(a-b) for a,b in zip(before,after)) > .02: bad.append('interrupted scenery change jumps route')
+    triples = [(0,1,3)] + ([(1,orbit,4),(orbit,0,orbit)] if orbit >= 0 else [])
+    for start, mid, end in triples:
+        delta=pg.evaluate("""([start,mid,end])=>{
+          __app.setBiome(start,true);__app.setBiome(mid);__app.S.biomeT=.35;
+          const before=[__app.pathX(10000),__app.roadY(10000)];__app.setBiome(end);
+          return Math.max(...before.map((v,i)=>Math.abs(v-[__app.pathX(10000),__app.roadY(10000)][i])));
+        }""",[start,mid,end])
+        if not math.isfinite(delta) or delta > .02: bad.append(f'interrupted {start}->{mid}->{end} jumps route: {delta}')
+    # The suspended road must also render during mixed land/space transitions,
+    # when CPU route interpolation alone cannot catch a missing shader weight.
+    if orbit >= 0:
+        for start, end, z in ((1,orbit,1600),(orbit,3,10000)):
+            pg.evaluate("""([start,end,z])=>{
+              __app.S.steady=null;__app.S.rpm=0;__app.S.ambient=0;
+              __app.setBiome(start,true);__app.setBiome(end);__app.S.biomeT=.5;__app.S.vis=z;
+            }""",[start,end,z])
+            pg.wait_for_timeout(150)
+            pix=pg.evaluate('__app.pixel()')
+            if pix['mean'] < 8 or pix['max']-pix['min'] < 25: bad.append(f'blank mixed land/space frame {start}->{end} at {z}')
+            pg.screenshot(path=str(OUT/f'blend-{start}-{end}-{z}.png'))
     pg.wait_for_timeout(1000)
-    replay = pg.evaluate("""()=>{
-      __app.setBiome(3,true);__app.S.seed=7;__app.S.vis=1234;__app.S.dist=456;__app.S.map.gamma=2;
-      __app.ride.startRecording('endless-cockpit');const file=__app.ride.stopRecording();
-      __app.setBiome(0,true);__app.S.seed=1;__app.S.vis=9;__app.S.dist=1;__app.S.map.gamma=1;
-      __app.ride.startReplay({...file,durationMs:1000});__app.ride.tick(performance.now()+20);
-      const out=[__app.S.biomeNext,__app.S.seed,__app.S.vis,__app.S.dist,__app.S.map.gamma];
-      __app.ride.stopReplay();return out;
-    }""")
-    if replay != [3,7,1234,456,2]: bad.append(f'replay did not restore initial route: {replay}')
+    for initial_scene in ([3,orbit] if orbit >= 0 else [3]):
+        replay = pg.evaluate("""(scene)=>{
+          __app.setBiome(scene,true);__app.setTod(3,true);__app.S.seed=7;__app.S.vis=1234;__app.S.dist=456;__app.S.map.gamma=2;
+          __app.ride.startRecording('endless-cockpit');const file=__app.ride.stopRecording();
+          __app.setBiome(0,true);__app.setTod(1,true);__app.S.seed=1;__app.S.vis=9;__app.S.dist=1;__app.S.map.gamma=1;
+          __app.ride.startReplay({...file,durationMs:1000});__app.ride.tick(performance.now()+20);
+          const out=[__app.S.biomeNext,__app.S.seed,__app.S.vis,__app.S.dist,__app.S.map.gamma,__app.S.tod];
+          __app.ride.stopReplay();return out;
+        }""",initial_scene)
+        replays.append(replay)
+        if replay != [initial_scene,7,1234,456,2,3]: bad.append(f'replay did not restore initial route: {replay}')
     # Real MediaRecorder download: its onstop callback runs after the UI clears recorder.
     pg.click('#session-button',force=True);pg.check('#rec-video');pg.click('#rec-toggle');pg.wait_for_timeout(1200)
     with pg.expect_download(predicate=lambda d:d.suggested_filename.endswith(('.webm','.mp4')),timeout=30000) as download:
@@ -75,6 +99,6 @@ with sync_playwright() as p:
     if errors: bad.extend(errors)
     b.close()
 srv.shutdown()
-(OUT/'scenery-results.json').write_text(json.dumps({'profiles':profiles,'errors':bad},indent=2))
+(OUT/'scenery-results.json').write_text(json.dumps({'profiles':profiles,'transitions':transitions,'replays':replays,'errors':bad},indent=2))
 print('\n'.join(bad) or 'scenery checks passed')
 sys.exit(bool(bad))

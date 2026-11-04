@@ -37,7 +37,8 @@ bad = 0
 with sync_playwright() as p:
     b = p.chromium.launch(channel='chrome', args=['--enable-gpu', '--use-angle=metal', '--ignore-gpu-blocklist'])
     for page in PAGES:
-        for name, w, h, dpr, mobile in SIZES:
+        sizes = SIZES + ([('compact-upright', 320, 568, 2, True), ('compact-sideways', 568, 320, 2, True)] if page == 'endless-cockpit.html' else [])
+        for name, w, h, dpr, mobile in sizes:
             c = b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=dpr, is_mobile=mobile, has_touch=mobile)
             pg = c.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)[:120]))
             pg.goto(f'http://127.0.0.1:{srv.server_port}/{page}')

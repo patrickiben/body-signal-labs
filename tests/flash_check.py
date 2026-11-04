@@ -74,14 +74,16 @@ with sync_playwright() as p:
             pg.click('#demo-button'); pg.wait_for_timeout(1500)
             capture('demo', 9000)
             if page == 'endless-cockpit.html':
+                scene_names = pg.evaluate('__app.BIOMES.map(b=>b.name)')
                 pg.click('#demo-button')
                 pg.evaluate("__app.setAuto(false); __app.S.steady=130; __app.setLook('wild'); window.__cyc=setInterval(()=>__app.nextBiome(),2000)")
                 pg.wait_for_function('__app.S.rpm > 125')
-                capture('hardest', 9000)
+                # Include the last world and its return to the first at top cadence.
+                capture('hardest', max(9000, len(scene_names) * 2000 + 1000))
                 pg.evaluate('clearInterval(window.__cyc)')
                 # Check each world explicitly: a single final scene can miss the dense
                 # canopy, narrow rails or farm silhouettes that carry the most contrast.
-                for biome in range(5):
+                for biome in range(len(scene_names)):
                     pg.evaluate(f"__app.setBiome({biome},true); __app.S.vis=240; __app.S.steady=100; __app.setTod(1,true)")
                     pg.wait_for_timeout(1500)
                     pg.evaluate("window.__tod=setInterval(()=>__app.setTod(__app.S.tod===1?3:1,true),1500)")
@@ -95,6 +97,15 @@ with sync_playwright() as p:
                         pg.evaluate(f'__app.setBiome(1,true); __app.S.vis=240; __app.setTod({tod},true)')
                         pg.wait_for_function(f'Math.abs(__app.S.dusk-({0.18 if tod == 1 else 1}))<.015', timeout=20000)
                         capture(f'tropical {look} held {label}')
+                # Rainbow orbit uses a bright suspended road against space. Cover
+                # its sharp Clear daylight and feedback-heavy Wild night at top
+                # cadence; the time-flip case above already exercises both light
+                # states continuously, without multiplying every setting pair.
+                orbit = scene_names.index('Rainbow orbit')
+                for look, tod, label in (('clear', 1, 'golden'), ('wild', 3, 'night')):
+                    pg.evaluate(f"__app.setLook('{look}');__app.setBiome({orbit},true);__app.S.vis=240;__app.S.steady=130;__app.setTod({tod},true)")
+                    pg.wait_for_function(f'Math.abs(__app.S.dusk-({0.18 if tod == 1 else 1}))<.015 && __app.S.rpm>125', timeout=20000)
+                    capture(f'Rainbow orbit {look} held {label}')
             else:
                 for mode in ('ride', 'train'):
                     pg.click(f'[data-mode={mode}]'); pg.wait_for_timeout(2500)

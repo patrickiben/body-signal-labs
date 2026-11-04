@@ -1,6 +1,6 @@
 /* endless.js: Endless Cockpit. A procedural road that keeps pace with your pedaling.
-   Five landscapes have their own terrain, roadside objects and route profiles, with an optional dream-feedback loop.
-   Cadence sets the speed, and each crank revolution sends a ring of light down the road.
+   Six landscapes have their own terrain, roadside objects and route profiles, with an optional dream-feedback loop.
+   Cadence sets the speed; on the five land routes, each crank revolution sends a ring of light down the road.
    Plants and occasional wildlife have fixed seeded world positions across the landscapes; animals are static. */
 (function () {
   'use strict';
@@ -16,7 +16,8 @@
     { name: 'Meadow lanes', description: 'Country lane · rolling fields, split-rail fences and farmsteads', skyTop: '#5596c6', skyHz: '#d8e8d2', sun: '#fff0c6', ground: '#91a84e', rock: '#87965c', fog: '#cedbc0', edge: '#e4d59a', amp: 14, ridge: .1, trees: .2, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0016, sunAz: -.7, sunEl: .55, coast: 0, forest: 0, meadow: 1, alpine: 0, canyon: 0, width: 2, turn: .95, rise: .5, winding: .7 },
     { name: 'Alpine lake', description: 'Lakeside pass · turquoise water, snowy peaks and mountain pines', skyTop: '#367bb3', skyHz: '#d3e7ee', sun: '#fff3d9', ground: '#6b8968', rock: '#8c9699', fog: '#c2d9df', edge: '#b4dbe2', amp: 128, ridge: .7, trees: .2, sea: 1, snow: 1, strata: 0, grid: 0, fogK: .0016, sunAz: .7, sunEl: .5, coast: 0, forest: 0, meadow: 0, alpine: 1, canyon: 0, width: 2.1, turn: 1.4, rise: .7, winding: .65 },
     { name: 'Red canyon', description: 'Desert passage · sandstone walls, layered mesas and saguaro cacti', skyTop: '#5c9db7', skyHz: '#f5cba0', sun: '#ffe1b0', ground: '#c18a55', rock: '#c67246', fog: '#d8b18a', edge: '#ecc39a', amp: 72, ridge: .8, trees: 0, sea: 0, snow: 0, strata: 1, grid: 0, fogK: .0022, sunAz: -.9, sunEl: .5, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 1, width: 2.35, turn: .75, rise: .25, winding: 1.45 },
-  ].map((b) => ({ ...b, c: { skyTop: srgb(b.skyTop), skyHz: srgb(b.skyHz), sun: srgb(b.sun), ground: srgb(b.ground), rock: srgb(b.rock), fog: srgb(b.fog), edge: srgb(b.edge) } }));
+    { name: 'Rainbow orbit', description: 'Rainbow skyway · a suspended ribbon through stars and a ringed planet', skyTop: '#171b42', skyHz: '#302449', sun: '#e0e8ff', ground: '#654a92', rock: '#6c80a8', fog: '#181b35', edge: '#aba9ff', amp: 0, ridge: 0, trees: 0, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0008, sunAz: -.4, sunEl: .6, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 1, width: 3.5, turn: 2.1, rise: 1.05, winding: .55 },
+  ].map((b) => ({ orbit: 0, ...b, c: { skyTop: srgb(b.skyTop), skyHz: srgb(b.skyHz), sun: srgb(b.sun), ground: srgb(b.ground), rock: srgb(b.rock), fog: srgb(b.fog), edge: srgb(b.edge) } }));
 
   /* ---- the same road in JS and GLSL, so the camera, the grade readout and the picture agree ---- */
   const S = {
@@ -26,7 +27,7 @@
   };
   const MAX_SPEED = 7, M_PER_MI = 1609.34, GRADE_K = 5;
   const routeValue = (key) => { const t = S.biomeT * S.biomeT * (3 - 2 * S.biomeT); return lerp((S.fromMix || BIOMES[S.biome])[key], BIOMES[S.biomeNext][key], t); };
-  const WORLD_KEYS = ['coast', 'forest', 'meadow', 'alpine', 'canyon'];
+  const WORLD_KEYS = ['coast', 'forest', 'meadow', 'alpine', 'canyon', 'orbit'];
   const routeBlend = (z, scene, elevation) => BIOMES.reduce((sum, b, i) => {
     const weight = scene ? scene[WORLD_KEYS[i]] : routeValue(WORLD_KEYS[i]);
     if (weight < .000001) return sum;
@@ -53,13 +54,13 @@ uniform vec3 uCam,uRight,uUp,uFwd;
 uniform sampler2D uN,uS;
 uniform vec3 uSkyTop,uSkyHz,uSunC,uGround,uRock,uFog,uEdge,uSunDir;
 uniform float uAmp,uRidge,uSea,uSnow,uStrata,uGrid,uTrees,uDusk,uFogK;
-uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uWidth;
+uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uOrbit,uWidth;
 uniform vec4 uRing[RINGS];
-uniform vec4 uRouteA; uniform float uRouteB;
+uniform vec4 uRouteA; uniform float uRouteB,uRouteC;
 float routeX(float z,float turn,float winding){z*=winding;return turn*(14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7));}
 float routeY(float z,float rise,float winding){z*=winding;return rise*(7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1));}
-float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);return v;}
-float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);return v;}
+float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);return v;}
+float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);return v;}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return textureLod(uN,(i+f+.5)/256.,0.).r;}
 const mat2 R=mat2(.8,.6,-.6,.8);
 float fbm2(vec2 p){return (vn(p)+.5*vn(R*p*2.03+3.1))/1.5;}
@@ -337,7 +338,9 @@ float height(vec2 p,bool hi){
     float wall=smoothstep(12.+n*12.,23.+n*16.,d);
     h+=(ry+shoulder*1.2+wall*(22.+floor(n*5.)*7.))*uCanyon;
   }
-  return h;
+  // Land weights sum to 1-uOrbit during a space transition; preserve the
+  // full shared route elevation so the temporary ground stays under the camera.
+  return h+ry*uOrbit;
 }
 float surface(vec2 p,bool hi){float h=height(p,hi);return mix(h,max(h,SEA),uSea);}
 float march(vec3 ro,vec3 rd,out float last){
@@ -386,16 +389,143 @@ vec3 sky(vec3 rd,vec2 sv){
   skyTrail=exp(-abs(rd.y-top)*90.)*a*.35*smoothstep(-.02,.01,rd.y);
   return c;
 }
+// A sky-fixed star field and original ringed planet. No animated sparkle or
+// repeating transverse track stripes: the rainbow runs along the direction of travel.
+vec3 orbitSky(vec3 rd){
+  vec3 c=mix(vec3(.006,.009,.032),vec3(.018,.013,.055),.5+.5*rd.y);
+  vec2 cloud=vec2(rd.x*3.2+rd.z*.8,rd.y*3.4+rd.z*.3)+uSeed*.17;
+  float mist=fbm4(cloud+4.2), dust=fbm2(cloud*1.8-2.);
+  float band=exp(-pow((rd.y-.18-rd.x*.22)*3.2,2.));
+  c+=mix(vec3(.014,.025,.07),vec3(.065,.013,.065),dust)*band*smoothstep(.26,.78,mist);
+  vec2 uv=vec2(atan(rd.x,rd.z),asin(clamp(rd.y,-1.,1.)))*vec2(62.,55.);
+  vec2 cell=floor(uv),f=fract(uv)-.5;
+  float h=fract(sin(dot(cell,vec2(127.1,311.7))+uSeed)*43758.54);
+  if(h>.92){
+    float radius=.025+.055*fract(h*91.);
+    float aa=max(.025,70./uRes.y);
+    float star=(1.-smoothstep(radius-aa,radius+aa,length(f)))*min(1.,radius*radius/(aa*aa));
+    c+=mix(vec3(.3,.46,.7),vec3(.7,.53,.3),fract(h*33.))*star*.7;
+  }
+  vec3 center=normalize(vec3(.64,.34,1.));
+  vec3 pr=normalize(cross(vec3(0.,1.,0.),center)),pu=cross(center,pr);
+  float face=dot(rd,center);
+  if(face>0.){
+    vec2 q=vec2(dot(rd,pr),dot(rd,pu))/face;
+    vec2 r=mat2(.94,.342,-.342,.94)*q;
+    float aa=2./uRes.y,rad=length(vec2(r.x,r.y/.26));
+    float ring=smoothstep(.25-aa,.25+aa,rad)*(1.-smoothstep(.42-aa,.42+aa,rad));
+    vec3 ringC=mix(vec3(.12,.18,.28),vec3(.31,.25,.16),smoothstep(.26,.41,rad));
+    ringC*=.8+.2*sin(rad*75.);
+    if(r.y>0.)c=mix(c,ringC,ring*.78);
+    float disk=1.-smoothstep(.202-aa,.202+aa,length(q));
+    if(disk>0.){
+      vec2 p=q/.202;
+      vec3 n=vec3(p,sqrt(max(0.,1.-dot(p,p))));
+      float light=.22+.78*max(0.,dot(n,normalize(vec3(-.6,.7,.8))));
+      float bands=.5+.5*sin(p.y*17.+sin(p.x*3.)*.8);
+      vec3 planet=mix(vec3(.14,.24,.31),vec3(.48,.31,.2),smoothstep(.3,.75,bands))*light;
+      planet+=vec3(.04,.09,.15)*pow(1.-n.z,3.);
+      c=mix(c,planet,disk);
+    }
+    if(r.y<=0.)c=mix(c,ringC,ring*.88);
+  }
+  vec3 moonDir=normalize(vec3(-.68,.14,1.));
+  float md=length(rd-moonDir),maa=2./uRes.y;
+  float moon=1.-smoothstep(.052-maa,.052+maa,md);
+  c=mix(c,vec3(.12,.18,.27)*(.6+.4*smoothstep(-.052,.052,rd.x-moonDir.x)),moon);
+  return c;
+}
+vec3 orbitRainbow(float x){
+  float s=clamp(x,0.,.9999)*6.,i=floor(s),f=s-i;
+  vec3 a,b;
+  if(i<1.){a=vec3(.56,.035,.075);b=vec3(.72,.19,.025);}
+  else if(i<2.){a=vec3(.72,.19,.025);b=vec3(.64,.53,.035);}
+  else if(i<3.){a=vec3(.64,.53,.035);b=vec3(.035,.36,.13);}
+  else if(i<4.){a=vec3(.035,.36,.13);b=vec3(.025,.36,.55);}
+  else if(i<5.){a=vec3(.025,.36,.55);b=vec3(.065,.12,.58);}
+  else{a=vec3(.065,.12,.58);b=vec3(.37,.065,.49);}
+  return mix(a,b,smoothstep(.22,.78,f));
+}
+// Intersect a finite ribbon, without an infinite ground plane below it. A missed
+// crossing continues to the next hill so the track can curve across open space.
+float orbitMarch(vec3 ro,vec3 rd){
+  float a=.2,ga=ro.y+rd.y*a-roadY(ro.z+rd.z*a);
+  for(int i=0;i<120;i++){
+    if(a>=680.)break;
+    float b=min(680.,a+max(.55,a*.042));
+    vec3 p=ro+rd*b;float gb=p.y-roadY(p.z);
+    if(ga*gb<=0.){
+      float lo=a,hi=b,glo=ga;
+      for(int j=0;j<6;j++){
+        float m=(lo+hi)*.5;vec3 q=ro+rd*m;float gm=q.y-roadY(q.z);
+        if(glo*gm>0.){lo=m;glo=gm;}else hi=m;
+      }
+      float hit=(lo+hi)*.5;vec3 q=ro+rd*hit;
+      if(abs(q.x-pathX(q.z))<uWidth)return hit;
+    }
+    a=b;ga=gb;
+  }
+  return 1e4;
+}
+vec3 orbitWorld(vec3 ro,vec3 rd){
+  vec3 space=orbitSky(rd),c=space;
+  float t=orbitMarch(ro,rd);
+  if(t<680.){
+    vec3 p=ro+rd*t;float dx=p.x-pathX(p.z),d=abs(dx);
+    c=orbitRainbow((dx/uWidth+1.)*.5)*(.8+.12*pow(1.-d/uWidth,2.));
+    float seam=1.-smoothstep(.025,.07,uWidth-d);
+    c=mix(c,vec3(.36,.42,.58),seam*.8);
+    // A calm continuous edge glow gives the floating road a visible boundary.
+    c+=vec3(.055,.09,.15)*exp(-pow((d-uWidth+.14)/.12,2.));
+    c=mix(c,space,smoothstep(370.,680.,t));
+  }
+  if(rd.z>.02){
+    // Sparse orbital gantries repeat every 140 m, with open centers and a low
+    // blue-metal frame. Their fixed positions give depth without a flashing pattern.
+    for(int k=4;k>=0;k--){
+      float z=(floor(ro.z/140.)+float(k)+1.)*140.;
+      float ot=(z-ro.z)/rd.z;
+      if(ot>t||ot>620.||ot<.3)continue;
+      vec3 p=ro+rd*ot;vec2 q=vec2(p.x-pathX(z),p.y-roadY(z));
+      float aa=max(.004,ot/(uRes.y*uFocal));
+      float radius=uWidth+.32;
+      float frame=foliageBand(length(q)-radius,.085,aa)*smoothstep(-aa,aa,q.y);
+      float inset=foliageBand(length(q)-(radius-.12),.025,aa)*smoothstep(-aa,aa,q.y);
+      vec3 arch=mix(vec3(.035,.07,.15),vec3(.16,.24,.4),clamp(q.y/radius,0.,1.));
+      c=mix(c,arch,frame*(1.-smoothstep(420.,620.,ot)));
+      c=mix(c,vec3(.22,.34,.51),inset*.65*(1.-smoothstep(420.,620.,ot)));
+    }
+    // Continuous low guardrails are real capsules above the ribbon, so open
+    // space is visible between their illuminated tops and the track surface.
+    for(int k=0;k<22;k++){
+      float za=(floor(ro.z/14.)+float(k))*14.,zb=za+14.;
+      for(int side=0;side<2;side++){
+        float sg=side==0?-1.:1.;
+        vec3 a=vec3(pathX(za)+sg*(uWidth+.08),roadY(za)+.38,za);
+        vec3 b=vec3(pathX(zb)+sg*(uWidth+.08),roadY(zb)+.38,zb);
+        vec3 ba=b-a,oa=ro-a;
+        float bb=dot(ba,ba),br=dot(ba,rd),bo=dot(ba,oa),rr=dot(rd,oa);
+        float aa=bb-br*br,ab=bb*rr-bo*br,ac=bb*dot(oa,oa)-bo*bo-.0036*bb;
+        float disc=ab*ab-aa*ac;if(disc<0.||aa<.001)continue;
+        float rt=(-ab-sqrt(disc))/aa,y=bo+rt*br;
+        if(rt<.1||rt>t||y<0.||y>bb)continue;
+        c=mix(c,vec3(.19,.27,.42),1.-smoothstep(180.,310.,rt));
+      }
+    }
+  }
+  return c*(1.-uDusk*.24);
+}
+
 void main(){
   vec2 sv=vUv*2.-1.;float asp=uRes.x/uRes.y;
   vec3 rd=normalize(uFwd*uFocal+uRight*sv.x*asp+uUp*sv.y);
   vec3 ro=uCam;
   skyTrail=0.;
-  vec3 skyc=sky(rd,sv);
+  vec3 skyc=uOrbit>.999?vec3(0.):sky(rd,sv);
   float trail=0.;
   vec3 col=skyc;
   float last;
-  float t=march(ro,rd,last);
+  float t=uOrbit>.999?1e4:march(ro,rd,last);
   if(t<680.){
     vec3 p=ro+rd*t;
     bool water=uSea>.5&&height(p.xz,false)<SEA+.25;
@@ -457,7 +587,7 @@ void main(){
   }
   // World-space roadside silhouettes: each has a fixed seeded position, parallax and terrain occlusion.
   // A bounded set of planes avoids expensive per-step tree geometry on mobile GPUs.
-  if(rd.z>.02){
+  if(rd.z>.02&&uOrbit<.999){
     for(int row=21;row>=0;row--){
       float spacing=14.; // fixed grid: scenery blends never rehash object positions
       float cell=floor(ro.z/spacing)+float(row)+1.;
@@ -580,6 +710,7 @@ void main(){
       }
     }
   }
+  if(uOrbit>.001){col=mix(col,orbitWorld(ro,rd),uOrbit);trail*=1.-uOrbit;skyTrail*=1.-uOrbit;}
   // alpha marks what may leave a trail: emitters and the spectrum ridge, never the sun or the sky
   o=vec4(col,max(trail,skyTrail));
 }`;
@@ -589,11 +720,11 @@ precision highp float;
 uniform vec3 uCam,uRight,uUp,uFwd; uniform float uFocal,uAsp,uZ,uPx,uSeed,uSpeedN;
 out float vA;
 float h(float n){return fract(sin(n)*43758.5453);}
-uniform vec4 uRouteA; uniform float uRouteB;
+uniform vec4 uRouteA; uniform float uRouteB,uRouteC;
 float routeX(float z,float turn,float winding){z*=winding;return turn*(14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7));}
 float routeY(float z,float rise,float winding){z*=winding;return rise*(7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1));}
-float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);return v;}
-float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);return v;}
+float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);return v;}
+float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);return v;}
 void main(){
   float i=float(gl_VertexID);
   float a=h(i*1.13),b=h(i*2.71),c=h(i*4.33);
@@ -709,7 +840,7 @@ void main(){
     <p class="sheet-intro">Everything you see here is a stated rule. There is no model and no server.</p>
     <table class="maptable"><tbody>
       <tr><th>Cadence</th><td>Sets the speed, and the zoom of the picture each frame, through the curve under Route.</td></tr>
-      <tr><th>Each revolution</th><td>Sends a ring of light down the road.</td></tr>
+      <tr><th>Each revolution</th><td>Sends a ring of light down the five land routes.</td></tr>
       <tr><th>Grade</th><td>The procedural road's slope changes your speed by up to 40%, never the zoom curve.</td></tr>
       <tr><th>Distance</th><td>Counts only the speed your cadence makes, never the slow drift at rest.</td></tr>
       <tr><th>Scenery</th><td>Five different routes: a cliffside coast, a tropical nature preserve, country lanes, an alpine lake and a sandstone canyon. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
@@ -1042,7 +1173,7 @@ void main(){
   if (!navigator.bluetooth) S.bt = 'unsupported';
 
   /* ---- ride sound: cadence-driven atoms, ported from the first version, off by default ---- */
-  const ATOMS = [[98, 130.81, 196, 246.94, 293.66, 392, 493.88], [110, 146.83, 220, 277.18, 329.63, 440, 554.37], [130.81, 164.81, 196, 261.63, 392, 523.25, 659.25], [123.47, 164.81, 246.94, 329.63, 493.94, 659.25, 987.77], [82.41, 110, 164.81, 220, 277.18, 329.63, 415.3]];
+  const ATOMS = [[98, 130.81, 196, 246.94, 293.66, 392, 493.88], [110, 146.83, 220, 277.18, 329.63, 440, 554.37], [130.81, 164.81, 196, 261.63, 392, 523.25, 659.25], [123.47, 164.81, 246.94, 329.63, 493.94, 659.25, 987.77], [82.41, 110, 164.81, 220, 277.18, 329.63, 415.3], [146.83, 196, 246.94, 293.66, 392, 493.88, 587.33]];
   let AC = null, sndOn = false, sndGain = null, sndDest = null, nextGrain = 0;
   const rideSoundStream = () => (sndOn && sndDest ? sndDest.stream : null);
   function curAtoms() { const a = ATOMS[S.biome], b = ATOMS[S.biomeNext], t = S.biomeT; return a.map((v, i) => lerp(v, b[i], t)); }
@@ -1135,7 +1266,7 @@ void main(){
   }
 
   /* ---- one scene's sky and land at a time of day: the road and the scene tiles both draw from this ---- */
-  const NUMS = ['amp', 'ridge', 'trees', 'sea', 'snow', 'strata', 'grid', 'fogK', 'sunAz', 'sunEl', 'coast', 'forest', 'meadow', 'alpine', 'canyon', 'width', 'turn', 'rise', 'winding'];
+  const NUMS = ['amp', 'ridge', 'trees', 'sea', 'snow', 'strata', 'grid', 'fogK', 'sunAz', 'sunEl', 'coast', 'forest', 'meadow', 'alpine', 'canyon', 'orbit', 'width', 'turn', 'rise', 'winding'];
   // The scene on screen right now, frozen, so a new choice blends from it instead of jumping back to a scene's start.
   function sceneNow() {
     const a = S.fromMix || BIOMES[S.biome], b = BIOMES[S.biomeNext], t = S.biomeT * S.biomeT * (3 - 2 * S.biomeT);
@@ -1158,7 +1289,7 @@ void main(){
       uSunC: mix3('sun').map((v, i) => lerp(v, [0.26, 0.29, 0.44][i], night * 0.96)),
       uGround: mix3('ground'), uRock: mix3('rock'), uFog: mix3('fog').map((v) => v * (1 - dusk * 0.86)), uEdge: mix3('edge'),
       uSunDir: [sx / sl, sunEl / sl, sz / sl],
-      uCoast: mixN('coast'), uForest: mixN('forest'), uMeadow: mixN('meadow'), uAlpine: mixN('alpine'), uCanyon: mixN('canyon'), uWidth: mixN('width'), uRouteA: ['coast','forest','meadow','alpine'].map(mixN), uRouteB: mixN('canyon'),
+      uCoast: mixN('coast'), uForest: mixN('forest'), uMeadow: mixN('meadow'), uAlpine: mixN('alpine'), uCanyon: mixN('canyon'), uOrbit: mixN('orbit'), uWidth: mixN('width'), uRouteA: ['coast','forest','meadow','alpine'].map(mixN), uRouteB: mixN('canyon'), uRouteC: mixN('orbit'),
       uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: dusk, uFogK: mixN('fogK'),
     };
   }
@@ -1303,7 +1434,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
 
       /* motes */
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
-      G.use(pMote, { uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: rw / rh, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpeedN: motion01(S.rpm), uEdge: land.uEdge, uRouteA: land.uRouteA, uRouteB: land.uRouteB });
+      G.use(pMote, { uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: rw / rh, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpeedN: motion01(S.rpm), uEdge: land.uEdge, uRouteA: land.uRouteA, uRouteB: land.uRouteB, uRouteC: land.uRouteC });
       if(S.look !== 'clear') gl.drawArrays(gl.POINTS, 0, 650);
       gl.disable(gl.BLEND);
 

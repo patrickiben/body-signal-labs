@@ -1,8 +1,20 @@
 # Validation
 
-Checked on 2026-11-02 and 2026-11-03 in Chrome 156 on an Apple M4 Max Mac. **No real cadence sensor or heart-rate strap has connected to either cockpit yet.** The checks a person can do with real gear are listed at the end. Autonomic Telemetry is validated in [its own repository](https://github.com/patrickiben/autonomic-telemetry/blob/main/docs/VALIDATION.md).
+Checked between 2026-11-02 and 2026-11-04 in Chrome 156 on an Apple M4 Max Mac. **No real cadence sensor or heart-rate strap has connected to either cockpit yet.** The checks a person can do with real gear are listed at the end. Autonomic Telemetry is validated in [its own repository](https://github.com/patrickiben/autonomic-telemetry/blob/main/docs/VALIDATION.md).
 
 A browser test cannot pair a real Bluetooth device, and a page that opens Chrome's device list closes headless Chrome, so every sensor state below uses a stub of `navigator.bluetooth` that sends real packet bytes through the page's own parsers.
+
+## Rainbow orbit, 2026-11-04
+
+Rainbow orbit is appended as scene 5, preserving the existing five scene indices. Its finite rainbow ribbon, open space, ringed planet, moon and raised rails were inspected in rendered browser captures. The route/camera calculation, thumbnails, optional ride sound and saved/replayed scene state all include the sixth scene.
+
+The updated state suite passed **34/34** checks, including six visible phone tiles, selection, persistence and automatic wrapping from orbit to coast. The scenery suite rendered all six routes at four travel positions; tested 15 long-distance transition paths and three interrupted transitions; checked mixed land/space frames; restored both alpine and orbit recordings; and produced an actual browser video download. This review caught and corrected a mixed-scene road-height mismatch and aligned the ribbon's bounded ray search with its 680 m fade distance.
+
+All **16 responsive layouts passed**: the existing 14 across both cockpits plus 320 × 568 and 568 × 320 Endless layouts. The compact landscape check caught an options/readouts overlap, now corrected. All six scene choices stay visible.
+
+The motion suite passed **28/28 cases** across normal and reduced motion. The six orbit-specific cases had 0% of regions above three flashes per second; the overall maximum was **21.4%**, below the 25% threshold. The maximum whole-frame count was **1**, below 3. These sampled cases do not establish personal motion comfort or cover saturated red flashes.
+
+All four pages passed the software-rendered smoke suite. A separate SwiftShader orbit ride produced a varied, nonblank frame with no page errors, adapting to a 188 × 106 scenery buffer; interface text remains at screen resolution. The low-resolution fallback is a compatibility path, not evidence of high frame rates on software renderers.
 
 ## Scenery revision, 2026-11-03
 
