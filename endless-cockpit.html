@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#101525">
 <title>Endless Cockpit</title>
-<meta name="description" content="A procedural road at dusk that keeps your pace: your cadence sets the speed, from a Bluetooth sensor, the keyboard or a steady setting.">
+<meta name="description" content="Five procedural cycling routes: coastal cliffs, pine forest, country lanes, an alpine lake and a sandstone canyon, moving at your cadence.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101525'/%3E%3Cpath d='M5 17h6l2.5-6 4 11 2.5-5H27' fill='none' stroke='%23b8b7ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
 :root {
@@ -305,11 +305,15 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
   .seg button, .seg-solo { padding: 5px 10px; min-height: 30px; font-size: 11px; }
 }
 
+.route-caption { margin: 0; color: var(--ink); font-size: 11px; line-height: 1.4; text-align: center; text-shadow: 0 1px 5px #101820; padding: 4px 12px; border-radius: 12px; background: rgba(12,22,25,.62); backdrop-filter: blur(8px); }
+@media (max-width: 860px) { .route-caption { max-width: 95%; font-size: 10px; padding: 3px 9px; } }
+@media (max-height: 520px) { .route-caption { display: none; } }
+
 </style>
 </head>
 <body>
 <main class="scene" id="scene" aria-label="Endless Cockpit">
-<canvas id="stage" role="img" aria-label="A procedural road at dusk that keeps your pace: your cadence sets the speed, from a Bluetooth sensor, the keyboard or a steady setting."></canvas>
+<canvas id="stage" role="img" aria-label="Five procedural cycling routes: coastal cliffs, pine forest, country lanes, an alpine lake and a sandstone canyon, moving at your cadence."></canvas>
 </main>
 <script>
 /* family.js: the same-tab bar shared by the suite's home page and its three apps, in the same order everywhere.
@@ -720,6 +724,7 @@ void main(){
 
     ride.startRecording = (app, synthetic) => {
       session = { t0: performance.now(), app, created: new Date().toISOString(), synthetic: !!synthetic, lanes: {} };
+      emit('recording', true);
       emit('state');
     };
     ride.noteLane = (name, value) => { if (session) (session.lanes[name] = session.lanes[name] || []).push([Math.round(performance.now() - session.t0), value]); };
@@ -760,7 +765,7 @@ void main(){
 </script>
 <script>
 /* endless.js: Endless Cockpit. A procedural road that keeps pace with your pedaling.
-   The scene is raymarched each frame, then fed through a zoom-feedback loop toward the vanishing point.
+   Five landscapes have their own terrain, roadside objects and route profiles, with an optional dream-feedback loop.
    Cadence sets the speed, and each crank revolution sends a ring of light down the road. */
 (function () {
   'use strict';
@@ -771,22 +776,33 @@ void main(){
   const RM = matchMedia('(prefers-reduced-motion: reduce)');
 
   const BIOMES = [
-    { name: 'Golden coast', skyTop: '#2e4f8a', skyHz: '#ffb077', sun: '#ffd49a', ground: '#55452e', rock: '#7a5a3c', fog: '#ffc898', edge: '#ffd36b', amp: 58, ridge: 0.38, trees: 0.25, sea: 1, snow: 0, strata: 0, grid: 0, fogK: 0.0034, sunAz: 0.12, sunEl: 0.1 },
-    { name: 'Misty pines', skyTop: '#1f3a50', skyHz: '#a7c9c2', sun: '#ffe8c6', ground: '#1e3a2f', rock: '#39494a', fog: '#b0d3cc', edge: '#7ff0dd', amp: 64, ridge: 0.22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: 0.0062, sunAz: -0.3, sunEl: 0.16 },
-    { name: 'Neon forest', skyTop: '#120829', skyHz: '#5e2496', sun: '#ff74d4', ground: '#120b26', rock: '#28144d', fog: '#7c42bb', edge: '#ef86ff', amp: 48, ridge: 0.55, trees: 0.8, sea: 0, snow: 0, strata: 0, grid: 1, fogK: 0.0052, sunAz: 0.02, sunEl: 0.07 },
-    { name: 'High alpine', skyTop: '#23548f', skyHz: '#c6def2', sun: '#fff2d8', ground: '#465660', rock: '#56626e', fog: '#d6e7f5', edge: '#9fe0ff', amp: 66, ridge: 0.7, trees: 0.1, sea: 0, snow: 1, strata: 0, grid: 0, fogK: 0.0027, sunAz: 0.42, sunEl: 0.26 },
-    { name: 'Red canyon', skyTop: '#472833', skyHz: '#d27f5c', sun: '#f2bd8c', ground: '#7a3b24', rock: '#a9522c', fog: '#eaa27a', edge: '#ff8f70', amp: 54, ridge: 0.8, trees: 0, sea: 0, snow: 0, strata: 1, grid: 0, fogK: 0.0039, sunAz: -0.16, sunEl: 0.09 },
+    { name: 'Golden coast', description: 'Cliffside cycleway · open sea, rock stacks and white guardrails', skyTop: '#397ab1', skyHz: '#abd6eb', sun: '#ffe7be', ground: '#6c8247', rock: '#a58d70', fog: '#9bbbc9', edge: '#e6c985', amp: 45, ridge: .38, trees: 0, sea: 1, snow: 0, strata: 0, grid: 0, fogK: .0018, sunAz: -.65, sunEl: .55, coast: 1, forest: 0, meadow: 0, alpine: 0, canyon: 0, width: 2.25, turn: 1.25, rise: .4, winding: .8 },
+    { name: 'Misty pines', description: 'Woodland trail · tall conifers, fern banks and a soft gravel path', skyTop: '#78a5b3', skyHz: '#d8ded0', sun: '#fff2c9', ground: '#3c6041', rock: '#768574', fog: '#b7c9b7', edge: '#9fc4aa', amp: 22, ridge: .22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .004, sunAz: -.5, sunEl: .52, coast: 0, forest: 1, meadow: 0, alpine: 0, canyon: 0, width: 1.65, turn: .75, rise: .3, winding: 1.15 },
+    { name: 'Meadow lanes', description: 'Country lane · rolling fields, split-rail fences and farmsteads', skyTop: '#5596c6', skyHz: '#d8e8d2', sun: '#fff0c6', ground: '#91a84e', rock: '#87965c', fog: '#cedbc0', edge: '#e4d59a', amp: 14, ridge: .1, trees: .2, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0016, sunAz: -.7, sunEl: .55, coast: 0, forest: 0, meadow: 1, alpine: 0, canyon: 0, width: 2, turn: .95, rise: .5, winding: .7 },
+    { name: 'Alpine lake', description: 'Lakeside pass · turquoise water, snowy peaks and mountain pines', skyTop: '#367bb3', skyHz: '#d3e7ee', sun: '#fff3d9', ground: '#6b8968', rock: '#8c9699', fog: '#c2d9df', edge: '#b4dbe2', amp: 128, ridge: .7, trees: .2, sea: 1, snow: 1, strata: 0, grid: 0, fogK: .0016, sunAz: .7, sunEl: .5, coast: 0, forest: 0, meadow: 0, alpine: 1, canyon: 0, width: 2.1, turn: 1.4, rise: .7, winding: .65 },
+    { name: 'Red canyon', description: 'Desert passage · sandstone walls, layered mesas and saguaro cacti', skyTop: '#5c9db7', skyHz: '#f5cba0', sun: '#ffe1b0', ground: '#c18a55', rock: '#c67246', fog: '#d8b18a', edge: '#ecc39a', amp: 72, ridge: .8, trees: 0, sea: 0, snow: 0, strata: 1, grid: 0, fogK: .0022, sunAz: -.9, sunEl: .5, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 1, width: 2.35, turn: .75, rise: .25, winding: 1.45 },
   ].map((b) => ({ ...b, c: { skyTop: srgb(b.skyTop), skyHz: srgb(b.skyHz), sun: srgb(b.sun), ground: srgb(b.ground), rock: srgb(b.rock), fog: srgb(b.fog), edge: srgb(b.edge) } }));
 
   /* ---- the same road in JS and GLSL, so the camera, the grade readout and the picture agree ---- */
   const S = {
     rpm: 0, rev: 0, demo: false, demoT: 0, bleT: -1e12, bt: 'idle', btName: '', speed: 0, dist: 0, vis: 40, zoom: 0, grade: 0, surge: 0, shake: 0, shakeV: 0, roll: 0,
-    map: { idle: 25, max: 95, maxZoom: 0.018, gamma: 1.6 }, dream: 0.55, wild: 0.35, seed: 0,
+    map: { idle: 25, max: 95, maxZoom: 0.018, gamma: 1.6 }, dream: 0.15, wild: 0.1, seed: 0,
     pedal: false, steady: null, ble: null, bleName: '', biome: 0, biomeNext: 0, biomeT: 1, dusk: 0.3, ambient: 2.2,
   };
   const MAX_SPEED = 18, M_PER_MI = 1609.34, GRADE_K = 5;
-  const pathX = (z) => 14 * Math.sin(z * 0.0113 + 1 + S.seed) + 6.5 * Math.sin(z * 0.0271 + 2.2 + S.seed * 1.7);
-  const roadY = (z) => 7 * Math.sin(z * 0.0071 + 0.4 + S.seed) + 3.4 * Math.sin(z * 0.0193 + 1.9 + S.seed * 2.3) + 1.1 * Math.sin(z * 0.0471 + 3.1);
+  const routeValue = (key) => { const t = S.biomeT * S.biomeT * (3 - 2 * S.biomeT); return lerp((S.fromMix || BIOMES[S.biome])[key], BIOMES[S.biomeNext][key], t); };
+  const WORLD_KEYS = ['coast', 'forest', 'meadow', 'alpine', 'canyon'];
+  const routeBlend = (z, scene, elevation) => BIOMES.reduce((sum, b, i) => {
+    const weight = scene ? scene[WORLD_KEYS[i]] : routeValue(WORLD_KEYS[i]);
+    if (weight < .000001) return sum;
+    const q = z * b.winding;
+    const v = elevation ? b.rise * (7*Math.sin(q*.0071+.4+S.seed)+3.4*Math.sin(q*.0193+1.9+S.seed*2.3)+1.1*Math.sin(q*.0471+3.1)) : b.turn * (14*Math.sin(q*.0113+1+S.seed)+6.5*Math.sin(q*.0271+2.2+S.seed*1.7));
+    return sum + weight * v;
+  }, 0);
+  // Blend evaluated route positions. Interpolating a sine's frequency would whip
+  // the camera through many cycles when scenery changes late in a long ride.
+  const pathX = (z, b) => routeBlend(z, b, false);
+  const roadY = (z, b) => routeBlend(z, b, true);
   const gradeAt = (z) => (roadY(z + 3) - roadY(z - 3)) / 6;
   const gradeFactor = (g) => clamp(1 - g * GRADE_K, 0.6, 1.35);
   const motion01 = (rpm) => {
@@ -802,39 +818,58 @@ uniform vec3 uCam,uRight,uUp,uFwd;
 uniform sampler2D uN,uS;
 uniform vec3 uSkyTop,uSkyHz,uSunC,uGround,uRock,uFog,uEdge,uSunDir;
 uniform float uAmp,uRidge,uSea,uSnow,uStrata,uGrid,uTrees,uDusk,uFogK;
-uniform float uSpark;
+uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uWidth;
 uniform vec4 uRing[RINGS];
-float pathX(float z){return 14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7);}
-float roadY(float z){return 7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1);}
+uniform vec4 uRouteA; uniform float uRouteB;
+float routeX(float z,float turn,float winding){z*=winding;return turn*(14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7));}
+float routeY(float z,float rise,float winding){z*=winding;return rise*(7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1));}
+float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);return v;}
+float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);return v;}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return textureLod(uN,(i+f+.5)/256.,0.).r;}
 const mat2 R=mat2(.8,.6,-.6,.8);
 float fbm2(vec2 p){return (vn(p)+.5*vn(R*p*2.03+3.1))/1.5;}
 float fbm4(vec2 p){float a=.5,s=0.;for(int i=0;i<4;i++){s+=a*vn(p);p=R*p*2.03+1.7;a*=.5;}return s/.9375;}
 const float SEA=-14.;
 float height(vec2 p,bool hi){
-  float px=pathX(p.y),ry=roadY(p.y),d=abs(p.x-px);
-  float t=smoothstep(4.,46.,d);
+  float px=pathX(p.y),ry=roadY(p.y),dx=p.x-px,d=abs(dx);
+  float shoulder=smoothstep(uWidth+.35,uWidth+3.,d);
   vec2 q=p*.0088+uSeed*3.;
-  q+=.55*vec2(vn(q*.73+1.3),vn(q*.73+4.1));          // bends the noise lattice out of sight
-  float n=hi?fbm4(q):fbm2(q);
-  float r=1.-abs(2.*fbm2(q*.63+9.)-1.);
-  float m=mix(n,r*r,uRidge);
-  float mid=vn(q*4.3+5.3)-.5;
-  float h=ry+t*max(0.,m-.27+mid*.16)*uAmp*(1.+d*.0016);
-  float far=smoothstep(110.,430.,d);
-  if(far>0.){float rr=1.-abs(2.*fbm2(q*.31+2.7)-1.);h+=far*rr*rr*uAmp*1.5;}
-  if(uTrees>0.)h+=smoothstep(4.,22.,d)*uTrees*pow(vn(p*.19),3.)*5.;
-  if(uSea>0.){float side=smoothstep(7.,70.,p.x-px);h=mix(h,SEA-5.,side*uSea);}
+  float n=fbm2(q),h=0.;
+  // Distinct landforms; uniform branches skip the inactive worlds on the GPU.
+  if(uCoast>.001){
+    float coast=ry+shoulder*(4.+n*16.)*smoothstep(2.,60.,-dx);
+    coast=mix(coast,SEA-5.,smoothstep(5.,21.,dx));
+    vec2 stack=vec2(dx-58.,mod(p.y+uSeed*17.,135.)-67.5);
+    coast=max(coast,SEA-4.+26.*(1.-smoothstep(7.,15.,length(stack))));
+    h+=coast*uCoast;
+  }
+  if(uForest>.001)h+=(ry+shoulder*(.5+n*3.5)+smoothstep(25.,120.,d)*n*15.)*uForest;
+  if(uMeadow>.001)h+=(ry+shoulder*(n-.35)*5.+smoothstep(20.,180.,d)*n*14.)*uMeadow;
+  if(uAlpine>.001){
+    float peaks=.6+.4*fbm2(vec2(p.y*.012,uSeed+5.));
+    float left=max(0.,1.-abs(dx+190.)/165.)*(72.+48.*peaks);
+    float right=max(0.,1.-abs(dx-320.)/145.)*(90.+55.*fbm2(q+7.));
+    float distant=smoothstep(320.,540.,d)*(40.+75.*fbm2(q*.7+2.));
+    float mountain=ry+shoulder*1.2+left+right+distant;
+    float lake=smoothstep(5.,23.,dx)*(1.-smoothstep(170.,245.,dx));
+    h+=mix(mountain,SEA-7.,lake)*uAlpine;
+  }
+  if(uCanyon>.001){
+    float wall=smoothstep(12.+n*12.,23.+n*16.,d);
+    h+=(ry+shoulder*1.2+wall*(22.+floor(n*5.)*7.))*uCanyon;
+  }
   return h;
 }
-float surface(vec2 p,bool hi){float h=height(p,hi);return uSea>0.?max(h,SEA):h;}
+float surface(vec2 p,bool hi){float h=height(p,hi);return mix(h,max(h,SEA),uSea);}
 float march(vec3 ro,vec3 rd,out float last){
-  float t=.8,h=0.;last=0.;
-  for(int i=0;i<76;i++){
+  float t=.8,h=0.;last=0.;bool found=false;
+  for(int i=0;i<140;i++){
     vec3 p=ro+rd*t;h=p.y-surface(p.xz,false);
-    if(h<.002*t||t>680.)break;
-    last=t;t+=max(h*.62,.03+t*.011);
+    if(h<.002*t){found=true;break;}
+    if(t>680.)break;
+    last=t;t+=max(.3,t*.045);
   }
+  if(!found)return 1e4;
   if(t<680.&&last>0.){float a=last,b=t;for(int i=0;i<5;i++){float m=.5*(a+b);vec3 q=ro+rd*m;if(q.y-surface(q.xz,false)>0.)a=m;else b=m;}t=.5*(a+b);}
   return t;
 }
@@ -843,12 +878,12 @@ vec3 sky(vec3 rd,vec2 sv){
   float y=max(rd.y,0.);
   vec3 c=mix(uSkyHz,uSkyTop,pow(y,.52));
   float s=max(dot(rd,uSunDir),0.);
-  c+=uSunC*(pow(s,380.)*5.+pow(s,26.)*.42+pow(s,5.)*.2);
+  c+=uSunC*(pow(s,950.)*2.5+pow(s,56.)*.15);
   // cloud deck
   if(rd.y>.004){
     vec2 cp=rd.xz/(rd.y+.13)*1.25+vec2(uT*.006,uCam.z*.0009);
     float cl=fbm4(cp);
-    float cov=smoothstep(.46,.84,cl);
+    float cov=smoothstep(.57,.88,cl);
     vec3 cc=mix(uFog*.9,uSunC*1.02,.3+.55*pow(s,3.));
     c=mix(c,cc,cov*.62*smoothstep(.004,.13,rd.y));
   }
@@ -881,10 +916,10 @@ void main(){
   float trail=0.;
   vec3 col=skyc;
   float last;
-  float t=rd.y<.32?march(ro,rd,last):1e4;
+  float t=march(ro,rd,last);
   if(t<680.){
     vec3 p=ro+rd*t;
-    bool water=uSea>0.&&p.y<=SEA+.02;
+    bool water=uSea>.5&&height(p.xz,false)<SEA+.25;
     float e=.05+t*.0018;
     vec3 N=normalize(vec3(surface(p.xz-vec2(e,0.),true)-surface(p.xz+vec2(e,0.),true),2.*e,surface(p.xz-vec2(0.,e),true)-surface(p.xz+vec2(0.,e),true)));
     float px=pathX(p.z),d=abs(p.x-px),rel=p.y-roadY(p.z);
@@ -892,7 +927,8 @@ void main(){
     vec3 alb=mix(uGround*.75,uGround*1.55,dn);
     float sl=1.-N.y;
     alb=mix(alb,uRock,smoothstep(.1,.42,sl+dn*.14-.07));
-    if(uSnow>0.)alb=mix(alb,vec3(.84,.88,.96),uSnow*smoothstep(14.,44.,rel+dn*22.)*smoothstep(.62,.22,sl));
+    if(uSnow>0.)alb=mix(alb,vec3(.84,.88,.96),uSnow*smoothstep(33.,65.,rel+dn*15.)*(1.-smoothstep(.3,.68,sl)));
+    if(uMeadow>0.) { float field=step(.48,fract(p.x*.024+sin(p.z*.012)*.2)); alb=mix(alb,mix(vec3(.19,.28,.055),vec3(.34,.39,.08),field),uMeadow*.65*smoothstep(4.,9.,d)); }
     if(uStrata>0.)alb*=mix(1.,.74+.3*sin(rel*.85+dn*3.5),uStrata);
     if(uGrid>0.){vec2 g=abs(fract(p.xz*.12)-.5);float gl=smoothstep(.47,.5,max(g.x,g.y));alb+=uEdge*gl*.32*uGrid*exp(-t*.012);}
     float dif=clamp(dot(N,uSunDir),0.,1.);
@@ -903,23 +939,24 @@ void main(){
     if(water){
       vec3 W=normalize(vec3((vn(p.xz*.3+uT*.5)-.5)*.14,1.,(vn(p.xz*.27-uT*.4)-.5)*.14));
       vec3 rf=reflect(rd,W);
-      float keep=skyTrail;c=mix(uFog*.22+uSkyTop*.18,sky(vec3(rf.x,abs(rf.y),rf.z),vec2(0.)),.72);skyTrail=keep;
+      float keep=skyTrail;c=mix(mix(vec3(.015,.16,.26),vec3(.015,.26,.25),uAlpine),sky(vec3(rf.x,abs(rf.y),rf.z),vec2(0.)),.22+.3*pow(1.-max(0.,dot(-rd,W)),3.));
+      c+=vec3(.12,.22,.19)*pow(max(0.,sin(p.z*.8+p.x*.17+uT)),12.)*.2;skyTrail=keep;
       c+=uSunC*pow(max(dot(rf,uSunDir),0.),190.)*7.;
     }
     // the road
-    float rm=1.-smoothstep(2.,2.55,d);
+    float rm=1.-smoothstep(uWidth-.12,uWidth+.12,d);
     if(!water){
-      vec3 asphalt=mix(vec3(.022,.023,.03),uFog*.05,.4)+alb*.04;
+      vec3 asphalt=mix(vec3(.07,.075,.07),vec3(.31,.25,.16),uForest*.95+uCanyon*.35)*( .88+.18*dn);
       c=mix(c,asphalt*(uSunC*dif*1.2+amb),rm);
     }
     float em=0.;vec3 emC=vec3(0.);
     if(rm>0.){
       float dash=step(fract(p.z/max(uBeat*.5,1.)),.5)*(1.-smoothstep(.05,.1,abs(p.x-px)));
-      emC+=uEdge*dash*.32*rm*smoothstep(2.,16.,t);
+      emC+=uEdge*dash*.045*rm*smoothstep(2.,16.,t)*(1.-uForest);
     }
-    float side=exp(-pow((d-2.25)/.09,2.));
+    float side=exp(-pow((d-uWidth)/.045,2.));
     float spark=pow(vn(vec2(p.z*.9,uT*1.3)),6.)*7.;
-    emC+=uEdge*side*(.3+uSpark*spark*.75);
+    emC+=uEdge*side*(.055+uSpark*spark*.2);
     // rings of light that run ahead of you
     for(int i=0;i<RINGS;i++){
       vec4 r=uRing[i];
@@ -930,13 +967,91 @@ void main(){
       float g=exp(-pow((p.z-zr)/w,2.))*exp(-r.y*(wide?2.6:1.9))*r.z;
       g*=exp(-d*(wide?.03:.3))*(.12+.88*smoothstep(1.,20.,t));
       g*=smoothstep(46.,14.,zr-uCam.z);    // rings fade before the horizon, where they would stack into a flashing band
-      emC+=(wide?mix(uEdge,vec3(1.),.25):uEdge*1.2)*g*(wide?.22:1.25);
+      emC+=(wide?mix(uEdge,vec3(1.),.25):uEdge*1.2)*g*(wide?.15:.5);
     }
     float fog=1.-exp(-pow(t*uFogK,1.55));
     vec3 fogC=mix(uFog,uSunC,pow(max(dot(rd,uSunDir),0.),7.)*.55)*(1.-uDusk*.55);
     col=mix(c,fogC,fog)+emC*exp(-t*.0085);
     col=mix(col,skyc,smoothstep(590.,680.,t));
     trail=clamp(dot(emC,vec3(.4))*exp(-t*.0085),0.,1.);
+  }
+  // World-space roadside silhouettes: each has a fixed seeded position, parallax and terrain occlusion.
+  // A bounded set of planes avoids expensive per-step tree geometry on mobile GPUs.
+  if(rd.z>.02){
+    for(int row=21;row>=0;row--){
+      float cell=floor(ro.z/14.)+float(row)+1.;
+      float z=cell*14.;
+      float ot=(z-ro.z)/rd.z;
+      if(ot>t||ot>300.||ot<.2)continue;
+      vec3 hit=ro+rd*ot;
+      for(int sideI=0;sideI<2;sideI++){
+        float signX=sideI==0?-1.:1.;
+        float h=fract(sin(cell*12.71+signX*91.+uSeed)*43758.54);
+        float offset=uWidth+2.4+h*7.;
+        float x=pathX(z)+signX*offset;
+        float dx=hit.x-x;
+        if(abs(dx)>6.)continue;
+        float base=height(vec2(x,z),false), y=hit.y-base;
+        float treeH=7.+h*9., treeW=1.8+h*1.6;
+        float pine=0.;
+        for(int tier=0;tier<4;tier++){
+          float by=1.4+float(tier)*treeH*.16, top=by+treeH*.48;
+          float radius=treeW*(1.-float(tier)*.17)*(top-y)/(top-by);
+          radius*=.86+.14*sin(y*8.+h*29.)+.06*sin(y*23.+h*7.);
+          pine=max(pine,step(by,y)*step(y,top)*step(abs(dx),radius));
+        }
+        float trunk=step(abs(dx),.16)*step(0.,y)*step(y,treeH*.66);
+        float forestAlpha=uForest+uAlpine*step(h,.65)*step(signX,0.);
+        float silhouette=max(pine,trunk)*forestAlpha;
+        vec3 obj=mix(vec3(.14,.085,.04),vec3(.025,.13,.075)*(.8+.28*h+.3*dx/treeW+.16*sin(y*5.)+.18*step(0.,dx)),pine);
+        // Country trees have round crowns; farms sit behind the split-rail fence.
+        float crownShape=length(vec2(dx/(2.7+h*1.5),(y-5.2)/(2.7+h)));
+        float crown=step(crownShape,1.+.06*sin(dx*8.)*sin(y*7.));
+        float country=(max(trunk*step(y,5.),crown))*step(h,.35)*uMeadow;
+        if(country>silhouette){silhouette=country;obj=mix(vec3(.16,.1,.04),vec3(.11,.24,.035)*(.8+.22*sin(dx*3.)*cos(y*2.)+.2*(1.-crownShape)),crown);}
+        float house=step(abs(dx),3.3)*step(0.,y)*step(y,3.1);
+        float roof=step(3.1,y)*step(y,5.-abs(dx)*.56)*step(abs(dx),3.6);
+        float farm=max(house,roof)*step(.82,h)*uMeadow;
+        if(farm>silhouette){silhouette=farm;obj=mix(vec3(.66,.55,.34),vec3(.28,.12,.065),roof);float window=step(abs(abs(dx)-1.5),.42)*step(abs(y-1.8),.6);obj=mix(obj,vec3(.05,.09,.09),window);}
+        // Upright cacti have actual arms and a stem in the desert passage.
+        float stem=step(length(vec2(dx,y-clamp(y,0.,3.+h*2.5))),.22);
+        float arm=step(length(vec2(abs(dx)-.9,y-clamp(y,2.1,2.6+h))),.17);
+        float join=step(abs(dx),1.05)*step(abs(y-2.2),.17);
+        float cactus=max(stem,max(arm,join))*uCanyon;
+        if(cactus>silhouette){silhouette=cactus;obj=vec3(.11,.22,.12)*(.7+.3*cos(dx*7.)+.15*dx);}
+        if(silhouette>.001){
+          float fog=1.-exp(-pow(ot*uFogK,1.55));
+          vec3 lit=obj*(uSunC*.8+uFog*.65)*(1.-uDusk*.5);
+          col=mix(col,mix(lit,uFog*(1.-uDusk*.3),fog),clamp(silhouette,0.,1.));
+        }
+      }
+      // Fence and guardrail posts frame the route; they remain outside the riding surface.
+      float railX=abs(hit.x-pathX(z)), railY=hit.y-roadY(z);
+      float post=step(abs(railX-(uWidth+.65)),.09)*step(0.,railY)*step(railY,.95);
+      float railWeight=uCoast+uMeadow+uAlpine;
+      if(post*railWeight>.01){vec3 c=mix(vec3(.65,.65,.53),vec3(.26,.18,.09),uMeadow)*(uSunC*.7+uFog*.5);col=mix(col,mix(c,uFog,1.-exp(-ot*uFogK)),post*railWeight);}
+    }
+    // The rails are continuous 3D capsules, with curved segments and true perspective.
+    float railWeight=uCoast+uMeadow+uAlpine;
+    if(railWeight>.01){
+      for(int r=0;r<22;r++){
+        float za=(floor(ro.z/14.)+float(r))*14., zb=za+14.;
+        for(int sideI=0;sideI<2;sideI++){
+          float side=sideI==0?-1.:1.;
+          vec3 a=vec3(pathX(za)+side*(uWidth+.65),roadY(za)+.75,za);
+          vec3 b=vec3(pathX(zb)+side*(uWidth+.65),roadY(zb)+.75,zb);
+          vec3 ba=b-a,oa=ro-a;
+          float bb=dot(ba,ba),br=dot(ba,rd),bo=dot(ba,oa),rr=dot(rd,oa);
+          float aa=bb-br*br,ab=bb*rr-bo*br,ac=bb*dot(oa,oa)-bo*bo-.004*bb;
+          float disc=ab*ab-aa*ac;
+          if(disc<0.||aa<.001)continue;
+          float rt=(-ab-sqrt(disc))/aa, y=bo+rt*br;
+          if(rt<.1||rt>t||y<0.||y>bb)continue;
+          vec3 c=mix(vec3(.65,.65,.53),vec3(.26,.18,.09),uMeadow)*(uSunC*.7+uFog*.5);
+          col=mix(col,mix(c,uFog,1.-exp(-rt*uFogK)),railWeight);
+        }
+      }
+    }
   }
   // alpha marks what may leave a trail: emitters and the spectrum ridge, never the sun or the sky
   o=vec4(col,max(trail,skyTrail));
@@ -947,8 +1062,11 @@ precision highp float;
 uniform vec3 uCam,uRight,uUp,uFwd; uniform float uFocal,uAsp,uZ,uPx,uSeed,uSpeedN;
 out float vA;
 float h(float n){return fract(sin(n)*43758.5453);}
-float pathX(float z){return 14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7);}
-float roadY(float z){return 7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1);}
+uniform vec4 uRouteA; uniform float uRouteB;
+float routeX(float z,float turn,float winding){z*=winding;return turn*(14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7));}
+float routeY(float z,float rise,float winding){z*=winding;return rise*(7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1));}
+float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);return v;}
+float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);return v;}
 void main(){
   float i=float(gl_VertexID);
   float a=h(i*1.13),b=h(i*2.71),c=h(i*4.33);
@@ -1020,11 +1138,12 @@ void main(){
   const sceneBar = `
     <div class="scenebar chrome" id="scenebar">
       <div class="scene-tiles" id="scene-tiles" role="group" aria-label="Scenery">
-        ${BIOMES.map((b, i) => `<button class="scene-tile" data-b="${i}" aria-pressed="${i === 0}"><canvas width="336" height="196" aria-hidden="true" style="background:linear-gradient(${b.skyTop},${b.skyHz} 54%,${b.ground} 55%)"></canvas><span>${b.name}</span></button>`).join('')}
+        ${BIOMES.map((b, i) => `<button class="scene-tile" data-b="${i}" aria-pressed="${i === 0}" title="${b.description}"><canvas width="336" height="196" aria-hidden="true" style="background:linear-gradient(${b.skyTop},${b.skyHz} 54%,${b.ground} 55%)"></canvas><span>${b.name}</span></button>`).join('')}
       </div>
+      <p class="route-caption" id="route-caption">${BIOMES[0].description}</p>
       <div class="scene-row">
         <div class="seg" role="group" aria-label="Time of day">${TOD.map((t, i) => `<button data-tod="${i}" aria-pressed="${i === 0}"${t.title ? ` title="${t.title}"` : ''}${t.short ? ` aria-label="${t.label}"><span class="long">${t.label}</span><span class="short">${t.short}</span>` : `>${t.label}`}</button>`).join('')}</div>
-        <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'dreamy'}">${l.label}</button>`).join('')}</div>
+        <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'clear'}">${l.label}</button>`).join('')}</div>
         <button class="seg-solo" id="auto-scene" aria-pressed="true" aria-label="Auto scenery: new scenery every mile" title="A new scene blends in after each mile you ride"><span class="long">New scenery every mile</span><span class="short">Auto scenery</span></button>
         <button class="seg-solo" id="new-route">New route</button>
       </div>
@@ -1066,7 +1185,7 @@ void main(){
       <tr><th>Each revolution</th><td>Sends a ring of light down the road.</td></tr>
       <tr><th>Grade</th><td>The procedural road's slope changes your speed by up to 40%, never the zoom curve.</td></tr>
       <tr><th>Distance</th><td>Counts only the speed your cadence makes, never the slow drift at rest.</td></tr>
-      <tr><th>Scenery</th><td>Five scenes on the main screen. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
+      <tr><th>Scenery</th><td>Five different routes: a cliffside coast, a pine trail, country lanes, an alpine lake and a sandstone canyon. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
       <tr><th>Time of day</th><td>A four-minute cycle from golden hour to night, or held where you choose.</td></tr>
       <tr><th>Look</th><td>Clear, Dreamy and Wild set how much of the last frame stays and how much it warps. The sliders under Scenery fine-tune both.</td></tr>
     </tbody></table>
@@ -1085,7 +1204,7 @@ void main(){
 
   const aboutHtml = `${about}
     <details><summary>Safety and privacy</summary>
-      <p>A limiter slows any large change in brightness, and this page measures under the WCAG limit of three flashes a second, even at top cadence. That is a measured screen, not a medical guarantee. If flashing or moving light affects you, take care, and turn on your system's reduced-motion setting, which tightens the limiter and calms the camera.</p>
+      <p>A limiter slows large changes in brightness. The automated flicker check measures this build against the WCAG general-flash threshold. That is a measured screen, not a medical guarantee. If flashing or moving light affects you, take care, and turn on your system's reduced-motion setting, which tightens the limiter and calms the camera.</p>
       <p>Cadence is read in this browser and never sent anywhere. The page makes no network requests after it loads. Your scene and settings stay in this browser's storage.</p>
     </details>
     <details><summary>Ideas credited</summary>
@@ -1179,8 +1298,26 @@ void main(){
 
   const ringData = new Float32Array(12 * 4);
   const rings = [];
+  ride.on('recording', () => {
+    ride.noteLane('routeStart', { biome: S.biomeNext, seed: S.seed, tod: S.tod, vis: S.vis, dist: S.dist, map: { ...S.map } });
+  });
   ride.on('lane', (l) => {
-    if (l.name === 'rpm') S.replayRpm = l.value;
+    if (l.name === 'routeStart') {
+      const v = l.value;
+      if (!v || typeof v !== 'object') return;
+      if (BIOMES[v.biome]) setBiome(v.biome, true);
+      if (TOD[v.tod]) setTod(v.tod, true);
+      for (const k of ['seed','vis','dist']) if (Number.isFinite(v[k])) S[k] = v[k];
+      const limits = { idle: [0,60], max: [60,130], maxZoom: [.004,.04], gamma: [.6,3.2] };
+      if (v.map) for (const k of Object.keys(limits)) if (Number.isFinite(v.map[k])) S.map[k] = clamp(v.map[k], ...limits[k]);
+      for (const [id,key,scale,label,suffix] of [['idle','idle',1,'v-idle',' rpm'],['max','max',1,'v-max',' rpm'],['zoom','maxZoom',1000,'v-zoom','%'],['gamma','gamma',100,'v-gamma','']]) {
+        const input = $('m-'+id); input.value = S.map[key]*scale; shell.syncRange(input);
+        $(label).textContent = (id==='zoom' ? (S.map[key]*100).toFixed(1) : id==='gamma' ? S.map[key].toFixed(2) : S.map[key]) + suffix;
+      }
+      S.nextSceneAt = S.dist + M_PER_MI;
+      thumbAt = 0;
+    }
+    else if (l.name === 'rpm') S.replayRpm = l.value;
     else if (l.name === 'biome') setBiome(l.value);
     else if (l.name === 'seed') { S.seed = l.value; thumbAt = 0; }
     else if (l.name === 'tod') setTod(l.value, true);
@@ -1198,6 +1335,7 @@ void main(){
     ride.noteLane('biome', i);
     pressOnly('.scene-tile', (b) => +b.dataset.b === i);
     document.body.style.setProperty('--accent', BIOMES[i].edge);
+    $('route-caption').textContent = BIOMES[i].description;
     save();
   }
   function nextBiome() { setBiome((S.biomeNext + 1) % BIOMES.length); }
@@ -1226,7 +1364,7 @@ void main(){
   document.querySelectorAll('[data-look]').forEach((b) => b.addEventListener('click', () => setLook(b.dataset.look)));
   $('auto-scene').addEventListener('click', () => setAuto(!S.autoScene));
   $('new-route').addEventListener('click', () => { S.seed = (Math.random() * 40) | 0; thumbAt = 0; ride.noteLane('seed', S.seed); shell.toast('New route'); });
-  S.tod = 0; S.look = 'dreamy'; S.autoScene = true; S.nextSceneAt = M_PER_MI;
+  S.tod = 0; S.look = 'clear'; S.autoScene = true; S.nextSceneAt = M_PER_MI;
   document.body.style.setProperty('--accent', BIOMES[0].edge);
 
   /* ---- sheet controls ---- */
@@ -1271,7 +1409,7 @@ void main(){
   addEventListener('keydown', (e) => { if (e.code === 'Space' && !e.repeat && !e.target.closest('dialog[open], input, select, button')) { e.preventDefault(); pedalOn(); } });
   addEventListener('keyup', (e) => { if (e.code === 'Space') pedalOff(); });
   /* ---- recording and replay: cadence, scene and route, with an optional video of the screen ---- */
-  let recorder = null, recChunks = [];
+  let recorder = null;
   const stamp = () => new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
   $('rec-toggle').addEventListener('click', () => {
     if (!ride.recording) {
@@ -1281,11 +1419,15 @@ void main(){
         const sound = rideSoundStream();
         if (sound) sound.getAudioTracks().forEach((t) => st.addTrack(t));
         const mime = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported(m));
-        recChunks = [];
-        recorder = new MediaRecorder(st, mime ? { mimeType: mime, videoBitsPerSecond: 14e6 } : {});
-        recorder.ondataavailable = (e) => { if (e.data.size) recChunks.push(e.data); };
-        recorder.onstop = () => shell.download(new Blob(recChunks, { type: recorder.mimeType }), `endless-cockpit-${stamp()}.${(recorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm'}`);
-        recorder.start(1000);
+        const chunks = [];
+        const activeRecorder = new MediaRecorder(st, mime ? { mimeType: mime, videoBitsPerSecond: 14e6 } : {});
+        recorder = activeRecorder;
+        activeRecorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+        activeRecorder.onstop = () => {
+          shell.download(new Blob(chunks, { type: activeRecorder.mimeType }), `endless-cockpit-${stamp()}.${(activeRecorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm'}`);
+          st.getVideoTracks().forEach((track) => track.stop());
+        };
+        activeRecorder.start(1000);
       }
       $('rec-toggle').textContent = 'Stop and save';
       $('session-button').classList.add('rec');
@@ -1455,7 +1597,7 @@ void main(){
   }
 
   /* ---- one scene's sky and land at a time of day: the road and the scene tiles both draw from this ---- */
-  const NUMS = ['amp', 'ridge', 'trees', 'sea', 'snow', 'strata', 'grid', 'fogK', 'sunAz', 'sunEl'];
+  const NUMS = ['amp', 'ridge', 'trees', 'sea', 'snow', 'strata', 'grid', 'fogK', 'sunAz', 'sunEl', 'coast', 'forest', 'meadow', 'alpine', 'canyon', 'width', 'turn', 'rise', 'winding'];
   // The scene on screen right now, frozen, so a new choice blends from it instead of jumping back to a scene's start.
   function sceneNow() {
     const a = S.fromMix || BIOMES[S.biome], b = BIOMES[S.biomeNext], t = S.biomeT * S.biomeT * (3 - 2 * S.biomeT);
@@ -1478,13 +1620,14 @@ void main(){
       uSunC: mix3('sun').map((v, i) => lerp(v, [0.26, 0.29, 0.44][i], night * 0.96)),
       uGround: mix3('ground'), uRock: mix3('rock'), uFog: mix3('fog').map((v) => v * (1 - dusk * 0.86)), uEdge: mix3('edge'),
       uSunDir: [sx / sl, sunEl / sl, sz / sl],
+      uCoast: mixN('coast'), uForest: mixN('forest'), uMeadow: mixN('meadow'), uAlpine: mixN('alpine'), uCanyon: mixN('canyon'), uWidth: mixN('width'), uRouteA: ['coast','forest','meadow','alpine'].map(mixN), uRouteB: mixN('canyon'),
       uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: dusk, uFogK: mixN('fogK'),
     };
   }
   /* ---- the camera on the road at z, looking ahead along it, toward the low sun ---- */
-  function camAt(z, roll) {
-    const cx = pathX(z), cy = roadY(z) + 1.55, look = 26;
-    let fx = pathX(z + look) - cx, fy = roadY(z + look) + 1.0 - cy, fz = look;
+  function camAt(z, roll, b) {
+    const cx = pathX(z, b), cy = roadY(z, b) + 1.65, look = 26;
+    let fx = pathX(z + look, b) - cx, fy = roadY(z + look, b) + 1.1 - cy, fz = look;
     const fl = Math.hypot(fx, fy, fz); fx /= fl; fy /= fl; fz /= fl;
     let rx = fz, ry = 0, rz = -fx;
     const rl = Math.hypot(rx, rz); rx /= rl; rz /= rl;
@@ -1506,9 +1649,10 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       pThumb = G.program(THUMB_FS); thumbHDR = G.target(TW, TH);
       thumbLDR = G.target(TW, TH, { internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE }); thumbPx = new Uint8Array(TW * TH * 4);
     }
-    const z = S.vis + 60, cam = camAt(z, 0), tiles = document.querySelectorAll('.scene-tile canvas');
+    const z = S.vis + 60, tiles = document.querySelectorAll('.scene-tile canvas');
     gl.disable(gl.BLEND);
     BIOMES.forEach((b, i) => {
+      const cam = camAt(z, 0, b);
       G.into(thumbHDR); G.bindTex(0, tNoise); G.bindTex(1, tSpec);
       G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uRing: noRings }, landAt(b, b, 1, S.dusk)));
       G.draw();
@@ -1608,8 +1752,8 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
 
       /* motes */
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
-      G.use(pMote, { uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: rw / rh, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpeedN: motion01(S.rpm), uEdge: land.uEdge });
-      gl.drawArrays(gl.POINTS, 0, 1500);
+      G.use(pMote, { uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: rw / rh, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpeedN: motion01(S.rpm), uEdge: land.uEdge, uRouteA: land.uRouteA, uRouteB: land.uRouteB });
+      if(S.look !== 'clear') gl.drawArrays(gl.POINTS, 0, 650);
       gl.disable(gl.BLEND);
 
       /* feedback */
@@ -1628,8 +1772,8 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       /* bloom and grade */
       const bloom = Post.bloom(dreamA.tex, 1.15);
       Post.finish(dreamA.tex, bloom, {
-        uBloomK: 0.55, uExposure: 0.98 + S.dusk * 0.25,
-        uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000, uVig: 0.55, uSat: 1.06, rate: RM.matches ? 0.16 : 0.36,
+        uBloomK: 0.25, uExposure: 0.98 + S.dusk * 0.25,
+        uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000, uVig: 0.25, uSat: 1.02, rate: RM.matches ? 0.16 : 0.36,
       }, dtMs / 1000);
 
       if (lumaRec) lumaRec(now);

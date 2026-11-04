@@ -4,6 +4,17 @@ Checked on 2026-11-02 and 2026-11-03 in Chrome 156 on an Apple M4 Max Mac. **No 
 
 A browser test cannot pair a real Bluetooth device, and a page that opens Chrome's device list closes headless Chrome, so every sensor state below uses a stub of `navigator.bluetooth` that sends real packet bytes through the page's own parsers.
 
+## Scenery revision, 2026-11-03
+
+The five environments were reviewed as rendered screenshots, including riding with the welcome text hidden. They now have distinct landforms, objects and route profiles rather than palette changes alone. The coast screenshot in the home page and README was recaptured from this build.
+
+- `tests/endless_states.py`: **33/33 passed**, including cadence, demo, recording/replay, scenery controls, phone touch and stubbed Bluetooth states.
+- `tests/layout_check.py`: **14/14 layouts passed** across both cockpits. All five scenery choices and all nine options stay on screen.
+- `tests/scenery_states.py`: all five worlds rendered at 40, 600, 1800 and 4000 metres without blank frames or shader errors; route profiles and widths differ. Long-distance scenery blends at 1.6, 10 and 100 km stay monotonic, and interrupted blends keep the current route position. A saved route restored its starting scene, seed, position, distance and cadence mapping. A real browser MediaRecorder run produced a 1.2 MB, 1440 × 900 VP9 WebM download after Stop; ffmpeg decoded every frame without errors.
+- `FLASH_PAGES=endless-cockpit.html python3 tests/flash_check.py`: passed in normal and reduced motion. Worst region above three general flashes per second was **5.7%**, below the test's 25% limit. Whole-frame flashes: **0**. The measured runs rendered at 50.7–60.1 fps on this Mac's Chrome/Metal path; that is not a performance guarantee for other hardware.
+
+This does not validate real Bluetooth gear, saturated red flashes, or personal motion comfort. The shapes are stylized procedural geometry, with world-space roadside silhouettes, rather than photographic locations. Earlier results below describe their dated builds.
+
 ## Endless Cockpit
 
 Endless Cockpit takes its speed from cadence only. `tests/endless_states.py` drives it on the rendered page.
@@ -93,4 +104,4 @@ Biofeedback Path Cockpit, with a heart-rate strap:
 
 ## Not tested
 
-Firefox, Edge, Safari, any phone hardware, a real Hume Band on the direct path, and video capture end to end. Phone width was checked by layout only.
+Firefox, Edge, Safari, any phone hardware, a real Hume Band on the direct path, and long-duration video recording. Phone width was checked by layout only; short Chrome video capture and file decoding passed in the scenery revision.

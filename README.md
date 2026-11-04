@@ -8,9 +8,9 @@ Immersive scenes that follow signals from your body, in the browser. Each page r
 
 **Autonomic Telemetry** is a galaxy whose extent, brightness and warmth follow a personal, experimental estimate of arousal, inferred from heart, breath and brain signals. Work keeps watch, and Rest adds paced breathing. A labeled demo runs in any browser, and live signals come through a small bridge on a Mac. It lives in [its own repository](https://github.com/patrickiben/autonomic-telemetry).
 
-![Endless Cockpit during the demo](docs/endless-cockpit.jpg)
+![Endless Cockpit on the cliffside coast](docs/endless-cockpit.jpg)
 
-**Endless Cockpit** is a road at dusk that keeps your pace. Your cadence sets the speed, from a Bluetooth cadence sensor or smart trainer connected straight from the browser, the pedal button, or a steady setting. Each crank revolution sends a ring of light down the road. Five scenes sit on the main screen, with the time of day and a look, and with New scenery every mile on, the next scene blends in as you ride. The scene is raymarched each frame and fed through a zoom-feedback loop.
+**Endless Cockpit** takes you along five different cycling routes: a cliffside coast with open water and sea stacks, a gravel trail through tall pines, fenced country lanes past farmsteads, a turquoise alpine lake under snowy peaks, and a winding sandstone canyon. Each has its own terrain, roadside objects, path width, bends and elevation profile. Your cadence sets the speed, from a Bluetooth cadence sensor or smart trainer, the pedal button, or a steady setting. A Clear look is the default; Dreamy and Wild add the light trails and feedback. With New scenery every mile on, the landscape changes as you ride. These are procedural places, not GPS routes.
 
 ![Biofeedback Path Cockpit during the demo](docs/biofeedback-path-cockpit.jpg)
 

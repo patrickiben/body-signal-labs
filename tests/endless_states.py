@@ -92,7 +92,7 @@ with sync_playwright() as p:
     # scenery: five scenes drawn by the page, the time of day, looks, the every-mile change, and memory
     b, pg, errs = page()
     tiles = pg.evaluate("""[...document.querySelectorAll('.scene-tile')].map(t => { const c = t.querySelector('canvas'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let s = 0, s2 = 0, n = 0; for (let i = 0; i < d.length; i += 16) { const l = d[i] * .2126 + d[i + 1] * .7152 + d[i + 2] * .0722; s += l; s2 += l * l; n++; } const m = s / n; return [t.innerText.trim(), Math.round(Math.sqrt(s2 / n - m * m)), t.getAttribute('aria-pressed')]; })""")
-    check('the main screen shows five named scenes, each drawn by the page', [t[0] for t in tiles] == ['Golden coast', 'Misty pines', 'Neon forest', 'High alpine', 'Red canyon'] and all(t[1] > 8 for t in tiles), json.dumps(tiles))
+    check('the main screen shows five named scenes, each drawn by the page', [t[0] for t in tiles] == ['Golden coast', 'Misty pines', 'Meadow lanes', 'Alpine lake', 'Red canyon'] and all(t[1] > 8 for t in tiles), json.dumps(tiles))
     pg.click(".scene-tile[data-b='2']"); pg.wait_for_timeout(300)
     r = pg.evaluate("[__app.S.biomeNext, document.querySelector(\".scene-tile[data-b='2']\").getAttribute('aria-pressed')]")
     check('tapping a scene tile blends to that scene', r == [2, 'true'], json.dumps(r))

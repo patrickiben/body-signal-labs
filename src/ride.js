@@ -19,6 +19,7 @@
 
     ride.startRecording = (app, synthetic) => {
       session = { t0: performance.now(), app, created: new Date().toISOString(), synthetic: !!synthetic, lanes: {} };
+      emit('recording', true);
       emit('state');
     };
     ride.noteLane = (name, value) => { if (session) (session.lanes[name] = session.lanes[name] || []).push([Math.round(performance.now() - session.t0), value]); };
