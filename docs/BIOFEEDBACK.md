@@ -4,6 +4,12 @@ A road whose weather, grade and fog follow your body. Heart and cadence input ru
 
 Cadence is **measured** when a sensor reports it. Everything about your state is **inferred**, and the page labels it so. It replaces the older local page `Biofeedback_Path_Cockpit.html`, whose arousal weather always came from a hidden synthetic script.
 
+## Shared scenery
+
+The Route sheet offers the same eight environments as Endless Cockpit: Golden coast, Tropical preserve, Meadow lanes, New England Autumn, Red canyon, Rainbow orbit, Misty pines and Snake Way. New England Autumn replaces the alpine-lake choice with lakeside woodland, red/orange/gold foliage, evergreens and rocky bluffs. Snake Way is a pale, scaled serpent road with raised spines above golden clouds. Misty pines keeps the original Biofeedback mountain road, mist, teal edges and drifting lights.
+
+The shared renderer and route functions live in `src/cyclingscene.js`. Watch's inferred weather and Train's breathing/fog controls retain their existing signal calculations. Scene choice does not change which measurements or inference rules those modes use. These are stylized procedural environments, not recorded places.
+
 ## What drives what
 
 | Signal | Mode | Effect | Kind |
@@ -13,8 +19,8 @@ Cadence is **measured** when a sensor reports it. Everything about your state is
 | Inferred arousal index | Watch | The gas cloud grows wider, brighter and warmer, the sky charges toward dusk by up to 0.2, and warp rises by up to 0.5 | Inferred |
 | Heart rate above baseline | Ride with cadence | Up to 4.5% of apparent grade, which slows you. Shown apart from the road's own grade. The zoom never changes | Inferred |
 | Swing at pace | Train | Clarity lifts the fog. A held clarity of 0.6 brings dawn | Proxy |
-| Heart rate history | all | The horizon ridge is the last two minutes, newest in the middle | Measured |
-| Heart rate | all | Rings of light run down the road at the current rate | Measured rate, not beat timing |
+| Heart rate history | Signal view and land-scene horizons | The last two minutes of heart rate remain available for inspection | Measured |
+| Heart rate | cadence modes | A subtle brightness pulse follows the reported rate; reduced motion removes it | Measured rate, not measured beat timing |
 
 ## Sensors
 
@@ -40,6 +46,8 @@ Pedaling raises heart rate on its own, so any cadence above 15 rpm is passed to 
 
 Grade-load is `clamp((HR − baseline) / full, 0, 1) × 4.5%`. The baseline is your reference's mean heart rate when one exists, and otherwise the lowest 10-second mean since the sensor connected. Full is +60 bpm by default and adjustable. Speed is `motion × 18 m/s × clamp(1 − 5 × (route grade + grade-load), 0.6, 1.35)`, and zoom is `motion × max zoom`, so nothing inferred touches the zoom.
 
+Both cockpits use `src/cadence-motion.js` for cadence motion, at a fixed 1/120-second step. Cadence approaches its target with a 0.32-second time constant for sensor and manual input alike, with a small final decay to exact zero. Grade-load approaches its target over two seconds. The idle visual drift is 2.2 m/s in Watch/Ride and 1.5 m/s in Train, weighted down as driven motion rises; it never adds to the distance counter. Replay cadence takes priority, then a running demo or live sensor, then Ride's steady setting, held pedal at 88 rpm, and manual workout. Heart grade-load is specific to Biofeedback; Endless uses the road grade alone.
+
 ## Brainwaves drive
 
 Choose **Brainwaves** in Ride and follow [EEG setup](EEG_SETUP.md). This drive uses the bridge’s EEG beta/alpha ratio and quality fields, independently of heart rate, optical pulse and cadence. The bridge checks four-second EEG windows and requires at least two eligible standard channels. The app collects 20 distinct eligible samples, at least 950 ms apart, into an eyes-open personal reference. In log(beta/alpha) space, its fixed center is the median and its scale is 1.4826 × MAD with a floor of 0.15. The bounded game score is `clamp(0.5 + (center − logRatio) / (6 × scale), 0, 1)`. Zero beta is floored at 0.000001 only for the logarithm. Lower beta/alpha relative to that reference increases the game score. The reference is not a mental-state classifier. Eye closure and muscle activity can affect this ratio.
@@ -61,6 +69,8 @@ A stated script, sent as real packet bytes through the same parsers: a rest that
 ## Sessions and the Ghost Deck
 
 A session file holds cadence ten times a second, distance twice a second, and heart rate, RMSSD, SDNN, the index, the swing, clarity, the hold and dawn once a second, with the mode, scene and route seed. It is your own record, not a medical record, and nothing leaves the computer unless you share it. Replay plays back what was computed, without re-running the model. New files include the starting route, cadence mapping and baseline/settings. Their distance begins at zero when recording starts. The Ghost Deck restores that start and races the recorded distance as a light on the road, with the gap in meters. Older files are rebased to zero and label their starting position as approximate. A ride saved by the older page also replays and races, marked synthetic.
+
+New files identify the eight-scene catalog as `cycling-scenes@1`. Files saved before that marker use the original five-scene Biofeedback catalog and `PathScene` renderer, preserving their numeric scene meanings. Re-recording one of those replays retains its original catalog. Recorded EEG game-control values and synthetic labels remain separate from cadence.
 
 ## Not verified
 

@@ -4,6 +4,18 @@ Checked between 2026-11-02 and 2026-11-04 in Chrome 156 on an Apple M4 Max Mac. 
 
 A browser test cannot pair a real Bluetooth device, and a page that opens Chrome's device list closes headless Chrome, so every sensor state below uses a stub of `navigator.bluetooth` that sends real packet bytes through the page's own parsers.
 
+## Shared scenery and cadence motion, 2026-11-04
+
+Both cockpits now offer eight scenes, including the preserved Misty pines mountain road, New England Autumn in the former Alpine lake slot, and Snake Way above golden clouds. The shared renderer has no traveling road-light bands. Both apps use Biofeedback's existing cadence motion equations; EEG propulsion remains separate.
+
+- `tests/cadence_motion.cjs`: **12/12** checks against the preserved Biofeedback equations, including 432 input-priority combinations, a 100-second variable-cadence/grade trajectory and identical fixed-step results across six rendering frame rates.
+- `tests/session_regressions.cjs`: **35/35** checks, including explicit scene catalogs, legacy imports, rejection of incompatible scene-set imports during recording, and missing-baseline recording/replay. Legacy Biofeedback files keep their original renderer. Older Endless files retain their six numeric IDs and former speed scale; scene 3 follows the requested Autumn replacement.
+- `tests/shared_scenery_states.py`: **52/52** browser checks. All 16 app/scene combinations rendered, all eight route/grade arrays matched, and 240 actual simulation steps in each scene produced identical cadence state across the apps (maximum difference zero). Real session downloads, replay, the Ghost Deck, Train and EEG modes passed.
+- `tests/brainwave_states.py`: **22/22** existing EEG browser checks passed after integration. The **26** EEG controller and **15** bridge HTTP checks also passed.
+- Independent route review compared 32 JavaScript/GLSL coefficient pairs and 3,840 blended positions, with zero arithmetic difference. Final scene images were captured from the built pages; the Autumn canopy and cloud sea are stylized procedural scenery.
+
+Release-specific motion captures and responsive-layout results are recorded in [PR #2](https://github.com/patrickiben/body-signal-labs/pull/2). The dated sections below describe earlier builds; their lower-speed motion results do not validate the new cadence scale.
+
 ## Muse S Athena Brainwaves drive, 2026-11-04
 
 The optional local launcher reuses Autonomic Telemetry at `6c3ce294a1623649593f2871b364a9053c719ec0`; that dependency checkout was not modified. The isolated `.venv-eeg` requirements installed successfully, and a real-mode launcher boot served the cockpit and reported sequence zero without scanning or connecting, then shut down cleanly. No physical Muse was connected to this cockpit.

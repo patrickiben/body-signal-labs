@@ -21,7 +21,7 @@ class Q(http.server.SimpleHTTPRequestHandler):
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Q); threading.Thread(target=srv.serve_forever, daemon=True).start()
 URL = f'http://127.0.0.1:{srv.server_port}/endless-cockpit.html'
 GPU = ['--enable-gpu', '--use-angle=metal', '--ignore-gpu-blocklist', '--enable-webgl']
-SCENES = ['Golden coast', 'Tropical preserve', 'Meadow lanes', 'Alpine lake', 'Red canyon', 'Rainbow orbit']
+SCENES = ['Golden coast', 'Tropical preserve', 'Meadow lanes', 'New England Autumn', 'Red canyon', 'Rainbow orbit', 'Misty pines', 'Snake Way']
 results = []
 def check(name, ok, detail=''):
     results.append(ok); print(('PASS ' if ok else 'FAIL ') + name + (f'  [{detail}]' if detail else ''), flush=True)
@@ -93,7 +93,7 @@ with sync_playwright() as p:
     # Scenery tiles, the time of day, looks, the every-mile change, and memory.
     b, pg, errs = page()
     tiles = pg.evaluate("""[...document.querySelectorAll('.scene-tile')].map(t => { const c = t.querySelector('canvas'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let s = 0, s2 = 0, n = 0; for (let i = 0; i < d.length; i += 16) { const l = d[i] * .2126 + d[i + 1] * .7152 + d[i + 2] * .0722; s += l; s2 += l * l; n++; } const m = s / n; return [t.innerText.trim(), Math.round(Math.sqrt(s2 / n - m * m)), t.getAttribute('aria-pressed')]; })""")
-    check('the main screen shows all six named scenes, each drawn by the page', [t[0] for t in tiles] == SCENES and all(t[1] > 8 for t in tiles), json.dumps(tiles))
+    check('the main screen shows all eight named scenes, each drawn by the page', [t[0] for t in tiles] == SCENES and all(t[1] > 8 for t in tiles), json.dumps(tiles))
     scene_count = pg.evaluate('__app.BIOMES.length')
     orbit = SCENES.index('Rainbow orbit')
     pg.click(".scene-tile[data-b='2']"); pg.wait_for_timeout(300)
@@ -101,7 +101,12 @@ with sync_playwright() as p:
     check('tapping a scene tile blends to that scene', r == [2, 'true'], json.dumps(r))
     pg.click(f".scene-tile[data-b='{orbit}']"); pg.wait_for_timeout(300)
     r = pg.evaluate("[__app.S.biomeNext, document.getElementById('route-caption').textContent]")
-    check('the new Rainbow orbit tile selects its own route', r[0] == orbit and 'skyway' in r[1].lower(), json.dumps(r))
+    check('the Rainbow orbit tile selects its own route', r[0] == orbit and 'skyway' in r[1].lower(), json.dumps(r))
+    for name, caption in [('New England Autumn', 'woodland'), ('Misty pines', 'misty'), ('Snake Way', 'cloud')]:
+        index = SCENES.index(name)
+        pg.click(f".scene-tile[data-b='{index}']"); pg.wait_for_timeout(150)
+        r = pg.evaluate("[__app.S.biomeNext, document.getElementById('route-caption').textContent]")
+        check(f'{name} selects its own named environment', r[0] == index and caption in r[1].lower(), json.dumps(r))
     pg.click("[data-tod='3']"); pg.wait_for_timeout(2500)
     r = pg.evaluate("[__app.S.duskHold, +__app.S.dusk.toFixed(2)]")
     check('Night holds the sky at night', r[0] == 1 and r[1] > 0.8, json.dumps(r))
@@ -112,12 +117,12 @@ with sync_playwright() as p:
     pg.click('#connect-button'); pg.wait_for_timeout(300); pg.fill('#steady', '100'); pg.keyboard.press('Escape')
     pg.wait_for_function('(next) => __app.S.biomeNext === next', arg=(b0 + 1) % scene_count, timeout=15000)
     r = pg.evaluate("[__app.S.biomeNext, document.getElementById('toast').textContent]")
-    check('with New scenery every mile on, the last scene wraps to the first after the distance is ridden', b0 == orbit and r[0] == (b0 + 1) % scene_count and r[1].startswith('New scenery'), json.dumps([b0] + r))
+    check('with New scenery every mile on, Snake Way wraps to the coast after the distance is ridden', b0 == len(SCENES) - 1 and r[0] == 0 and r[1].startswith('New scenery'), json.dumps([b0] + r))
     pg.click('#auto-scene'); pg.evaluate("__app.S.nextSceneAt = __app.S.dist + 25"); b1 = pg.evaluate('__app.S.biomeNext')
     pg.wait_for_function('__app.S.dist >= __app.S.nextSceneAt', timeout=15000)
     r = pg.evaluate("[__app.S.biomeNext, __app.S.autoScene, document.getElementById('auto-scene').getAttribute('aria-pressed')]")
     check('with it off, the scene stays put', r == [b1, False, 'false'], json.dumps([b1] + r))
-    pg.click(f".scene-tile[data-b='{orbit}']"); pg.wait_for_timeout(200); b1 = orbit
+    pg.click(f".scene-tile[data-b='{len(SCENES) - 1}']"); pg.wait_for_timeout(200); b1 = len(SCENES) - 1
     pg.reload(); pg.wait_for_timeout(1500)
     r = pg.evaluate("[__app.S.biomeNext, __app.S.tod, __app.S.look, __app.S.autoScene]")
     check('the scene, time of day, look and that switch are remembered on the next visit', r == [b1, 3, 'wild', False], json.dumps(r))
@@ -131,7 +136,7 @@ with sync_playwright() as p:
         r = pg.evaluate("""() => { const on = (e) => { if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.top >= 0 && r.bottom <= innerHeight && r.left >= -1 && r.right <= innerWidth + 1; };
           const need = ['#connect-button', '#route-button', '#session-button', '#about-button', '#pedal', '#source-badge', '#demo-button', '#fs-button'];
           return { missing: need.filter((s) => !on(document.querySelector(s))), tiles: [...document.querySelectorAll('.scene-tile')].filter(on).length, options: [...document.querySelectorAll('.scene-row button')].filter(on).length, sideways: document.documentElement.scrollWidth > innerWidth, sub: document.getElementById('intro-sub').textContent }; }""")
-        check(f'a phone {label} shows the dock, the pedal button, the status, all six scenes and all nine scenery options, none cut off', not r['missing'] and r['tiles'] == len(SCENES) and r['options'] == 9 and not r['sideways'], json.dumps(r))
+        check(f'a phone {label} shows the dock, the pedal button, the status, all eight scenes and all nine scenery options, none cut off', not r['missing'] and r['tiles'] == len(SCENES) and r['options'] == 9 and not r['sideways'], json.dumps(r))
         if label == 'upright':
             check('on a phone the intro says to hold the pedal button, not Space', 'pedal button' in r['sub'] and 'Space' not in r['sub'], r['sub'])
             pg.dispatch_event('#pedal', 'pointerdown', {'pointerType': 'touch', 'isPrimary': True}); pg.wait_for_timeout(2500)

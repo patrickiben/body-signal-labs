@@ -5,6 +5,7 @@
   'use strict';
 
   const SCHEMA = 'body-signal-labs/ride-session@1';
+  const SCENE_CATALOG = 'cycling-scenes@1';
 
   function createRide() {
     const handlers = {};
@@ -27,7 +28,7 @@
       if (!session) return null;
       const s = session; session = null;
       emit('state');
-      return { schema: SCHEMA, app: s.app, created: s.created, durationMs: Math.round(performance.now() - s.t0), synthetic: s.synthetic, note: 'Cadence ten times a second, with scene and route changes. No audio and no other reading.', lanes: s.lanes };
+      return { schema: SCHEMA, app: s.app, created: s.created, durationMs: Math.round(performance.now() - s.t0), synthetic: s.synthetic, sceneCatalog: SCENE_CATALOG, note: 'Cadence ten times a second, with scene and route changes. No audio and no other reading.', lanes: s.lanes };
     };
 
     // Rides saved by the earlier page used another schema with the same lanes, so they replay too.
@@ -37,8 +38,11 @@
       const finite = (v, lo, hi) => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
       const fail = (part) => { throw new Error(`Invalid ride ${part}.`); };
       if (!finite(raw.durationMs, 0, Number.MAX_SAFE_INTEGER) || !object(raw.lanes)) fail('duration or lanes');
+      if (raw.sceneCatalog != null && raw.sceneCatalog !== SCENE_CATALOG) fail('scene catalog');
       if (raw.synthetic != null && typeof raw.synthetic !== 'boolean') fail('source label');
-      const biome = (v) => Number.isInteger(v) && v >= 0 && v < 6;
+      // Appending Misty at 6 and Snake Way at 7 preserves existing Endless IDs.
+      // Require a catalog tag for new IDs so old files cannot gain a new meaning.
+      const biome = (v) => Number.isInteger(v) && v >= 0 && v < (raw.sceneCatalog === SCENE_CATALOG ? 8 : 6);
       const tod = (v) => Number.isInteger(v) && v >= 0 && v < 4;
       for (const [name, lane] of Object.entries(raw.lanes)) {
         if (!Array.isArray(lane)) fail(`${name} lane`);
@@ -49,6 +53,7 @@
           if ((name === 'rpm' && !finite(v, 0, 250)) || (name === 'seed' && !finite(v, -1e6, 1e6)) || (name === 'biome' && !biome(v)) || (name === 'tod' && !tod(v))) fail(`${name} value`);
           if (name === 'routeStart') {
             if (!object(v)) fail('starting route');
+            if (v.motionVersion !== undefined && v.motionVersion !== 'biofeedback-cadence@1') fail('starting motion version');
             if ((v.biome != null && !biome(v.biome)) || (v.tod != null && !tod(v.tod))) fail('starting scene');
             for (const k of ['seed', 'vis', 'dist']) if (v[k] != null && !finite(v[k], k === 'dist' ? 0 : -1e12, 1e12)) fail(`starting ${k}`);
             if (v.map != null) {
@@ -58,7 +63,7 @@
           }
         }
       }
-      return raw;
+      return raw.sceneCatalog === SCENE_CATALOG ? raw : { ...raw, sceneCatalog: SCENE_CATALOG };
     };
     ride.startReplay = (raw) => {
       const s = ride.readSession(raw);

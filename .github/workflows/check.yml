@@ -25,6 +25,7 @@ jobs:
         run: |
           node tests/session_regressions.cjs
           node tests/eeg_drive.cjs
+          node tests/cadence_motion.cjs
       - uses: actions/checkout@v7
         with:
           repository: patrickiben/autonomic-telemetry

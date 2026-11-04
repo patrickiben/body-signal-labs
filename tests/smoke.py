@@ -44,10 +44,12 @@ with sync_playwright() as p:
                 bad.append(f'{page}: blank or flat canvas')
         except Exception as e:
             bad.append(f'{page}: canvas readback failed: {str(e)[:160]}')
-        if page == 'endless-cockpit.html':
-            info = pg.evaluate('__app.renderInfo')
-            if info['softwareRenderer'] and info['width'] * info['height'] > 82000:
-                bad.append(f'{page}: software rendering exceeds its responsive scenery budget: {info}')
+        info = pg.evaluate('__app.renderInfo')
+        if info['softwareRenderer'] and info['width'] * info['height'] > 82000:
+            bad.append(f'{page}: software rendering exceeds its responsive scenery budget: {info}')
+        scenes = pg.evaluate('__app.BIOMES.map(b=>b.name)')
+        if scenes != ['Golden coast', 'Tropical preserve', 'Meadow lanes', 'New England Autumn', 'Red canyon', 'Rainbow orbit', 'Misty pines', 'Snake Way']:
+            bad.append(f'{page}: shared scenery choices differ: {scenes}')
         if pg.evaluate("typeof createKit !== 'undefined' || typeof mountShell !== 'undefined'"): bad.append(f'{page}: a drum engine is on the page')
         if len(pg.query_selector_all('nav.family a')) != 4: bad.append(f'{page}: the suite bar is missing')
         if errors: bad.append(f'{page}: {errors[0]}')
