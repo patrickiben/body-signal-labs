@@ -37,7 +37,9 @@ with sync_playwright() as p:
         # Moving readouts do not prove that the shared WebGL output rendered.
         # Catch black/flat canvases after postprocessing changes as well.
         try:
-            pixels = pg.evaluate("Promise.race([__app.pixel(), new Promise((_, reject) => setTimeout(() => reject(new Error('canvas readback timed out')), 45000))])")
+            # Readback waits for a rendered frame and image decoding; use the same
+            # software-rendering allowance as the page's other browser operations.
+            pixels = pg.evaluate("Promise.race([__app.pixel(), new Promise((_, reject) => setTimeout(() => reject(new Error('canvas readback timed out')), 120000))])")
             if pixels['mean'] < 3 or pixels['max'] - pixels['min'] < 10:
                 bad.append(f'{page}: blank or flat canvas')
         except Exception as e:
