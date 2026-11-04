@@ -13,6 +13,8 @@ The five environments were reviewed as rendered screenshots, including riding wi
 - `tests/scenery_states.py`: all five worlds rendered at 40, 600, 1800 and 4000 metres without blank frames or shader errors; route profiles and widths differ. Long-distance scenery blends at 1.6, 10 and 100 km stay monotonic, and interrupted blends keep the current route position. A saved route restored its starting scene, seed, position, distance and cadence mapping. A real browser MediaRecorder run produced a 1.2 MB, 1440 × 900 VP9 WebM download after Stop; ffmpeg decoded every frame without errors.
 - `FLASH_PAGES=endless-cockpit.html python3 tests/flash_check.py`: passed in normal and reduced motion, with the demo disabled before the test verifies cadence above 125 rpm. Worst region above three general flashes per second was **14.7%**, below the test's 25% limit. Whole-frame flashes: **0**. The measured runs rendered at 45.4–60.1 fps on this Mac's Chrome/Metal path; that is not a performance guarantee for other hardware.
 
+The first GitHub Linux/SwiftShader run stalled with the hardware scenery budget. The software-rendering fallback now starts near 80,000 scenery pixels and reacts to two consecutive long frames. A local SwiftShader probe confirmed that path (327 × 245 scenery pixels); the UI remains at full resolution.
+
 This does not validate real Bluetooth gear, saturated red flashes, or personal motion comfort. The shapes are stylized procedural geometry, with world-space roadside silhouettes, rather than photographic locations. Earlier results below describe their dated builds.
 
 ## Endless Cockpit

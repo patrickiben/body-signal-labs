@@ -526,6 +526,17 @@ void main(){
 
   const cv = $('stage');
   const G = createGL(cv);
+  // A CPU WebGL renderer cannot afford the hardware pixel budget even for its
+  // first frame. UI remains full resolution; only the scenery is scaled.
+  const softwareRenderer = (() => {
+    if (!G) return false;
+    const g = G.gl, ext = g.getExtension('WEBGL_debug_renderer_info');
+    const renderer = g.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : g.RENDERER) || '';
+    return /swiftshader|llvmpipe|softpipe|software rasterizer|microsoft basic render/i.test(renderer);
+  })();
+  const sceneBudget = softwareRenderer ? 80000 : 1.35e6;
+  const minScale = (softwareRenderer ? 20000 : 60000) / sceneBudget;
+  const maxScale = softwareRenderer ? 1 : 1.9;
   let gl, Post, pScene, pDream, pMote, tNoise, tSpec;
   let scene, dreamA, dreamB, rw = 0, rh = 0, frameIdx = 0, lastScale = 1;
   const specBytes = new Uint8Array(BANDS), ridge = new Float32Array(BANDS);
@@ -876,11 +887,14 @@ void main(){
 uniform sampler2D uScene; uniform float uExposure;
 vec3 aces(vec3 x){ return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.); }
 void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1.-.45*smoothstep(.25,.95,dot(q,q)*2.1); o=vec4(pow(c,vec3(1./2.2)),1.); }`;
-  const TW = 336, TH = 196, noRings = new Float32Array(12 * 4);
+  const noRings = new Float32Array(12 * 4);
   let pThumb = null, thumbHDR = null, thumbLDR = null, thumbPx = null, thumbAt = 0, thumbDusk = -1;
   function drawThumbs(now) {
-    if (!pThumb) {
-      pThumb = G.program(THUMB_FS); thumbHDR = G.target(TW, TH);
+    const small = softwareRenderer || lastScale < .2, TW = small ? 144 : 336, TH = small ? 84 : 196;
+    if (!pThumb) pThumb = G.program(THUMB_FS);
+    if (!thumbHDR || thumbHDR.w !== TW) {
+      if (thumbHDR) { G.freeTarget(thumbHDR); G.freeTarget(thumbLDR); }
+      thumbHDR = G.target(TW, TH);
       thumbLDR = G.target(TW, TH, { internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE }); thumbPx = new Uint8Array(TW * TH * 4);
     }
     const z = S.vis + 60, tiles = document.querySelectorAll('.scene-tile canvas');
@@ -894,6 +908,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       G.use(pThumb, { uScene: 0, uExposure: 0.98 + S.dusk * 0.25 });
       G.draw();
       gl.readPixels(0, 0, TW, TH, gl.RGBA, gl.UNSIGNED_BYTE, thumbPx);
+      tiles[i].width = TW; tiles[i].height = TH;
       const c = tiles[i].getContext('2d'), img = c.createImageData(TW, TH);
       for (let y = 0; y < TH; y++) img.data.set(thumbPx.subarray((TH - 1 - y) * TW * 4, (TH - y) * TW * 4), y * TW * 4);     // GL rows run bottom up
       c.putImageData(img, 0, 0);
@@ -905,7 +920,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
   function resize() {
     const dpr = Math.min(devicePixelRatio || 1, 2), W = Math.max(320, Math.min(3840, Math.round(cv.clientWidth * dpr))), Hh = Math.max(240, Math.min(2160, Math.round(cv.clientHeight * dpr)));
     if (cv.width !== W || cv.height !== Hh) { cv.width = W; cv.height = Hh; }
-    const budget = 1.35e6 * lastScale, asp = W / Hh;
+    const budget = sceneBudget * lastScale, asp = W / Hh;
     let h = Math.round(Math.sqrt(budget / asp)), w = Math.round(h * asp);
     if (w > W) { w = W; h = Hh; }
     if (w === rw && h === rh) return;
@@ -915,11 +930,11 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
     Post.resize(rw, rh, 5);
   }
 
-  let last = performance.now(), slow = 0, fast = 0, fails = 0;
+  let last = performance.now(), slow = 0, fast = 0, stalled = 0, fails = 0;
   function render(now) {
     requestAnimationFrame(render);
     try {
-      const dtMs = Math.min(100, now - last);
+      const frameMs = now - last, dtMs = Math.min(100, frameMs);
       last = now;
       ride.tick(now);
       pageFrame(now);
@@ -940,10 +955,19 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       if (frameIdx > 2 && (!thumbAt || (now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
       S.dusk = S.duskHold != null ? S.dusk + (S.duskHold - S.dusk) * Math.min(1, dtMs / 900) : RM.matches ? S.dusk : 0.5 - 0.5 * Math.cos((now / 1000 / 240 + 0.14) * Math.PI * 2);
 
-      // Adapt the render size to the machine. The readings never depend on this.
-      if (dtMs > 26) slow++; else if (dtMs < 12) fast++;
-      if (++frameIdx % 90 === 0) {
-        if (slow > 30 && lastScale > 0.35) { lastScale *= 0.75; resize(); } else if (fast > 80 && lastScale < 1.9) { lastScale *= 1.2; resize(); }
+      // React to sustained stalls before waiting 90 expensive frames. This also
+      // covers browsers that hide renderer metadata and genuinely weak GPUs.
+      if (frameMs > 120) stalled++; else stalled = 0;
+      if (frameMs > 26) slow++; else if (frameMs < 20) fast++;
+      frameIdx++;
+      if (stalled >= 2 && lastScale > minScale) {
+        lastScale = Math.max(minScale, lastScale * .5); resize();
+        stalled = 0; slow = 0; fast = 0;
+      } else if (frameIdx % 15 === 0 && slow > 10 && lastScale > minScale) {
+        lastScale = Math.max(minScale, lastScale * .75); resize();
+        slow = 0; fast = 0;
+      } else if (frameIdx % 90 === 0) {
+        if (fast > 80 && lastScale < maxScale) { lastScale = Math.min(maxScale, lastScale * 1.2); resize(); }
         slow = 0; fast = 0;
       }
 
@@ -1070,6 +1094,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
   /* for the checks: read what is really on the canvas and in the engine */
   window.__app = {
     S, ride, BIOMES, pathX, roadY, gradeAt, motion01, recordLuma, setBiome, nextBiome, setTod, setLook, setAuto, drawThumbs,
+    get renderInfo() { return { softwareRenderer, width: rw, height: rh, pixelBudget: sceneBudget * lastScale }; },
     pixel() {
       const c = document.createElement('canvas'); c.width = 32; c.height = 18;
       const g = c.getContext('2d');

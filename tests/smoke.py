@@ -34,6 +34,10 @@ with sync_playwright() as p:
             pass
         v = pg.evaluate(moving)
         if v < 3: bad.append(f'{page}: the demo did not move it ({v})')
+        if page == 'endless-cockpit.html':
+            info = pg.evaluate('__app.renderInfo')
+            if info['softwareRenderer'] and info['width'] * info['height'] > 82000:
+                bad.append(f'{page}: software rendering exceeds its responsive scenery budget: {info}')
         if pg.evaluate("typeof createKit !== 'undefined' || typeof mountShell !== 'undefined'"): bad.append(f'{page}: a drum engine is on the page')
         if len(pg.query_selector_all('nav.family a')) != 4: bad.append(f'{page}: the suite bar is missing')
         if errors: bad.append(f'{page}: {errors[0]}')
