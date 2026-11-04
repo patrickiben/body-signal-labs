@@ -8,7 +8,7 @@ Immersive scenes that follow signals from your body, in the browser. Each page r
 
 **Autonomic Telemetry** is a galaxy whose extent, brightness and warmth follow a personal, experimental estimate of arousal, inferred from heart rate and pulse variability, with EEG shown as context. Work keeps watch, and Rest adds paced breathing. A labeled demo runs in any browser, and live signals come through a small bridge on a Mac. It lives in [its own repository](https://github.com/patrickiben/autonomic-telemetry).
 
-![Endless Cockpit on the Rainbow orbit skyway](docs/rainbow-orbit.jpg)
+![Endless Cockpit on the New England Autumn lakeside road](docs/new-england-autumn.jpg)
 
 **Endless Cockpit** takes you through eight scenes shared with Biofeedback Path Cockpit: Golden coast, Tropical preserve, Meadow lanes, New England Autumn, Red canyon, Rainbow orbit, Misty pines and Snake Way. Ride beside the sea, through autumn woodland or misty mountain ridges, along a rainbow skyway, or over golden clouds on a winding serpent road. The routes have different terrain, objects, widths, bends and elevation profiles. Your cadence sets the speed, from a Bluetooth sensor or smart trainer, the pedal button, or a steady setting. Both cockpits use the same cadence acceleration, braking and grade response. Clear is the default look; Dreamy and Wild add visual feedback. New scenery every mile changes the landscape as you ride. These are procedural places, not GPS routes.
 

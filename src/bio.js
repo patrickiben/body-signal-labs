@@ -516,7 +516,7 @@
       if (demo) bio.stopDemo();
       replay = { s, t0: performance.now(), lanes: Object.entries(s.lanes || {}).map(([k, v]) => ({ k, v, i: 0 })) };
       hist.fill(0); hrSeries = [];
-      Object.assign(now_, { hr: null, rmssd: null, sdnn: null, idx: null, swing: null, baseHr: s.start ? s.start.baseHr : null, phase: 'waiting', coverage: 'From a recording' });
+      Object.assign(now_, { hr: null, rmssd: null, sdnn: null, idx: null, swing: null, baseHr: s.start && s.start.baseHr != null ? s.start.baseHr : null, phase: 'waiting', coverage: 'From a recording' });
       emit('state'); emit('replay', true);
     };
     bio.stopReplay = () => {

@@ -328,6 +328,36 @@ vec4 seasonalPlants(vec2 p,float h,float coast,float meadow,float alpine,float c
   return outp;
 }
 
+// Dense woodland seen on the hillsides. Each 4.8 m cell grows a small,
+// overlapping rounded crown rather than stretching a color ramp over terrain.
+// A footprint in surface metres integrates crown edges and fades unresolved
+// crowns to their mean pigment before they can shimmer at the horizon.
+vec3 autumnCanopy(vec2 p,float footprint){
+  const float spacing=4.8;
+  vec2 cell=floor(p/spacing);float aa=max(.025,footprint*.65);
+  vec3 average=vec3(.185,.095,.031),col=vec3(.065,.061,.022);
+  float detail=1.-smoothstep(1.1,4.2,footprint);
+  if(detail<.001)return average;
+  for(int ix=-1;ix<=1;ix++)for(int iz=-1;iz<=1;iz++){
+    vec2 id=cell+vec2(float(ix),float(iz));
+    float h=fract(sin(dot(id,vec2(127.1,311.7))+uSeed*3.1)*43758.54);
+    float j=fract(sin(dot(id,vec2(269.5,183.3))+uSeed)*17571.31);
+    vec2 center=(id+.5+vec2(h-.5,j-.5)*.46)*spacing;
+    vec2 q=p-center;float radius=2.35+j*.8,r=length(q);
+    float edge=radius*(1.+.055*sin(atan(q.y,q.x)*7.+h*29.)*detail);
+    float cover=1.-smoothstep(edge-aa,edge+aa,r);
+    if(cover<.001)continue;
+    vec3 pigment=h<.24?vec3(.105,.15,.041):h<.49?vec3(.31,.058,.022):h<.78?vec3(.41,.145,.028):vec3(.38,.245,.055);
+    vec2 xy=q/max(radius,.01);
+    float dome=sqrt(max(0.,1.-min(.98,dot(xy,xy))));
+    float light=.48+.52*max(0.,dot(normalize(vec3(xy,dome)),normalize(vec3(-.45,-.55,1.))));
+    // Small, low-contrast leaf clusters soften the broad crown's interior.
+    float lobes=.96+.04*sin(q.x*3.1+h*17.)*sin(q.y*2.7+j*13.)*detail;
+    col=mix(col,pigment*light*lobes,cover*.96);
+  }
+  return mix(average,col,detail);
+}
+
 vec4 autumnTree(vec2 p,float h){
           float scale=.47+h*.3, aa=foliageAA/scale;
           vec2 q=p/scale;float crown=0.;
@@ -818,13 +848,15 @@ void main(){
     alb=mix(alb,uRock,smoothstep(.1,.42,sl+dn*.14-.07));
     if(uSnow>0.)alb=mix(alb,vec3(.84,.88,.96),uSnow*smoothstep(33.,65.,rel+dn*15.)*(1.-smoothstep(.3,.68,sl)));
     if(uAlpine>.001){
-      float canopyPatch=vn(p.xz*.32+5.);
-      vec3 leaves=mix(vec3(.19,.052,.018),vec3(.57,.25,.025),smoothstep(.32,.59,canopyPatch));
-      leaves=mix(leaves,vec3(.075,.15,.045),smoothstep(.61,.73,canopyPatch));
-      float cliff=smoothstep(.72,.95,sl)*smoothstep(.35,.68,fbm2(p.xz*.025+3.));
+      // Include elevation in the cross-slope coordinate so canopy crowns
+      // retain their rounded proportions on steep shore bluffs.
+      vec2 forestUV=vec2(p.x+sign(p.x-px)*p.y*.85,p.z);
+      float footprint=2.*t/(uRes.y*uFocal*max(.2,abs(dot(rd,N))));
+      vec3 leaves=autumnCanopy(forestUV,footprint);
+      float cliff=smoothstep(.69,.92,sl)*smoothstep(.38,.66,fbm2(p.xz*.025+3.));
       float woods=smoothstep(5.,11.,d)*(1.-cliff);
-      alb=mix(alb,leaves,uAlpine*woods);
-      alb*=mix(1.,.78+.35*fbm2(p.xz*.4+rel*.12),uAlpine*smoothstep(.25,.6,sl));
+      vec3 exposed=uRock*(.78+.24*fbm2(p.xz*.19+rel*.08));
+      alb=mix(alb,mix(exposed,leaves,woods),uAlpine*smoothstep(4.,7.,d));
     }
     if(uMeadow>0.) { float field=step(.48,fract(p.x*.024+sin(p.z*.012)*.2)); alb=mix(alb,mix(vec3(.19,.28,.055),vec3(.34,.39,.08),field),uMeadow*.65*smoothstep(4.,9.,d)); }
     if(uStrata>0.)alb*=mix(1.,.74+.3*sin(rel*.85+dn*3.5),uStrata);

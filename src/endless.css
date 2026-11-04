@@ -73,5 +73,5 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
 }
 
 /* Readouts stay legible over the bright cloud sea without covering the route. */
-body[data-app="endless-cockpit"] #hud { isolation: isolate; }
+body[data-app="endless-cockpit"] #hud { position: relative; isolation: isolate; }
 body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute; inset: -8px -10px; z-index: -1; pointer-events: none; border-radius: 14px; background: rgba(7,13,23,.65); }

@@ -134,6 +134,15 @@ const section = (from, to) => page.slice(page.indexOf(from), page.indexOf(to, pa
     assert.throws(() => b.startRecording('bad', initialRoute(1), 'unknown'), /scene catalog/);
     assert.equal(b.recording, true); assert.equal(b.stopRecording().app, 'keep-this-take');
   });
+  test('an omitted optional replay baseline stays null in a rerecording before JSON export', () => {
+    const b = context.createBio(), legacy = b.readSession({ ...bioSession(), start: initialRoute(1) });
+    b.startReplay(legacy); assert.equal(b.now.baseHr, null);
+    b.startRecording('baseline-free-replay', legacy.start, legacy.sceneCatalog);
+    b.noteLane('baseHr', b.now.baseHr);
+    const saved = b.stopRecording();
+    assert.equal(saved.lanes.baseHr[0][1], null); assert.equal(b.readSession(saved), saved);
+    b.stopReplay();
+  });
 
   const ride = context.createRide(); ride.startReplay(rideSession({ biome: [[0, 5]], rpm: [[0, 80]] }));
   test('ride import validates each lane before replacing an existing replay', () => {
@@ -145,7 +154,7 @@ const section = (from, to) => page.slice(page.indexOf(from), page.indexOf(to, pa
     assert.equal(ride.readSession(rideSession({ biome: [[0, 5]] })).lanes.biome[0][1], 5);
     assert.equal(ride.readSession({ ...rideSession(), schema: 'endless-cockpit/session@1' }).durationMs, 1000);
   });
-  test('untagged Endless scenes keep their six existing identities and normalize once', () => {
+  test('untagged Endless scenes retain their six numeric IDs and normalize once', () => {
     for (let biome = 0; biome < 6; biome++) {
       const raw = rideSession({ biome: [[0, biome]], routeStart: [[0, { biome }]] }), normalized = ride.readSession(raw);
       assert.equal(normalized.sceneCatalog, SHARED_SCENES); assert.equal(normalized.lanes.biome[0][1], biome);
@@ -188,7 +197,7 @@ const section = (from, to) => page.slice(page.indexOf(from), page.indexOf(to, pa
     cv: { captureStream() { const track = { count: 0, stop() { this.count++; } }; const stream = { track, getTracks: () => [track] }; streams.push(stream); return stream; } },
     MediaRecorder: Recorder, window: { MediaRecorder: Recorder }, shell: { download(blob) { downloads.push(blob); }, toast(message) { toasts.push(message); }, syncRange() {}, setMode(m) { S.mode = m; S.holdT = 0; S.dawn = 0; } },
     BIOMES: ['Golden coast', 'Tropical preserve', 'Meadow lanes', 'New England Autumn', 'Red canyon', 'Rainbow orbit', 'Misty pines', 'Snake Way'].map(name => ({ edge: '#fff', name })), SET_SECONDS: 60, M_PER_MI: 1609.34,
-    PathScene: { BIOMES: ['Golden coast', 'Misty pines', 'Neon salt', 'Alpine lake', 'Red canyon'].map(name => ({ edge: '#fff', name })) }, SCENE_CATALOG: SHARED_SCENES,
+    PathScene: { BIOMES: ['Golden coast', 'Misty pines', 'Neon forest', 'High alpine', 'Red canyon'].map(name => ({ edge: '#fff', name })) }, SCENE_CATALOG: SHARED_SCENES,
     mmss: String, performance: { now: () => clock }, renderAnalysis() {}, stopGhost() {}, motion01: (rpm) => rpm / 100, MAX_SPEED: 18 };
   vm.createContext(ui);
   vm.runInContext(section('  const legacyScene =', '  const pathX ='), ui);

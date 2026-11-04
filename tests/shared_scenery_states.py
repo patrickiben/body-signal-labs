@@ -126,7 +126,7 @@ try:
                     good = all(sum(abs(values[n+1][axis]-values[n][axis]) for n in range(20)) <= abs(values[-1][axis]-values[0][axis])+1e-6 for axis in range(2))
                     check(f"{app}: late-route transition {start} to {end} stays bounded", good)
 
-            for index, name in ((1, "Misty pines"), (2, "Neon salt")):
+            for index, name in ((1, "Misty pines"), (2, "Neon forest")):
                 import_bio(bio, fixture(index, catalog=None), f"legacy-{index}.json")
                 bio.wait_for_timeout(180)
                 legacy = bio.evaluate("({catalog:__app.S.sceneCatalog,biome:__app.S.biomeNext,name:document.getElementById('scene-name').textContent})")
