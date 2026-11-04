@@ -97,7 +97,7 @@ const section = (from, to) => page.slice(page.indexOf(from), page.indexOf(to, pa
     stop() { this.state = 'inactive'; stopped.push(() => this.onstop()); }
   }
   const uiBio = context.createBio(); uiBio.now.baseHr = 62;
-  const S = { mode: 'ride', vis: 700, seed: 3, biome: 2, biomeNext: 2, dist: 1609, rpm: 75, gradeLoad: .02, map: { idle: 25, max: 95, maxZoom: .018, gamma: 1.6 }, holdT: 8, dawn: .2 };
+  const S = { mode: 'ride', drivePower: 'cadence', vis: 700, seed: 3, biome: 2, biomeNext: 2, dist: 1609, rpm: 75, gradeLoad: .02, map: { idle: 25, max: 95, maxZoom: .018, gamma: 1.6 }, holdT: 8, dawn: .2 };
   const ui = { console, Blob, Event: class {}, $: get, S, bio: uiBio, document: { querySelectorAll: () => [], body: { style: { setProperty() {} } } },
     cv: { captureStream() { const track = { count: 0, stop() { this.count++; } }; const stream = { track, getTracks: () => [track] }; streams.push(stream); return stream; } },
     MediaRecorder: Recorder, window: { MediaRecorder: Recorder }, shell: { download(blob) { downloads.push(blob); }, syncRange() {}, setMode(m) { S.mode = m; S.holdT = 0; S.dawn = 0; } },

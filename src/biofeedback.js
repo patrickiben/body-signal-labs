@@ -16,8 +16,10 @@
     mode: 'watch', rpm: 0, speed: 0, dist: 0, vis: 40, zoom: 0, grade: 0, gradeLoad: 0, surge: 0, roll: 0, tilt: 0.34,
     map: { idle: 25, max: 95, maxZoom: 0.018, gamma: 1.6 }, dream: 0.55, wild: 0.35, seed: 0,
     pedal: false, steady: null, auto: false, autoT: 0, biome: 1, biomeNext: 1, biomeT: 1, dusk: 0.74, duskHold: null,
+    drivePower: 'cadence', eegDrive: 0, eegScore: null, eegRatio: null, eegValid: false, eegSimulated: false, replayEEG: null, eegBusy: false, motionCalm: 1, effectiveWild: .35,
     load: 0, clarity: 0, dawn: 0, holdT: 0, complete: false, replayRpm: null, ghost: null, ghostGap: null, orbitC: [0, 0.36], orbitA: 0, pulse: 0,
   };
+  const EEG_MAX_SPEED = 7;
   const MAX_SPEED = 18, M_PER_MI = 1609.34, GRADE_K = 5, AROUSAL_WILD = 0.5, DUSK_BIAS = 0.2, GRADE_LOAD_MAX = 0.045, CLARITY_TARGET = 0.6, SET_SECONDS = 60;
   const pathX = (z) => 14 * Math.sin(z * 0.0113 + 1 + S.seed) + 6.5 * Math.sin(z * 0.0271 + 2.2 + S.seed * 1.7);
   const roadY = (z) => 7 * Math.sin(z * 0.0071 + 0.4 + S.seed) + 3.4 * Math.sin(z * 0.0193 + 1.9 + S.seed * 2.3) + 1.1 * Math.sin(z * 0.0471 + 3.1);
@@ -29,6 +31,7 @@
   };
 
   const bio = createBio();
+  const eeg = createEEGDrive();
   const brand = '<svg viewBox="0 0 24 28" aria-hidden="true"><path d="M12 3 4 25M12 3l8 22M12 11v3M12 18v3"/><path d="M4 8.5h3.2l1.3-2.4 1.8 5 1.3-2.6h8.4"/></svg>';
 
   /* ---- the sheets ---- */
@@ -54,11 +57,23 @@
       </div>
       <button class="pill" id="cad-connect">Connect</button>
     </div>
+    <section class="eeg-connect" aria-labelledby="eeg-title">
+      <div class="device-info" id="eeg-info" data-tone="idle"><strong id="eeg-title">Muse S / Athena brainwaves <span class="dot"></span></strong>
+        <p class="state" id="eeg-state">Not connected</p><p class="why" id="eeg-why"></p></div>
+      <p class="note">An EEG balance game control, calibrated to you. Use Brainwaves in Ride without a cadence sensor.</p>
+      <p class="note" id="eeg-setup">Muse S needs the optional private relay. <a href="docs/EEG_SETUP.md">Set up the Muse S connection</a>. The synthetic preview works without it.</p>
+      <div class="row-actions"><button class="pill" id="eeg-start">Find Muse S</button><button class="pill" id="eeg-scan">Scan again</button><button class="pill" id="eeg-disconnect">Disconnect</button></div>
+      <label class="field">Headset<select id="eeg-device"><option value="">No Muse found yet</option></select></label>
+      <div class="row-actions"><button class="pill primary" id="eeg-pair">Pair selected headset</button><button class="pill" id="eeg-calibrate">New personal reference</button></div>
+      <p class="note" id="eeg-reference">Keep your eyes open and sit still for 20 eligible samples (~20 seconds) after the initial 4-second EEG buffer.</p>
+      <progress id="eeg-progress" max="1" value="0" aria-label="EEG personal reference progress"></progress>
+      <p class="note" id="eeg-quality" role="status">No usable EEG data yet.</p><p class="note" id="eeg-transport"></p>
+    </section>
     <div class="device-card">
       <svg viewBox="0 0 24 24" aria-hidden="true" class="ic"><path d="M7 5v14l11-7z"/></svg>
       <div class="device-info">
         <strong>No sensor here</strong>
-        <p class="why">The demo is a synthetic body and a synthetic crank. It runs through the same parsers and the same model, and it is labeled on screen the whole time.</p>
+        <p class="why">The demo is a synthetic body and crank. With Brainwaves selected in Ride, it also previews a clearly labeled synthetic EEG control. Body and crank samples use the same parsers and inference engine. The EEG preview simulates only the game control, with no headset reference claimed. All demo data is labeled on screen.</p>
       </div>
       <button class="pill" id="demo-sheet">Run demo</button>
     </div>
@@ -66,9 +81,9 @@
       <ol>
         <li><b>Heart rate.</b> Anything offering the standard Bluetooth Heart Rate service should appear in the list. A sensor that reports beat intervals adds RMSSD and SDNN. One that reports rate alone gives an explicitly limited estimate.</li>
         <li><b>Hume Band.</b> Uses the same two commands as Autonomic's Mac bridge, sent directly. Rate only, with about 15 seconds of warm-up.</li>
-        <li><b>Muse S.</b> Not read here. Its features need Autonomic's Mac bridge, and this page runs with no helper app.</li>
+        <li><b>Muse S.</b> Brainwave-only Ride uses EEG features from the optional private Autonomic relay. <a href="docs/EEG_SETUP.md">Connection setup</a>. Pairing is always your choice.</li>
         <li><b>Cadence.</b> A Bluetooth cadence sensor or a smart trainer. A speed-only sensor has no crank data and reads as no signal.</li>
-        <li><b>Browser.</b> Chrome or Edge, on https or localhost. Safari and Firefox have no Web Bluetooth. The desktop app's window cannot show the Bluetooth list, so connect from a browser.</li>
+        <li><b>Browser.</b> Direct Bluetooth needs Chrome or Edge, on https or localhost. Safari and Firefox have no Web Bluetooth. The desktop app's window cannot show the Bluetooth list, so connect from a browser.</li>
       </ol>
     </details>`;
 
@@ -155,9 +170,10 @@
   const about = `
     <p class="sheet-intro">Every link from your body to the picture is a stated rule. Cadence is measured when a sensor reports it. Everything about your state is inferred.</p>
     <table class="maptable"><tbody>
-      <tr><th>Cadence</th><td>Sets the speed and the zoom, in every mode. <span class="ep ep-measured">Measured</span> from a sensor only. The slider, the pedal button and the workout are labeled manual.</td></tr>
+      <tr><th>Cadence</th><td>Sets speed and zoom unless Brainwaves is selected in Ride. <span class="ep ep-measured">Measured</span> from a sensor only. The slider, the pedal button and the workout are labeled manual.</td></tr>
       <tr><th>Inferred arousal</th><td>Watch only. A higher index makes the gas cloud wider, brighter and warmer, charges the sky toward dusk and adds warp. <span class="ep ep-inferred">Inferred</span> It means intensity, not a feeling.</td></tr>
-      <tr><th>Heart rate</th><td>Ride only. Heart rate above your baseline adds up to 4.5% of apparent grade and slows you, shown apart from the road's own grade. The zoom never changes. <span class="ep ep-inferred">Inferred</span></td></tr>
+      <tr><th>EEG balance</th><td>Brainwaves in Ride only. Lower beta/alpha relative to your eyes-open reference of 20 eligible samples gives a higher 0–100 game-control score. That direction is a game rule, not a validated mental-state interpretation. A higher control makes the road faster and steadier; this does not measure mental clarity, attention or health. Missing or poor-quality data gently stops the ride. <span class="ep ep-proxy">Proxy</span></td></tr>
+      <tr><th>Heart rate</th><td>Cadence-powered Ride only. Heart rate above your baseline adds up to 4.5% of apparent grade and slows you, shown apart from the road's own grade. The zoom never changes. <span class="ep ep-inferred">Inferred</span></td></tr>
       <tr><th>Swing at pace</th><td>Train only. How far heart rate swings at the pacer's own frequency, over the last two breaths. It lifts the fog. Hold it for 60 seconds and dawn breaks. <span class="ep ep-proxy">Proxy</span></td></tr>
       <tr><th>Horizon</th><td>The ridge on the horizon is the last two minutes, newest in the middle. Rings of light run down the road at your current rate.</td></tr>
       <tr><th>Road</th><td>Hills and grade are procedural and seeded. <span class="ep ep-proc">Procedural</span></td></tr>
@@ -177,7 +193,7 @@
     <details id="safety"><summary>Safety and privacy</summary>
       <p>The rings are small, and each region of the picture may change brightness only so fast. If moving light troubles you, turn on your system's reduced-motion setting: the page then calms the camera and removes the pulse.</p>
       <p>Stop if paced breathing makes you dizzy. Do not ride with your eyes on a screen outdoors.</p>
-      <p>Sensor readings are analyzed in this browser and never sent anywhere. The page makes no network requests after it loads, and no session is saved unless you press record.</p>
+      <p>Heart rate and cadence are analyzed in this browser. Optional Muse S features arrive from your configured private relay only after you choose Find Muse S; no public service receives them. No session is saved unless you press record.</p>
     </details>
     <details id="credits"><summary>Ideas and code credited</summary>
       <p>The Hume commands follow <a href="https://github.com/brendangooden/j2208-band-tools" rel="noopener">j2208-band-tools</a> (MIT), through Autonomic's bridge. The feedback loop follows <a href="https://github.com/jberg/butterchurn" rel="noopener">Butterchurn</a> (MIT), as an idea only.</p>
@@ -193,9 +209,9 @@
     <div class="hud-set" data-for="ride" hidden>
       <div class="gauge"><span class="k">Route grade <span class="ep ep-proc">Procedural</span></span><span class="v"><span id="g-grade">0.0</span><small>%</small></span></div>
       <div class="gauge"><span class="k">Speed</span><span class="v"><span id="g-speed">0.0</span><small>mph</small></span></div>
-      <div class="gauge hero"><span class="k">Cadence <span class="ep" id="ep-cad">Manual</span></span><span class="v" id="g-rpm">--</span></div>
+      <div class="gauge hero"><span class="k"><span id="g-power-label">Cadence</span> <span class="ep" id="ep-cad">Manual</span></span><span class="v" id="g-rpm">--</span></div>
       <div class="gauge"><span class="k">Distance</span><span class="v"><span id="g-dist">0.00</span><small>mi</small></span></div>
-      <div class="gauge"><span class="k">Grade-load <span class="ep ep-inferred">Inferred</span></span><span class="v"><span id="g-load">--</span><small id="g-load-u">%</small></span></div>
+      <div class="gauge"><span class="k"><span id="g-load-label">Grade-load</span> <span class="ep ep-inferred" id="g-load-tag">Inferred</span></span><span class="v"><span id="g-load">--</span><small id="g-load-u">%</small></span></div>
       <div class="gauge" id="g-ghost-wrap" hidden><span class="k">Ghost</span><span class="v"><span id="g-ghost">--</span><small>m</small></span></div>
     </div>
     <div class="hud-set" data-for="train" hidden>
@@ -235,16 +251,17 @@
     },
     onMode: (m) => setMode(m),
     stage, hud: hudHtml,
-    beforeBadges: '<button class="pill primary chrome" id="pedal" hidden>Hold to pedal</button>',
+    beforeBadges: '<div class="ride-power chrome" id="ride-power" role="group" aria-label="Ride power" hidden><span>Ride power</span><button class="pill" data-power="cadence" aria-pressed="true">Cadence</button><button class="pill" data-power="brainwaves" aria-pressed="false">Brainwaves</button></div><button class="pill primary chrome" id="pedal" hidden>Hold to pedal</button>',
     badges: `
       <button class="source-badge" id="source-badge" data-source="ambient" title="Open the sensor settings"><span class="dot" aria-hidden="true"></span><span id="source-label">Ambient · no sensor connected</span></button>
       <button class="chip chrome" id="chip-hr" data-tone="idle"><span class="dot" aria-hidden="true"></span><span id="chip-hr-text">Heart rate · not connected</span></button>
+      <button class="chip chrome" id="chip-eeg" data-tone="idle" hidden><span class="dot" aria-hidden="true"></span><span id="chip-eeg-text">EEG · not connected</span></button>
       <button class="chip chrome" id="chip-cad" data-tone="idle"><span class="dot" aria-hidden="true"></span><span id="chip-cad-text">Cadence · not connected</span></button>`,
     truth: '',
     sheets: [
-      { id: 'connect', label: 'Connect', icon: 'connect', title: 'Bring your signals.', intro: 'Heart rate paints the weather and the grade. Cadence sets the speed. Either one works alone, straight from this browser.', html: connectSheet },
+      { id: 'connect', label: 'Connect', icon: 'connect', title: 'Bring your signals.', intro: 'Heart rate paints the weather and the grade. Cadence sets the speed. Either works directly in a compatible browser. Muse S brainwave control uses an optional private relay.', html: connectSheet },
       { id: 'route', label: 'Route', icon: 'route', title: 'Choose the road.', intro: 'These change how it looks and how the game scores. They never change the readings.', html: routeSheet },
-      { id: 'session', label: 'Session', icon: 'session', title: 'Keep what you rode.', intro: 'A session file holds cadence, heart rate and the inferred values. Nothing leaves this computer unless you share the file.', html: sessionSheet },
+      { id: 'session', label: 'Session', icon: 'session', title: 'Keep what you rode.', intro: 'A session file holds cadence, heart rate, inferred values and any recorded EEG game control. EEG control is a derived proxy, not a measured mental state. Nothing leaves this computer unless you share the file.', html: sessionSheet },
       { id: 'signal', label: 'Signal', icon: 'signal', title: 'What the page reads.', wide: true, html: signalSheet },
       { id: 'about', label: 'About', icon: 'about', title: 'What drives what.', html: about },
     ],
@@ -273,9 +290,9 @@
     bio.noteLane('mode', m);
     renderStates();
   }
-  addEventListener('keydown', (e) => { if (e.code === 'Space' && S.mode === 'ride' && !e.repeat && !e.target.closest('dialog[open], input, select, button')) { e.preventDefault(); pedalOn(); } });
+  addEventListener('keydown', (e) => { if (e.code === 'Space' && S.mode === 'ride' && S.drivePower === 'cadence' && !e.repeat && !e.target.closest('dialog[open], input, select, button')) { e.preventDefault(); pedalOn(); } });
   addEventListener('keyup', (e) => { if (e.code === 'Space') pedalOff(); });
-  function pedalOn() { S.pedal = true; S.auto = false; syncAuto(); $('pedal').classList.add('on'); }
+  function pedalOn() { if (brainRide()) return; S.pedal = true; S.auto = false; syncAuto(); $('pedal').classList.add('on'); }
   function pedalOff() { S.pedal = false; $('pedal').classList.remove('on'); }
   addEventListener('blur', pedalOff);
   document.addEventListener('visibilitychange', () => { if (document.hidden) pedalOff(); });
@@ -312,8 +329,16 @@
     const t = BT_TEXT[c.state] || BT_TEXT.idle;
     return { tone: t[0], chip: `Cadence · ${t[1].toLowerCase()}`, state: t[1], why: c.detail || t[2] || 'Press Connect, then choose your sensor or trainer in the browser list.' };
   }
-  const manualRide = () => S.mode === 'ride' && (S.steady != null || S.pedal || S.auto);
+  const manualRide = () => S.mode === 'ride' && S.drivePower === 'cadence' && (S.steady != null || S.pedal || S.auto);
   function sourceView() {
+    if (brainRide()) {
+      const q = eegReading();
+      if (bio.replayOn) return ['replay', q.simulated || bio.syntheticReplay ? 'Replay · EEG control includes synthetic data' : 'Replay · recorded EEG game control'];
+      if (bio.demoOn) return ['demo', 'Demo · synthetic EEG preview, not your brainwaves'];
+      if (q.simulated) return ['demo', q.valid ? 'Synthetic bridge · EEG game control, not headset data' : `Synthetic bridge · ${q.phase} · no usable EEG control`];
+      if (q.valid) return ['live', 'Brainwaves · Muse S · EEG balance proxy'];
+      return ['open', `Brainwaves · ${eeg.state.phase} · coasting to a stop`];
+    }
     if (bio.demoOn) return ['demo', 'Demo · synthetic signals, not your body'];
     if (bio.replayOn) return ['replay', bio.syntheticReplay ? 'Replay · recording includes synthetic signals' : 'Replay · a recorded session, not live'];
     const h = bio.hr.state === 'live', c = bio.cadence.state === 'live';
@@ -325,6 +350,7 @@
     return ['ambient', 'Ambient · no sensor connected'];
   }
   function cadenceTag() {
+    if (brainRide()) return [bio.replayOn ? 'Recorded proxy' : S.eegSimulated ? 'Demo proxy' : 'Proxy', 'ep-proxy'];
     if (bio.demoOn) return ['Demo', 'ep-demo'];
     if (bio.replayOn) return ['Recorded', 'ep-proc'];
     if (bio.cadence.state === 'live') return ['Measured', 'ep-measured'];
@@ -355,14 +381,97 @@
     $('replay-stop').hidden = !bio.replayOn;
     const [tag, cls] = cadenceTag(), ep = $('ep-cad');
     if (ep.textContent !== tag) { ep.textContent = tag; ep.className = `ep ${cls}`; }
+    renderEEG();
   }
+  const brainRide = () => S.mode === 'ride' && S.drivePower === 'brainwaves';
+  function setDrivePower(power, quiet) {
+    if (!['cadence', 'brainwaves'].includes(power) || (bio.replayOn && !quiet)) return;
+    if (power === S.drivePower) { renderStates(); return; }
+    S.drivePower = power; S.rpm = 0; S.gradeLoad = 0; S.surge = 0; S.pulse = 0;
+    pedalOff();
+    if (!quiet) bio.noteLane('drivePower', power);
+    renderStates();
+  }
+  function eegReading() {
+    if (bio.replayOn && brainRide()) return S.replayEEG || { score: null, drive: 0, ratio: null, valid: false, simulated: bio.syntheticReplay, phase: 'waiting', reason: 'Waiting for recorded EEG control.' };
+    const q = eeg.state;
+    return { score: q.score, drive: q.drive, ratio: q.ratio, valid: !!(q.quality && q.quality.valid && q.phase === 'ready'), simulated: !!q.simulated, phase: q.phase, reason: q.quality && q.quality.reason || q.message || '' };
+  }
+  function updateEEG(dt) {
+    const liveDrive = eeg.tick(dt, bio.demoOn && brainRide());
+    const q = eegReading();
+    S.eegScore = q.valid && Number.isFinite(q.score) ? q.score : null;
+    S.eegValid = q.valid; S.eegRatio = q.ratio; S.eegSimulated = q.simulated;
+    // Playback uses the saved control, including its already-smoothed coast.
+    // Quality still withholds the displayed score; re-filtering would change the ride.
+    if (bio.replayOn && brainRide()) S.eegDrive = clamp(q.drive, 0, 1);
+    else S.eegDrive = clamp(Number.isFinite(liveDrive) ? liveDrive : 0, 0, 1);
+    if (S.eegDrive < .0005) S.eegDrive = 0;
+  }
+  function renderEEG() {
+    const q = eeg.state, active = brainRide(), reading = eegReading();
+    $('ride-power').hidden = S.mode !== 'ride';
+    document.querySelectorAll('[data-power]').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.power === S.drivePower)); b.disabled = bio.replayOn; });
+    $('pedal').hidden = S.mode !== 'ride' || active;
+    $('ride-controls').hidden = active; $('mapping').hidden = active;
+    $('g-power-label').textContent = active ? 'EEG control / 100' : 'Cadence';
+    $('g-load-label').textContent = active ? 'EEG signal' : 'Grade-load';
+    $('g-load-tag').hidden = active;
+    $('chip-cad').hidden = active; $('chip-eeg').hidden = !active;
+    $('chip-eeg').dataset.tone = reading.valid ? 'good' : 'warn';
+    $('chip-eeg-text').textContent = bio.replayOn ? 'EEG · recorded proxy' : reading.simulated ? bio.demoOn ? 'EEG · synthetic preview' : 'EEG · synthetic bridge' : reading.valid ? 'EEG · personal reference ready' : `EEG · ${q.phase}`;
+    $('truth').textContent = active ? 'An EEG balance game control, calibrated to you. Higher control makes a faster, steadier ride. Not a measure of mental clarity.' : TRUTH[S.mode];
+    if (active) {
+      $('intro-eyebrow').textContent = 'Ride · brainwave control'; $('intro-title').textContent = 'Let the EEG balance move the road.';
+      $('intro-sub').textContent = 'Use Muse S with a personal reference. No pedaling is needed, or try a labeled synthetic preview.';
+    } else if (S.mode === 'ride') {
+      $('intro-eyebrow').textContent = 'Ride · cadence sets the speed'; $('intro-title').textContent = 'Your legs set the speed.';
+      $('intro-sub').textContent = 'Cadence is measured from a sensor. Grade-load is inferred from heart rate.';
+    }
+    $('eeg-state').textContent = q.deviceName ? `${q.deviceName} · ${q.phase}` : `Muse S · ${q.phase}`;
+    $('eeg-why').textContent = q.message || 'Connect the configured private relay to look for Muse S.';
+    $('eeg-quality').textContent = q.quality && q.quality.reason || 'No usable EEG data yet.';
+    $('eeg-transport').textContent = `Relay · ${q.transport === true ? 'connected' : q.transport || 'disconnected'}`;
+    $('eeg-info').dataset.tone = q.phase === 'ready' ? 'good' : q.phase === 'error' ? 'bad' : 'warn';
+    const devices = q.devices || [], key = JSON.stringify(devices.map((d) => [d.id, d.name]));
+    if ($('eeg-device').dataset.devices !== key) {
+      const select = $('eeg-device'), chosen = select.value; select.replaceChildren();
+      const empty = document.createElement('option'); empty.value = ''; empty.textContent = devices.length ? 'Choose your Muse S' : 'No Muse found yet'; select.appendChild(empty);
+      devices.forEach((d) => { const option = document.createElement('option'); option.value = d.id; option.textContent = d.name; select.appendChild(option); });
+      if (devices.some((d) => d.id === chosen)) select.value = chosen;
+      select.dataset.devices = key;
+    }
+    $('eeg-start').disabled = !q.available || S.eegBusy;
+    $('eeg-scan').disabled = !q.available || S.eegBusy;
+    $('eeg-pair').disabled = !$('eeg-device').value || S.eegBusy || bio.replayOn;
+    $('eeg-disconnect').disabled = !q.available || q.phase === 'disconnected' || S.eegBusy;
+    $('eeg-calibrate').disabled = !q.deviceName || q.simulated || S.eegBusy || bio.replayOn;
+    const progress = clamp(q.progress || 0, 0, 1);
+    $('eeg-progress').value = progress;
+    $('eeg-reference').textContent = q.simulated ? bio.demoOn ? 'Synthetic preview. No headset calibration is claimed.' : `Synthetic bridge data · ${Math.floor(progress * 20)} of 20 eligible samples. No real headset reference is claimed.` : q.phase === 'calibrating' ? `Eyes open, sit still · ${Math.floor(progress * 20)} of 20 eligible samples` : q.baseline ? 'Personal reference ready. Recalibrate after changing headset fit.' : 'Allow a 4-second EEG buffer, then keep your eyes open and sit still for 20 eligible samples (~20 seconds).';
+    $('eeg-setup').hidden = !!q.available;
+  }
+  async function eegAction(action) {
+    if (S.eegBusy) return;
+    S.eegBusy = true; renderStates();
+    try { await action(); } catch (err) { $('eeg-why').textContent = err.message || 'The EEG connection could not complete.'; }
+    finally { S.eegBusy = false; renderStates(); }
+  }
+
   bio.on('state', renderStates);
-  ['source-badge', 'chip-hr', 'chip-cad'].forEach((id) => $(id).addEventListener('click', () => shell.openSheet('connect')));
+  ['source-badge', 'chip-hr', 'chip-cad', 'chip-eeg'].forEach((id) => $(id).addEventListener('click', () => shell.openSheet('connect')));
   $('read-more').addEventListener('click', () => shell.openSheet('signal'));
   $('hr-connect').addEventListener('click', () => (bio.hr.connected ? bio.disconnectHeart() : bio.connectHeart('standard')));
   $('hume-connect').addEventListener('click', () => bio.connectHeart('hume'));
   $('cad-connect').addEventListener('click', () => (bio.cadence.connected ? bio.disconnectCadence() : bio.connectCadence()));
   $('demo-sheet').addEventListener('click', () => { toggleDemo(); if (bio.demoOn) $('connect-sheet').close(); });
+  document.querySelectorAll('[data-power]').forEach((b) => b.addEventListener('click', () => setDrivePower(b.dataset.power)));
+  $('eeg-start').addEventListener('click', () => eegAction(() => eeg.start()));
+  $('eeg-scan').addEventListener('click', () => eegAction(() => eeg.scan()));
+  $('eeg-device').addEventListener('change', renderStates);
+  $('eeg-pair').addEventListener('click', () => eegAction(() => eeg.pair($('eeg-device').value)));
+  $('eeg-disconnect').addEventListener('click', () => eegAction(() => eeg.disconnect()));
+  $('eeg-calibrate').addEventListener('click', () => eegAction(() => eeg.calibrate()));
   $('ref-reset').addEventListener('click', () => { bio.resetReference(); shell.toast('Your reference starts again now.'); });
 
   /* ---- Route sheet ---- */
@@ -441,7 +550,8 @@
       bio.startRecording('biofeedback-path-cockpit', sessionStart());
       bio.noteLane('mode', S.mode); bio.noteLane('biome', S.biomeNext); bio.noteLane('seed', S.seed);
       bio.noteLane('dist', 0); bio.noteLane('vis', S.vis); bio.noteLane('rpm', S.rpm);
-      bio.noteLane('baseHr', bio.now.baseHr);
+      bio.noteLane('baseHr', bio.now.baseHr); bio.noteLane('drivePower', S.drivePower);
+      if (S.drivePower === 'brainwaves') bio.noteLane('eeg', eegReading());
       let videoWarning = '';
       if ($('rec-video').checked && cv.captureStream && window.MediaRecorder) {
         let capture = null;
@@ -507,13 +617,15 @@
     } catch (err) { $('rec-status').textContent = `That file could not be replayed: ${err.message}`; }
   });
   function sessionStart() {
-    return { vis: S.vis, seed: S.seed, biome: S.biomeNext, mode: S.mode, dist: S.dist, rpm: S.rpm,
+    return { vis: S.vis, seed: S.seed, biome: S.biomeNext, mode: S.mode, drivePower: S.drivePower || 'cadence', dist: S.dist, rpm: S.rpm,
       map: { ...S.map }, gradeLoad: S.gradeLoad, baseHr: bio.now.baseHr, fullOver: bio.fullOver,
       fullSwing: bio.fullSwing, pace: bio.pace.rate, hold: S.holdT, dawn: S.dawn };
   }
   function restoreStart(s, ghost) {
     const first = (name, fallback) => s.lanes[name] && s.lanes[name].length ? s.lanes[name][0][1] : fallback;
     const v = s.start;
+    S.drivePower = v && v.drivePower || first('drivePower', 'cadence');
+    S.replayEEG = null; S.eegDrive = 0; S.eegScore = null; S.eegValid = false; S.eegSimulated = false;
     S.vis = v ? v.vis : 40; S.seed = v ? v.seed : first('seed', 0);
     setBiome(v ? v.biome : first('biome', 1), true);
     shell.setMode(ghost ? 'ride' : v ? v.mode : first('mode', 'watch'));
@@ -538,6 +650,8 @@
   }
   bio.on('lane', (l) => {
     if (l.name === 'rpm') S.replayRpm = l.value;
+    else if (l.name === 'drivePower') setDrivePower(l.value, true);
+    else if (l.name === 'eeg') S.replayEEG = l.value;
     else if (l.name === 'biome') setBiome(l.value);
     else if (l.name === 'mode' && l.value !== S.mode) shell.setMode(l.value);
     else if (l.name === 'seed') S.seed = l.value;
@@ -547,7 +661,7 @@
     else if (l.name === 'hold') S.holdT = l.value;
     else if (l.name === 'dawn') { S.dawn = l.value; S.complete = l.value >= 1; }
   });
-  bio.on('replay', (on) => { if (!on) { S.replayRpm = null; S.replayClarity = null; } renderStates(); });
+  bio.on('replay', (on) => { if (!on) { S.replayRpm = null; S.replayClarity = null; S.replayEEG = null; } renderStates(); });
 
   function ghostFrom(s) {
     const lanes = s.lanes || {};
@@ -737,9 +851,10 @@
     document.querySelector('.hud-set[data-for=watch]').classList.toggle('empty', quietHud);
     set('g-speed', ((S.speed * 3600) / M_PER_MI).toFixed(1));
     set('g-dist', (S.dist / M_PER_MI).toFixed(2));
-    set('g-rpm', S.rpm > 0.5 ? String(Math.round(S.rpm)) : '--');
+    set('g-rpm', brainRide() ? S.eegScore == null ? '--' : String(Math.round(S.eegScore * 100)) : S.rpm > 0.5 ? String(Math.round(S.rpm)) : '--');
     set('g-grade', `${S.grade * 100 >= 0 ? '+' : ''}${(S.grade * 100).toFixed(1)}`);
-    if (n.hr != null && n.baseHr != null) { set('g-load', `+${(S.gradeLoad * 100).toFixed(1)}`); set('g-load-u', '%'); } else { set('g-load', '--'); set('g-load-u', n.hr != null ? 'base' : 'no HR'); }
+    if (brainRide()) { set('g-load', S.eegValid ? 'ready' : 'coast'); set('g-load-u', ''); }
+    else if (n.hr != null && n.baseHr != null) { set('g-load', `+${(S.gradeLoad * 100).toFixed(1)}`); set('g-load-u', '%'); } else { set('g-load', '--'); set('g-load-u', n.hr != null ? 'base' : 'no HR'); }
     if (S.ghost) { const g = Math.round(S.ghostGap || 0); set('g-ghost', `${g > 0 ? '+' : ''}${g}`); }
     // Train
     const cl = S.mode === 'train' ? (bio.replayOn ? S.replayClarity : BioMath.clarity(n.swing, bio.fullSwing)) : null;
@@ -777,6 +892,14 @@
   const H = 1 / 120;
   function step() {
     const n = bio.now;
+    if (brainRide()) {
+      // This branch consumes no heart rate, cadence, manual pedal or grade-load.
+      S.rpm = 0; S.grade = gradeAt(S.vis); S.gradeLoad = 0; S.surge = 0; S.pulse = 0;
+      S.speed = S.eegDrive * EEG_MAX_SPEED;
+      S.zoom = S.eegDrive * S.map.maxZoom * .35;
+      S.dist += S.speed * H; S.vis += S.speed * H;
+      return;
+    }
     S.rpm += (targetRpm(H) - S.rpm) * (1 - Math.exp(-H / 0.32));
     if (S.rpm < 0.3) S.rpm = Math.max(0, S.rpm - H * 8);
     const m = motion01(S.rpm);
@@ -799,7 +922,7 @@
   const ridge = new Uint8Array(64), ridgeF = new Float32Array(64);
   const ringData = new Float32Array(12 * 4), rings = [];
   bio.on('beat', () => {
-    if (RM.matches) return;
+    if (RM.matches || brainRide()) return;
     S.pulse = 1;
     rings.push({ z: S.vis + 2, t: performance.now(), v: 0.34, k: 0 });
     if (rings.length > 12) rings.shift();
@@ -820,7 +943,7 @@
 
   function noteLanes(now) {
     if (!bio.recording) return;
-    if (now - noteLanes.fast > 100) { noteLanes.fast = now; bio.noteLane('rpm', +S.rpm.toFixed(1)); }
+    if (now - noteLanes.fast > 100) { noteLanes.fast = now; bio.noteLane('rpm', +S.rpm.toFixed(1)); if (brainRide()) bio.noteLane('eeg', eegReading()); }
     if (now - noteLanes.mid > 500) { noteLanes.mid = now; bio.noteLane('dist', +Math.max(0, S.dist - recordBaseDist).toFixed(1)); bio.noteLane('vis', +S.vis.toFixed(3)); }
     if (now - noteLanes.slow > 1000) {
       noteLanes.slow = now;
@@ -836,13 +959,13 @@
     try {
       const dtMs = Math.min(100, now - last), dt = dtMs / 1000;
       last = now;
-      bio.tick(now);
+      bio.tick(now); updateEEG(dt);
       fpsN++; if (now - fpsT > 500) { fps = (fpsN * 1000) / (now - fpsT); fpsN = 0; fpsT = now; }
 
       const n = bio.now;
-      const playing = bio.demoOn || bio.replayOn || bio.hr.connected || bio.cadence.connected || manualRide();
+      const playing = bio.demoOn || bio.replayOn || bio.hr.connected || bio.cadence.connected || manualRide() || brainRide();
       document.body.classList.toggle('playing', playing);
-      shell.quietTick(now, bio.demoOn || bio.hr.state === 'live' || bio.cadence.state === 'live');
+      shell.quietTick(now, bio.demoOn || (brainRide() ? S.eegValid : bio.hr.state === 'live' || bio.cadence.state === 'live'));
 
       if (now - lastText > 120) {
         lastText = now;
@@ -907,7 +1030,8 @@
       const tx = pathX(z + look), ty = roadY(z + look) + 1.0 + look * S.tilt;
       let fx = tx - cx, fy = ty - cy, fz = look;
       const fl = Math.hypot(fx, fy, fz); fx /= fl; fy /= fl; fz /= fl;
-      const curveRoll = RM.matches ? 0 : clamp((pathX(z + 12) - 2 * pathX(z + 6) + cx) * 0.012, -0.07, 0.07);
+      S.motionCalm = brainRide() ? 1 - .85 * S.eegDrive : 1;
+      const curveRoll = RM.matches ? 0 : S.motionCalm * clamp((pathX(z + 12) - 2 * pathX(z + 6) + cx) * 0.012, -0.07, 0.07);
       S.roll += (curveRoll - S.roll) * Math.min(1, dtMs / 200);
       let rx = fz, rz = -fx;
       const rl = Math.hypot(rx, rz); rx /= rl; rz /= rl;
@@ -916,7 +1040,7 @@
       const cr = Math.cos(S.roll), sr = Math.sin(S.roll);
       const right = [rx * cr + ux * sr, uy * sr, rz * cr + uz * sr];
       const up = [ux * cr - rx * sr, uy * cr, uz * cr - rz * sr];
-      const camX = cx, camY = cy + (RM.matches ? 0 : Math.sin(S.vis * 0.9) * 0.018 * motion01(S.rpm));
+      const camX = cx, camY = cy + (RM.matches ? 0 : Math.sin(S.vis * 0.9) * 0.018 * (brainRide() ? S.motionCalm : motion01(S.rpm)));
       const fwd = [fx, fy, fz];
       const sunAz = train ? Math.atan2(tx - cx, look) : mixN('sunAz');
       const sd = (() => { const x = Math.sin(sunAz), z2 = Math.cos(sunAz), y = sunEl, l = Math.hypot(x, y, z2); return [x / l, y / l, z2 / l]; })();
@@ -942,7 +1066,7 @@
       gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 64, 1, gl.RED, gl.UNSIGNED_BYTE, ridge);
 
       const beatLen = Math.max(6, (n.hr ? 60 / n.hr : 0.8) * Math.max(10, S.speed));
-      const m = motion01(S.rpm);
+      const m = brainRide() ? S.eegDrive : motion01(S.rpm);
       S.pulse *= Math.exp(-dt / 0.24);
       const br = bio.breath();
       const nebulaAmt = smooth(0.26, 0.72, dusk) * (ride ? 0.42 : train ? 0.32 * (1 - S.dawn) : 1);
@@ -980,11 +1104,12 @@
       const cz = vpP[0] * fwd[0] + vpP[1] * fwd[1] + vpP[2] * fwd[2];
       const vp = [0.5 + ((vpP[0] * right[0] + vpP[1] * right[1] + vpP[2] * right[2]) * focal) / cz / asp / 2, 0.5 + ((vpP[0] * up[0] + vpP[1] * up[1] + vpP[2] * up[2]) * focal) / cz / 2];
       const fpsScale = dtMs / 16.67;
-      const zoomNow = RM.matches ? S.zoom * 0.4 : 1 - Math.pow(1 - (S.zoom + 0.0012), fpsScale);
-      const wildEff = train ? S.wild * (1 - S.clarity) : clamp(S.wild + S.load * AROUSAL_WILD, 0, 1);
+      const zoomNow = RM.matches ? S.zoom * 0.4 : 1 - Math.pow(1 - (S.zoom + (brainRide() ? 0 : 0.0012)), fpsScale);
+      const wildEff = brainRide() ? (S.eegValid ? S.wild * S.motionCalm : 0) : train ? S.wild * (1 - S.clarity) : clamp(S.wild + S.load * AROUSAL_WILD, 0, 1);
+      S.effectiveWild = wildEff;
       G.into(dreamB);
       G.bindTex(0, scene.tex); G.bindTex(1, dreamA.tex);
-      G.use(pDream, { uScene: 0, uPrev: 1, uVP: vp, uZoom: zoomNow, uDream: RM.matches ? S.dream * 0.5 : S.dream, uWild: wildEff, uT: now / 1000 });
+      G.use(pDream, { uScene: 0, uPrev: 1, uVP: vp, uZoom: zoomNow, uDream: (RM.matches ? S.dream * 0.5 : S.dream) * (brainRide() ? 1 - .7 * S.eegDrive : 1), uWild: wildEff, uT: now / 1000 });
       G.draw();
       const tmp = dreamA; dreamA = dreamB; dreamB = tmp;
 
@@ -1066,7 +1191,7 @@
 
   /* for the checks: read what is really on the canvas and in the engine */
   window.__app = {
-    S, bio, BioMath, BIOMES, pathX, roadY, gradeAt, gradeFactor, motion01, CLARITY_TARGET, recordLuma,
+    S, bio, eeg, setDrivePower, BioMath, BIOMES, pathX, roadY, gradeAt, gradeFactor, motion01, CLARITY_TARGET, recordLuma,
     pixel() {
       const c = document.createElement('canvas'); c.width = 32; c.height = 18;
       const g = c.getContext('2d');

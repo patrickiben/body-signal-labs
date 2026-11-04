@@ -151,6 +151,7 @@
     const bounds = { rpm: [0, 250], hr: [0, 300], rmssd: [0, 500], sdnn: [0, 500], idx: [0, 100], swing: [0, 300], clarity: [0, 1], dawn: [0, 1], hold: [0, 1e9], dist: [0, 1e12], vis: [-1e12, 1e12], seed: [-1e6, 1e6], baseHr: [0, 300], gradeLoad: [0, .045] };
     const optional = new Set(['hr', 'rmssd', 'sdnn', 'idx', 'swing', 'baseHr']);
     const mode = (v) => ['watch', 'ride', 'train'].includes(v);
+    const drivePower = (v) => ['cadence', 'brainwaves'].includes(v);
     const biome = (v) => Number.isInteger(v) && v >= 0 && v < 5;
     const map = (v) => object(v) && Object.entries({ idle: [0, 60], max: [60, 130], maxZoom: [.004, .04], gamma: [.6, 3.2] }).every(([k, lim]) => finite(v[k], ...lim));
     if (raw.start != null) {
@@ -158,7 +159,9 @@
       if (!object(s) || !finite(s.vis, -1e12, 1e12) || !finite(s.seed, -1e6, 1e6) || !biome(s.biome) || !mode(s.mode) || !map(s.map)) fail('starting route');
       for (const [k, lim] of Object.entries({ rpm: [0, 250], dist: [0, 1e12], gradeLoad: [0, .045], fullOver: [20, 100], fullSwing: [6, 16], pace: [3, 12], hold: [0, 1e9], dawn: [0, 1] })) if (s[k] != null && !finite(s[k], ...lim)) fail(`starting ${k}`);
       if (s.baseHr != null && !finite(s.baseHr, 0, 300)) fail('starting baseline');
+      if (s.drivePower != null && !drivePower(s.drivePower)) fail('starting drive power');
     }
+    let includesSyntheticEEG = false;
     for (const [name, lane] of Object.entries(raw.lanes)) {
       if (!Array.isArray(lane)) fail(`${name} lane`);
       let previous = -1;
@@ -166,10 +169,18 @@
         if (!Array.isArray(point) || point.length !== 2 || !finite(point[0], 0, raw.durationMs) || point[0] < previous) fail(`${name} timing`);
         previous = point[0]; const value = point[1];
         if (bounds[name] && !(optional.has(name) && value === null) && !finite(value, ...bounds[name])) fail(`${name} value`);
-        if ((name === 'mode' && !mode(value)) || (name === 'biome' && !biome(value))) fail(`${name} value`);
+        if ((name === 'mode' && !mode(value)) || (name === 'biome' && !biome(value)) || (name === 'drivePower' && !drivePower(value))) fail(`${name} value`);
+        if (name === 'eeg') {
+          if (value && value.simulated === true) includesSyntheticEEG = true;
+          if (!object(value) || typeof value.valid !== 'boolean' || typeof value.simulated !== 'boolean' || !finite(value.drive, 0, 1)) fail('EEG control');
+          if (value.score !== null && !finite(value.score, 0, 1)) fail('EEG score');
+          if (value.valid && (value.score === null || value.ratio === null || value.phase !== 'ready')) fail('EEG ready state');
+          if (value.ratio !== null && !finite(value.ratio, 0, 50)) fail('EEG balance');
+          if (!['disconnected', 'waiting', 'calibrating', 'ready', 'stale', 'error'].includes(value.phase) || typeof value.reason !== 'string' || value.reason.length > 1000) fail('EEG quality');
+        }
       }
     }
-    return raw;
+    return includesSyntheticEEG && raw.synthetic !== true ? { ...raw, synthetic: true } : raw;
   }
 
   function createBio() {
@@ -470,12 +481,12 @@
 
     /* ---- recording and replay ---- */
     bio.startRecording = (appName, start) => { session = { t0: performance.now(), app: appName, created: new Date().toISOString(), lanes: {}, start: start ? JSON.parse(JSON.stringify(start)) : undefined, synthetic: !!demo || !!(replay && replay.s.synthetic) }; emit('state'); };
-    bio.noteLane = (name, value) => { if (session) { session.synthetic = session.synthetic || !!demo || !!(replay && replay.s.synthetic); (session.lanes[name] = session.lanes[name] || []).push([Math.round(performance.now() - session.t0), value]); } };
+    bio.noteLane = (name, value) => { if (session) { session.synthetic = session.synthetic || !!demo || !!(replay && replay.s.synthetic) || !!(name === 'eeg' && value && value.simulated); (session.lanes[name] = session.lanes[name] || []).push([Math.round(performance.now() - session.t0), value]); } };
     bio.stopRecording = () => {
       if (!session) return null;
       const s = session; session = null;
       emit('state');
-      return { schema: 'body-signal-labs/biofeedback-session@1', app: s.app, created: s.created, durationMs: Math.round(performance.now() - s.t0), synthetic: s.synthetic, start: s.start, distanceRelative: !!s.start, note: 'Readings once a second and cadence ten times a second. Inferred values are inferred, not measured. Not a medical record.', lanes: s.lanes };
+      return { schema: 'body-signal-labs/biofeedback-session@1', app: s.app, created: s.created, durationMs: Math.round(performance.now() - s.t0), synthetic: s.synthetic, start: s.start, distanceRelative: !!s.start, note: 'Readings once a second; cadence and any EEG game control ten times a second. EEG control is a derived beta/alpha game proxy, not a measured mental state. Inferred values are inferred, not measured. Not a medical record.', lanes: s.lanes };
     };
     bio.readSession = (raw) => {
       if (raw && /\/biofeedback-session@1$/.test(raw.schema || '')) return validateBioSession(raw);

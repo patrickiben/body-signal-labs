@@ -6,15 +6,15 @@ Immersive scenes that follow signals from your body, in the browser. Each page r
 
 ![Autonomic Telemetry during its labeled synthetic demo](docs/autonomic-telemetry.jpg)
 
-**Autonomic Telemetry** is a galaxy whose extent, brightness and warmth follow a personal, experimental estimate of arousal, inferred from heart, breath and brain signals. Work keeps watch, and Rest adds paced breathing. A labeled demo runs in any browser, and live signals come through a small bridge on a Mac. It lives in [its own repository](https://github.com/patrickiben/autonomic-telemetry).
+**Autonomic Telemetry** is a galaxy whose extent, brightness and warmth follow a personal, experimental estimate of arousal, inferred from heart rate and pulse variability, with EEG shown as context. Work keeps watch, and Rest adds paced breathing. A labeled demo runs in any browser, and live signals come through a small bridge on a Mac. It lives in [its own repository](https://github.com/patrickiben/autonomic-telemetry).
 
 ![Endless Cockpit on the Rainbow orbit skyway](docs/rainbow-orbit.jpg)
 
 **Endless Cockpit** takes you along six different cycling routes: a cliffside coast with open water and sea stacks, a tropical nature preserve with palms and colorful flowering plants, fenced country lanes past farmsteads, a turquoise alpine lake under snowy peaks, a winding sandstone canyon, and a rainbow skyway suspended among stars and a ringed planet. Each has its own terrain, roadside objects, path width, bends and elevation profile, with subtle wildflowers and occasional birds or small reptiles. Your cadence sets the speed, from a Bluetooth cadence sensor or smart trainer, the pedal button, or a steady setting. A Clear look is the default; Dreamy and Wild add the light trails and feedback. With New scenery every mile on, the landscape changes as you ride. These are procedural places, not GPS routes.
 
-![Biofeedback Path Cockpit during the demo](docs/biofeedback-path-cockpit.jpg)
+![Biofeedback Path Cockpit during its labeled synthetic EEG demo](docs/biofeedback-brainwaves.jpg)
 
-**Biofeedback Path Cockpit** is a road whose weather, grade and fog follow your body. Heart rate from a Bluetooth strap paints the weather, cadence sets the speed, and a paced-breathing game clears the fog. The inferred index is Autonomic Telemetry's own model. Everything about your state is inferred, and labeled as inferred.
+**Biofeedback Path Cockpit** is a road whose weather, grade and fog follow your body. Heart rate from a Bluetooth strap paints the weather, cadence sets the speed, and a paced-breathing game clears the fog. In Ride, an optional **Brainwaves** drive uses Muse S EEG to set speed and smoothness without cadence or a heart sensor. It runs through the local Mac bridge, with personal calibration and visible signal quality; the EEG balance is an experimental game control, not a measurement of mental clarity. The inferred index is Autonomic Telemetry's own model. Everything about your state is inferred, and labeled as inferred.
 
 ## What the pages tell you
 
@@ -22,7 +22,7 @@ Each sensor says whether it is not connected, waiting for you to choose, refused
 
 ## Browsers
 
-The cockpits connect sensors over Web Bluetooth, in Chrome or Edge on a computer. Safari and Firefox do not have it, and every demo still runs there. [Inputs](docs/INPUTS.md) has the details, with sources.
+The cockpits connect heart and cadence sensors over Web Bluetooth, in Chrome or Edge on a computer. Safari and Firefox do not have it, and every demo still runs there. Muse S uses the optional Mac bridge instead of browser Bluetooth; see [EEG setup](docs/EEG_SETUP.md). [Inputs](docs/INPUTS.md) has the details, with sources.
 
 ## Open it locally
 
@@ -31,6 +31,8 @@ The cockpit pages are self-contained. Open `endless-cockpit.html` or `biofeedbac
 ```sh
 python3 -m http.server 8090
 ```
+
+For Muse S Brainwaves drive, use the [optional bridge launcher](docs/EEG_SETUP.md), which serves the cockpit and EEG stream from the same private local address. The static page alone does not connect to Muse.
 
 Edit `src/`, then run `python3 build.py`, which inlines everything into the pages. The suite bar links to Autonomic Telemetry by a relative path, so a clone of [autonomic-telemetry](https://github.com/patrickiben/autonomic-telemetry) beside this one makes the bar work on disk too.
 

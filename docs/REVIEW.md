@@ -17,6 +17,10 @@ This pass covers Endless Cockpit and Biofeedback Path Cockpit, following the six
 
 Rainbow orbit is the sixth scene. It preserves the existing five stored indices and adds a suspended rainbow ribbon, raised rails, arches, stars, a moon and a ringed planet. The renderer, route math, thumbnails, sound and replay all recognize it. A compact landscape overlap was fixed during phone review.
 
+## Optional Muse S Athena drive
+
+Biofeedback Ride now also offers Brainwaves as a separate power source. It uses the existing local Autonomic bridge, an eyes-open personal EEG reference and explicit quality gates. Higher experimental EEG control raises speed and steadiness without a heart or cadence sensor; invalid signals coast to a stop. This is a game mapping, not a validated mental-clarity measure. See [setup](EEG_SETUP.md) and [method](BIOFEEDBACK.md).
+
 ## Next improvements worth doing
 
 1. **A scenery playlist and favorites.** Let riders choose which environments automatic cycling visits, and keep a preferred route seed as a bookmark. This would give the current every-mile switch more personal control.

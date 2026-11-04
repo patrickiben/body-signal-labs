@@ -4,7 +4,7 @@
 |---|---|
 | Autonomic Telemetry | Heart, pulse, breath and brain signals through its Mac bridge, or a labeled synthetic demo. See [its own guide](https://github.com/patrickiben/autonomic-telemetry/blob/main/docs/BRIDGE.md) |
 | Endless Cockpit | Your cadence: a Bluetooth cadence sensor or smart trainer, the pedal button or Space, or a steady setting |
-| Biofeedback Path Cockpit | Heart rate from a Bluetooth strap, and cadence from a sensor, a smart trainer or the pedal button |
+| Biofeedback Path Cockpit | Heart rate from a Bluetooth strap, cadence from a sensor/trainer/manual controls, or optional Muse S EEG drive in Ride |
 
 ## Cadence
 
@@ -13,6 +13,10 @@ Both cockpits read the standard Bluetooth Cycling Speed and Cadence profile, or 
 ## Heart rate
 
 Biofeedback Path Cockpit reads the standard Bluetooth Heart Rate profile. A strap that reports beat intervals adds RMSSD and SDNN; a rate-only sensor gives an explicitly limited estimate. [Biofeedback Path Cockpit](BIOFEEDBACK.md) has the details.
+
+## Muse S brainwave drive
+
+The optional [Mac bridge launcher](EEG_SETUP.md) reuses Autonomic Telemetry’s Muse Classic/Athena transport and EEG feature extraction. The cockpit receives EEG beta/alpha balance and signal-quality information from that local bridge. It does not require Hume, a heart strap or cadence. Choose Brainwaves in Ride, explicitly connect the Muse, then calibrate with eyes open. The static hosted page offers a labeled preview; actual Muse input requires the local launcher.
 
 ## Browsers
 

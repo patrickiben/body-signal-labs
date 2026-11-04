@@ -4,6 +4,19 @@ Checked between 2026-11-02 and 2026-11-04 in Chrome 156 on an Apple M4 Max Mac. 
 
 A browser test cannot pair a real Bluetooth device, and a page that opens Chrome's device list closes headless Chrome, so every sensor state below uses a stub of `navigator.bluetooth` that sends real packet bytes through the page's own parsers.
 
+## Muse S Athena Brainwaves drive, 2026-11-04
+
+The optional local launcher reuses Autonomic Telemetry at `6c3ce294a1623649593f2871b364a9053c719ec0`; that dependency checkout was not modified. The isolated `.venv-eeg` requirements installed successfully, and a real-mode launcher boot served the cockpit and reported sequence zero without scanning or connecting, then shut down cleanly. No physical Muse was connected to this cockpit.
+
+- `tests/eeg_drive.cjs`: **26/26** deterministic checks, including private-path configuration, request-start clock alignment, delayed/stale/duplicate frames, reference changes, spaced calibration samples, synthetic isolation, disconnect failures and cleanup.
+- `tests/test_brainwave_bridge.py`: **15/15** checks using the actual upstream HTTP handler and a controlled engine. Private paths, configuration order, Host/Origin refusal, traversal/source/symlink denial, same-session events and sibling navigation passed.
+- `tests/brainwave_relay.py`: **14/14** checks over the real launcher → HTTP/SSE → browser path, without replacing fetch, EventSource or configuration injection. Eligible synthetic Athena-format fixtures completed a 20-sample reference in 19.36 seconds and drove 2.22 → 5.26 m/s while cadence stayed zero and HR/RMSSD stayed unavailable. Zero-ratio recording/replay, stale-data coast and Disconnect passed. This validates transport and game-control integration, not a headset or mental-state inference.
+- `tests/brainwave_states.py`: **22/22** browser state checks cover no automatic pairing, literal device names, calibration, score/speed/steadiness ordering, exclusion of cadence/heart/manual propulsion, source-specific HUD, demo, session provenance, legacy cadence replay, invalid import rejection and recorded coasting.
+- Six additional EEG layouts passed from 320 × 568 to 1440 × 900, including 568 × 320 landscape and Connect-sheet controls. Manual screenshot review caught and corrected a compact header overlap and low-contrast HUD labels over a bright horizon. README/home imagery was captured from the labeled built-in EEG demo.
+- Two nine-second high-control motion captures, with Wild and Dreamy at maximum, passed under normal and reduced motion. Worst regions above three flashes per second were **1.5%** and **2.4%** against the 25% screen, with **0 whole-frame flashes**. These sampled cases do not cover saturated red flashes or establish personal comfort.
+
+Live EEG is a calibrated spectral game proxy. The bridge's software quality gates do not verify contact, remove every artifact or establish mental clarity. A real Athena session remains the final hardware check.
+
 ## Follow-up reliability review, 2026-11-04
 
 The failure cases and further product ideas are recorded in [REVIEW.md](REVIEW.md). `tests/session_regressions.cjs` passed **20/20** deterministic checks covering contact loss, missing versus zero cadence fields, synthetic provenance, malformed session rejection, recording isolation, relative ghost distance and route restoration. The full existing Biofeedback browser state suite passed **45/45**. `tests/pedal_focus.py` passed for both cockpits, covering keyboard/pointer focus loss and hidden pages, plus leaving Biofeedback Ride mode.
