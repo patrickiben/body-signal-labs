@@ -68,7 +68,9 @@ with sync_playwright() as p:
             if page == 'endless-cockpit.html':
                 # the ride's hardest cases: top cadence in the Wild look while the scene changes every 2 s,
                 # and the time of day flipping between golden hour and night, faster than anyone would tap it
+                pg.click('#demo-button')  # demo cadence takes precedence over a steady setting
                 pg.evaluate("__app.S.steady = 130; __app.setLook('wild'); window.__cyc = setInterval(() => __app.nextBiome(), 2000)")
+                pg.wait_for_function('__app.S.rpm > 125')
                 runs.append(('hardest', analyze(pg.evaluate('__app.recordLuma(9000)'))))
                 pg.evaluate("clearInterval(window.__cyc); __app.S.steady = 100; let k = 0; window.__tod = setInterval(() => __app.setTod(k++ % 2 ? 3 : 1), 1500)")
                 runs.append(('time flips', analyze(pg.evaluate('__app.recordLuma(9000)'))))
