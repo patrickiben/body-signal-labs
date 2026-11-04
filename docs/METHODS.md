@@ -4,13 +4,17 @@ Everything in Endless Cockpit is a stated rule. Nothing is learned, and it uses 
 
 ## Endless Cockpit
 
-Each landscape has a separate terrain function, blended with normalized scene weights: the coast cuts down to a sea plane and adds isolated rock stacks; the forest has a low rolling floor; the meadows have broad field banks; the alpine route opens onto a lake between distant ridges; and the canyon has stepped walls. The road's width, curvature, wavelength and elevation amplitude also vary by landscape. The camera, terrain shader, elevation preview and cadence-derived grade use the same route parameters.
+Each landscape has a separate terrain function, blended with normalized scene weights: the coast cuts down to a sea plane and adds isolated rock stacks; the tropical preserve has a low rolling forest floor; the meadows have broad field banks; the alpine route opens onto a lake between distant ridges; and the canyon has stepped walls. The road's width, curvature, wavelength and elevation amplitude also vary by landscape. The camera, terrain shader, elevation preview and cadence-derived grade use the same route parameters.
 
-Tall pines, round country trees, farm buildings and cacti are seeded world-space silhouettes with perspective, parallax and terrain occlusion. They are stylized procedural shapes rather than photorealistic assets. Roadside rails are ray-intersected 3D segments. Objects are evaluated over a bounded distance so riding indefinitely does not grow memory. Scene thumbnails use the same renderer and the correct camera for each route.
+Palms, broadleaf vegetation, colorful flowers, alpine pines, round country trees, farm buildings, cacti and occasional small wildlife are seeded world-space silhouettes with perspective, parallax and terrain occlusion. They are stylized procedural shapes rather than photorealistic assets. Roadside rails are ray-intersected 3D segments. Objects are evaluated over a bounded distance so riding indefinitely does not grow memory. Scene thumbnails use the same renderer and the correct camera for each route.
+
+Flower clusters and occasional perched or ground birds and lizards stay at fixed seeded positions beside the route. Wildlife is static; passing it creates parallax, without an animal behavior simulation. All landscapes share a fixed placement grid so scene transitions do not reseed these details. Smaller flowers and wildlife are evaluated only near their roadside bounds, and their colors use the landscape's existing lighting and fog.
 
 The road and terrain are a raymarched height field. The scene passes through a feedback loop like Milkdrop's: the last frame is zoomed toward the vanishing point, slightly warped, and mixed under the new frame. Only emitters leave long trails, tracked in the alpha channel, so the sun and sky never smear over the land.
 
 `motion01(rpm)` maps cadence to a 0 to 1 motion value with a set idle, top and response curve. Zoom per frame is exactly that value times the maximum. The road's grade changes speed by a factor from 0.6 to 1.35 after the mapping, so the curve stays truthful. Motion runs on a fixed 1/120 s step. Ride files now include the starting scene, route seed, visual position, distance, time of day and cadence mapping. Playback reproduces those settings and the recorded cadence; timing, smoothing and older files can still produce a different traveled distance. Distance counts driven speed only, never the slow drift shown at rest.
+
+The base visual speed reaches 7 m/s (about 15.7 mph) at the top of the cadence mapping, before the grade factor. This touring pace replaces the previous 18 m/s cap so nearby planting and wildlife remain readable. The displayed speed, accumulated distance and camera travel use the same driven speed. It is a procedural pace, not a measurement of real bicycle speed.
 
 Cadence comes from a Bluetooth CSC or FTMS sensor, the hold-to-pedal button at 88 rpm, or a steady setting, in that order. A sensor reading older than 3 seconds counts as stopped. Each full crank revolution sends one ring of light down the road, and the road's dashes are spaced one per revolution. The ridge on the horizon is stated value noise that drifts past as you ride. It is not a measurement.
 
@@ -26,7 +30,9 @@ A ride file holds cadence ten times a second, a starting route/settings snapshot
 
 ## Safety
 
-A limiter in the final pass holds each region of the finished picture, on a grid 128 cells wide, to a change of 0.36 in relative luminance per second, in either direction, whatever caused it. A 10% swing therefore takes more than a quarter of a second, which keeps a large area under three flashes a second by construction. Small sparks barely move a region's mean, so they stay instant. The limit tightens to 0.16 under the system's reduced-motion setting, which also removes the crash flash and reduces the camera's shake, surge and rotation.
+A limiter in the final pass tracks local average luminance on a grid 128 cells wide, allowing changes of 0.36 per second in either direction, or 0.16 with reduced motion. It adjusts the finished picture from those regional averages. This does not bound every pixel: moving high-contrast silhouettes can still change rapidly within a region, so the rendered result must be measured. Reduced motion also removes the crash flash and reduces the camera's shake, surge and rotation.
+
+Endless Cockpit caps this adjustment's brightness gain at 1: it can dim the image but cannot brighten passing foliage. The previous gain of up to 4 could amplify moving contrast into bright flashes. Foliage edges use projected pixel coverage, with fine leaflet patterns fading toward their average once too small to resolve. These changes keep the Clear view sharp. Biofeedback retains its existing gain setting.
 
 Endless Cockpit's far range is slow procedural noise, and its rings of light fade before they reach the horizon, where they would stack.
 

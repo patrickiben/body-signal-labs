@@ -137,10 +137,11 @@ void main(){
   c*=1.-uVig*smoothstep(.25,.95,dot(q,q)*2.1);
   o=vec4(c,1.);
 }`;
-  // The flicker limiter. Each region of the finished picture may change brightness only so fast, in either
-  // direction, whatever made it change. Holding a 10% swing to about a quarter second keeps any large area
-  // under the WCAG limit of three flashes a second, by construction. Small sparks barely move a region's mean,
-  // so they stay instant.
+  // Regional luminance smoothing limits sampled local averages, not every pixel.
+  // Moving silhouettes can still change contrast within those regions, and upward
+  // gain can amplify that contrast. Pages may cap maxGain at 1 to keep natural
+  // scenery from brightening as it moves. Rendered flash behavior must be measured;
+  // this approximation alone cannot guarantee a threshold or personal comfort.
   const LIMIT_FS = FS_HEAD + `
 uniform sampler2D uCur,uPrev; uniform float uLod,uMax;
 void main(){
@@ -149,12 +150,12 @@ void main(){
   o=vec4(prev+clamp(cur-prev,-uMax,uMax),cur,0.,1.);
 }`;
   const OUT_FS = FS_HEAD + `
-uniform sampler2D uG,uLim; uniform float uGrain,uT; uniform vec3 uLift;
+uniform sampler2D uG,uLim; uniform float uGrain,uT,uMaxGain; uniform vec3 uLift;
 float h12(vec2 p){ vec3 q=fract(vec3(p.xyx)*.1031); q+=dot(q,q.yzx+33.33); return fract((q.x+q.y)*q.z); }
 void main(){
   vec3 c=texture(uG,vUv).rgb;
   vec2 L=texture(uLim,vUv).rg;
-  c*=clamp((L.x+.003)/(L.y+.003),.05,4.);
+  c*=clamp((L.x+.003)/(L.y+.003),.05,uMaxGain);
   c=pow(min(c,vec3(1.)),vec3(1./2.2))+uLift;
   c+=(h12(gl_FragCoord.xy+fract(uT)*97.)-.5)*uGrain;
   o=vec4(c,1.);
@@ -204,7 +205,7 @@ void main(){
       return mips[0].tex;
     }
     function finish(sceneTex, bloomTex, vals, dt) {
-      const v = Object.assign({ uBloomK: 0.6, uExposure: 1, uFlash: 0, uFlashC: [1, 0.94, 0.84], uVig: 0.5, uSat: 1, uGrain: 0.02, uT: 0, uLift: [0, 0, 0], rate: 0.36 }, vals);
+      const v = Object.assign({ uBloomK: 0.6, uExposure: 1, uFlash: 0, uFlashC: [1, 0.94, 0.84], uVig: 0.5, uSat: 1, uGrain: 0.02, uT: 0, uLift: [0, 0, 0], rate: 0.36, maxGain: 4 }, vals);
       gl.disable(gl.BLEND);
       G.into(graded);
       G.bindTex(0, sceneTex); G.bindTex(1, bloomTex);
@@ -220,7 +221,7 @@ void main(){
       limFresh = false;
       G.into(null);
       G.bindTex(0, graded.tex); G.bindTex(1, limA.tex);
-      G.use(out, { uG: 0, uLim: 1, uGrain: v.uGrain, uT: v.uT, uLift: v.uLift });
+      G.use(out, { uG: 0, uLim: 1, uGrain: v.uGrain, uT: v.uT, uLift: v.uLift, uMaxGain: v.maxGain });
       G.draw();
     }
     return { resize, bloom, finish };

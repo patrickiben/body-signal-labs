@@ -17,6 +17,18 @@ The first GitHub Linux/SwiftShader run stalled with the hardware scenery budget.
 
 This does not validate real Bluetooth gear, saturated red flashes, or personal motion comfort. The shapes are stylized procedural geometry, with world-space roadside silhouettes, rather than photographic locations. Earlier results below describe their dated builds.
 
+### Tropical preserve and wildlife follow-up
+
+The former pine trail is now a tropical nature preserve, with palms, broadleaf understory, orange/red bracts, pink flowers and burgundy leaves. Its occasional perched birds and small lizards were inspected in actual browser captures. The other four routes have smaller flower accents and sparse birds or desert lizards. Wildlife is static and seeded beside the route. Alpine conifers remain separate.
+
+The updated build passed all 33 state checks, all 14 responsive layouts with the tropical route selected, and the five-world scenery, long-distance transition and recording checks. All four pages passed the SwiftShader smoke suite. A separate software-rendered tropical ride reached 70 rpm with a 267 × 150 scenery buffer, a nonblank frame and no page errors. README and home screenshots were recaptured from this build.
+
+The smoke suite now checks actual canvas pixels as well as moving readouts. A separate comparison found the shared renderer's default output pixel-identical to the previous build through brightness transitions and resizes, including its RGBA8 fallback. Biofeedback's ambient and demo scenes remained nonblank and varied, with no page or GL errors.
+
+Dense moving foliage exposed a limitation of the regional brightness adjustment: its upward gain amplified contrast and could make leaves flash. The final build combines projected-pixel foliage coverage, a 7 m/s base touring pace and an Endless-only gain cap of 1. The Clear view remains sharp.
+
+The expanded flicker suite captures before analyzing and stops its timers between cases. It checks the demo, top-cadence scene changes, day/night changes in all five worlds, and tropical daylight/night held steady in both Clear and Wild, under normal and reduced motion. All **22 cases passed**: the worst region above three flashes per second was **21.4%** against the test's 25% limit, with **0 whole-frame flashes**. Clear held daylight measured 12.3% with normal motion and 17.5% with reduced motion. This is a measured screen for these cases, not a guarantee for every route or of personal motion comfort; saturated red flashes are not tested.
+
 ## Endless Cockpit
 
 Endless Cockpit takes its speed from cadence only. `tests/endless_states.py` drives it on the rendered page.

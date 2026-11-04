@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#101525">
 <title>Endless Cockpit</title>
-<meta name="description" content="Five procedural cycling routes: coastal cliffs, pine forest, country lanes, an alpine lake and a sandstone canyon, moving at your cadence.">
+<meta name="description" content="Five procedural cycling routes: coastal cliffs, a tropical preserve, country lanes, an alpine lake and a sandstone canyon, moving at your cadence.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101525'/%3E%3Cpath d='M5 17h6l2.5-6 4 11 2.5-5H27' fill='none' stroke='%23b8b7ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
 :root {
@@ -313,7 +313,7 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
 </head>
 <body>
 <main class="scene" id="scene" aria-label="Endless Cockpit">
-<canvas id="stage" role="img" aria-label="Five procedural cycling routes: coastal cliffs, pine forest, country lanes, an alpine lake and a sandstone canyon, moving at your cadence."></canvas>
+<canvas id="stage" role="img" aria-label="Five procedural cycling routes: coastal cliffs, a tropical preserve, country lanes, an alpine lake and a sandstone canyon, moving at your cadence."></canvas>
 </main>
 <script>
 /* family.js: the same-tab bar shared by the suite's home page and its three apps, in the same order everywhere.
@@ -604,10 +604,11 @@ void main(){
   c*=1.-uVig*smoothstep(.25,.95,dot(q,q)*2.1);
   o=vec4(c,1.);
 }`;
-  // The flicker limiter. Each region of the finished picture may change brightness only so fast, in either
-  // direction, whatever made it change. Holding a 10% swing to about a quarter second keeps any large area
-  // under the WCAG limit of three flashes a second, by construction. Small sparks barely move a region's mean,
-  // so they stay instant.
+  // Regional luminance smoothing limits sampled local averages, not every pixel.
+  // Moving silhouettes can still change contrast within those regions, and upward
+  // gain can amplify that contrast. Pages may cap maxGain at 1 to keep natural
+  // scenery from brightening as it moves. Rendered flash behavior must be measured;
+  // this approximation alone cannot guarantee a threshold or personal comfort.
   const LIMIT_FS = FS_HEAD + `
 uniform sampler2D uCur,uPrev; uniform float uLod,uMax;
 void main(){
@@ -616,12 +617,12 @@ void main(){
   o=vec4(prev+clamp(cur-prev,-uMax,uMax),cur,0.,1.);
 }`;
   const OUT_FS = FS_HEAD + `
-uniform sampler2D uG,uLim; uniform float uGrain,uT; uniform vec3 uLift;
+uniform sampler2D uG,uLim; uniform float uGrain,uT,uMaxGain; uniform vec3 uLift;
 float h12(vec2 p){ vec3 q=fract(vec3(p.xyx)*.1031); q+=dot(q,q.yzx+33.33); return fract((q.x+q.y)*q.z); }
 void main(){
   vec3 c=texture(uG,vUv).rgb;
   vec2 L=texture(uLim,vUv).rg;
-  c*=clamp((L.x+.003)/(L.y+.003),.05,4.);
+  c*=clamp((L.x+.003)/(L.y+.003),.05,uMaxGain);
   c=pow(min(c,vec3(1.)),vec3(1./2.2))+uLift;
   c+=(h12(gl_FragCoord.xy+fract(uT)*97.)-.5)*uGrain;
   o=vec4(c,1.);
@@ -671,7 +672,7 @@ void main(){
       return mips[0].tex;
     }
     function finish(sceneTex, bloomTex, vals, dt) {
-      const v = Object.assign({ uBloomK: 0.6, uExposure: 1, uFlash: 0, uFlashC: [1, 0.94, 0.84], uVig: 0.5, uSat: 1, uGrain: 0.02, uT: 0, uLift: [0, 0, 0], rate: 0.36 }, vals);
+      const v = Object.assign({ uBloomK: 0.6, uExposure: 1, uFlash: 0, uFlashC: [1, 0.94, 0.84], uVig: 0.5, uSat: 1, uGrain: 0.02, uT: 0, uLift: [0, 0, 0], rate: 0.36, maxGain: 4 }, vals);
       gl.disable(gl.BLEND);
       G.into(graded);
       G.bindTex(0, sceneTex); G.bindTex(1, bloomTex);
@@ -687,7 +688,7 @@ void main(){
       limFresh = false;
       G.into(null);
       G.bindTex(0, graded.tex); G.bindTex(1, limA.tex);
-      G.use(out, { uG: 0, uLim: 1, uGrain: v.uGrain, uT: v.uT, uLift: v.uLift });
+      G.use(out, { uG: 0, uLim: 1, uGrain: v.uGrain, uT: v.uT, uLift: v.uLift, uMaxGain: v.maxGain });
       G.draw();
     }
     return { resize, bloom, finish };
@@ -766,7 +767,8 @@ void main(){
 <script>
 /* endless.js: Endless Cockpit. A procedural road that keeps pace with your pedaling.
    Five landscapes have their own terrain, roadside objects and route profiles, with an optional dream-feedback loop.
-   Cadence sets the speed, and each crank revolution sends a ring of light down the road. */
+   Cadence sets the speed, and each crank revolution sends a ring of light down the road.
+   Plants and occasional wildlife have fixed seeded world positions across the landscapes; animals are static. */
 (function () {
   'use strict';
   const { createGL, createPost, FS_HEAD, srgb } = GLKit;
@@ -777,7 +779,7 @@ void main(){
 
   const BIOMES = [
     { name: 'Golden coast', description: 'Cliffside cycleway · open sea, rock stacks and white guardrails', skyTop: '#397ab1', skyHz: '#abd6eb', sun: '#ffe7be', ground: '#6c8247', rock: '#a58d70', fog: '#9bbbc9', edge: '#e6c985', amp: 45, ridge: .38, trees: 0, sea: 1, snow: 0, strata: 0, grid: 0, fogK: .0018, sunAz: -.65, sunEl: .55, coast: 1, forest: 0, meadow: 0, alpine: 0, canyon: 0, width: 2.25, turn: 1.25, rise: .4, winding: .8 },
-    { name: 'Misty pines', description: 'Woodland trail · tall conifers, fern banks and a soft gravel path', skyTop: '#78a5b3', skyHz: '#d8ded0', sun: '#fff2c9', ground: '#3c6041', rock: '#768574', fog: '#b7c9b7', edge: '#9fc4aa', amp: 22, ridge: .22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .004, sunAz: -.5, sunEl: .52, coast: 0, forest: 1, meadow: 0, alpine: 0, canyon: 0, width: 1.65, turn: .75, rise: .3, winding: 1.15 },
+    { name: 'Tropical preserve', description: 'Tropical nature preserve · palms, flowering understory and a warm earth trail', skyTop: '#368ca8', skyHz: '#bee1cc', sun: '#ffedbc', ground: '#467642', rock: '#b99b6a', fog: '#a9c7ad', edge: '#e0b887', amp: 22, ridge: .22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0028, sunAz: -.5, sunEl: .52, coast: 0, forest: 1, meadow: 0, alpine: 0, canyon: 0, width: 1.65, turn: .75, rise: .3, winding: 1.15 },
     { name: 'Meadow lanes', description: 'Country lane · rolling fields, split-rail fences and farmsteads', skyTop: '#5596c6', skyHz: '#d8e8d2', sun: '#fff0c6', ground: '#91a84e', rock: '#87965c', fog: '#cedbc0', edge: '#e4d59a', amp: 14, ridge: .1, trees: .2, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0016, sunAz: -.7, sunEl: .55, coast: 0, forest: 0, meadow: 1, alpine: 0, canyon: 0, width: 2, turn: .95, rise: .5, winding: .7 },
     { name: 'Alpine lake', description: 'Lakeside pass · turquoise water, snowy peaks and mountain pines', skyTop: '#367bb3', skyHz: '#d3e7ee', sun: '#fff3d9', ground: '#6b8968', rock: '#8c9699', fog: '#c2d9df', edge: '#b4dbe2', amp: 128, ridge: .7, trees: .2, sea: 1, snow: 1, strata: 0, grid: 0, fogK: .0016, sunAz: .7, sunEl: .5, coast: 0, forest: 0, meadow: 0, alpine: 1, canyon: 0, width: 2.1, turn: 1.4, rise: .7, winding: .65 },
     { name: 'Red canyon', description: 'Desert passage · sandstone walls, layered mesas and saguaro cacti', skyTop: '#5c9db7', skyHz: '#f5cba0', sun: '#ffe1b0', ground: '#c18a55', rock: '#c67246', fog: '#d8b18a', edge: '#ecc39a', amp: 72, ridge: .8, trees: 0, sea: 0, snow: 0, strata: 1, grid: 0, fogK: .0022, sunAz: -.9, sunEl: .5, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 1, width: 2.35, turn: .75, rise: .25, winding: 1.45 },
@@ -789,7 +791,7 @@ void main(){
     map: { idle: 25, max: 95, maxZoom: 0.018, gamma: 1.6 }, dream: 0.15, wild: 0.1, seed: 0,
     pedal: false, steady: null, ble: null, bleName: '', biome: 0, biomeNext: 0, biomeT: 1, dusk: 0.3, ambient: 2.2,
   };
-  const MAX_SPEED = 18, M_PER_MI = 1609.34, GRADE_K = 5;
+  const MAX_SPEED = 7, M_PER_MI = 1609.34, GRADE_K = 5;
   const routeValue = (key) => { const t = S.biomeT * S.biomeT * (3 - 2 * S.biomeT); return lerp((S.fromMix || BIOMES[S.biome])[key], BIOMES[S.biomeNext][key], t); };
   const WORLD_KEYS = ['coast', 'forest', 'meadow', 'alpine', 'canyon'];
   const routeBlend = (z, scene, elevation) => BIOMES.reduce((sum, b, i) => {
@@ -829,6 +831,250 @@ float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return textureLod(uN
 const mat2 R=mat2(.8,.6,-.6,.8);
 float fbm2(vec2 p){return (vn(p)+.5*vn(R*p*2.03+3.1))/1.5;}
 float fbm4(vec2 p){float a=.5,s=0.;for(int i=0;i<4;i++){s+=a*vn(p);p=R*p*2.03+1.7;a*=.5;}return s/.9375;}
+// Static, seeded world-space vegetation and wildlife. No frame-random color or motion.
+// Analytic world-pixel footprint: derivatives are undefined inside the row/leaf
+// branches, whose neighboring pixels may be evaluating different billboards.
+float foliageAA=.006;
+float foliageEdge(float d){return 1.-smoothstep(-foliageAA,foliageAA,d);}
+// Integrate a finite strip across one projected pixel. Unlike an SDF edge alone,
+// this preserves coverage when a stem or leaflet becomes narrower than a pixel.
+float foliageBand(float center,float halfWidth,float aa){
+  return clamp((center+halfWidth+aa)/(2.*aa),0.,1.)-clamp((center-halfWidth+aa)/(2.*aa),0.,1.);
+}
+float foliageSpan(float value,float lo,float hi,float aa){return foliageBand(value-(lo+hi)*.5,(hi-lo)*.5,aa);}
+void foliagePaint(inout vec3 c,inout float alpha,vec3 pigment,float mask){
+  float a=mask+alpha*(1.-mask);
+  c=(pigment*mask+c*alpha*(1.-mask))/max(a,.00001);alpha=a;
+}
+float line2(vec2 p,vec2 a,vec2 b){vec2 q=p-a,v=b-a;return length(q-v*clamp(dot(q,v)/dot(v,v),0.,1.));}
+float leaf2(vec2 p,vec2 a,vec2 b,float width){
+  vec2 axis=b-a,q=p-a;float t=dot(q,axis)/dot(axis,axis);
+  float crossD=abs(q.x*axis.y-q.y*axis.x)/length(axis);
+  return foliageBand(crossD,width*sin(3.14159*clamp(t,0.,1.)),foliageAA)*foliageSpan(t*length(axis),0.,length(axis),foliageAA);
+}
+vec4 tropicalTree(vec2 p,float h,float side){
+  vec3 c=vec3(0.);float alpha=0.;
+  float H=6.5+h*4.,bend=-side*(.5+h*1.4);
+  float yf=clamp(p.y/H,0.,1.),tx=bend*yf*yf;
+  float trunk=foliageBand(p.x-tx,.22-.09*yf,foliageAA)*foliageSpan(p.y,0.,H,foliageAA);
+  float trunkDetail=1.-smoothstep(.35,1.4,foliageAA*15.);
+  if(trunk>.001)foliagePaint(c,alpha,vec3(.29,.19,.105)*(.78+.18*cos(p.y*15.)*trunkDetail+.2*clamp((p.x-tx)/.22,-1.,1.)),trunk);
+  vec2 crown=vec2(bend,H);
+  if(h<.78){
+    // Six drooping pinnate fronds plus an upright spear. Curved rachises and
+    // alternating narrow leaflets give palms an unmistakable open silhouette.
+    for(int f=0;f<6;f++){
+      float sideF=f<3?-1.:1.,layer=mod(float(f),3.);
+      float span=3.+layer*.55+h*.65,t=(p.x-crown.x)*sideF/span;
+      if(t< -foliageAA/span||t>1.+foliageAA/span)continue;
+      float tc=clamp(t,0.,1.);
+      float axisY=H+(2.-layer*.62)*tc-(2.25+layer*.38)*tc*tc;
+      // Leaflet notches converge to their mean coverage once unresolved instead
+      // of alternately appearing and disappearing as a subpixel frond moves.
+      float resolved=1.-smoothstep(.35,1.4,foliageAA*38./span);
+      float leafWidth=(.12+.29*sin(tc*3.14159))*mix(.803775,.46+.54*abs(sin(tc*38.+h*4.)),resolved);
+      float slope=((2.-layer*.62)-2.*(2.25+layer*.38)*tc)/span;
+      float normalScale=inversesqrt(1.+slope*slope);
+      float frond=foliageBand((p.y-axisY)*normalScale,leafWidth*normalScale,foliageAA)*foliageSpan(t*span,0.,span,foliageAA);
+      if(frond>.001)foliagePaint(c,alpha,mix(vec3(.025,.13,.055),vec3(.11,.29,.075),.35+.35*sideF+.15*layer)*(.88+.12*cos(tc*38.)*resolved),frond);
+    }
+    float spear=leaf2(p,crown,crown+vec2(.4*side,2.3),.18);
+    if(spear>.001)foliagePaint(c,alpha,vec3(.12,.31,.09),spear);
+    float fruit=step(length((p-crown-vec2(.12,-.18))/vec2(.25,.2)),1.);
+    if(fruit>.5){alpha=1.;c=vec3(.19,.13,.055);}
+  }else{
+    // Broad, overlapping leaves form a lower, rounded tropical canopy.
+    for(int f=0;f<9;f++){
+      float angle=float(f)*2.4+h*8.;
+      vec2 base=crown+vec2(sin(angle)*.35,cos(angle)*.25-.65);
+      vec2 tip=base+vec2(sin(angle)*2.25,cos(angle)*1.45+.35);
+      float leaf=leaf2(p,base,tip,.72);
+      if(leaf>.001){float vein=1.-smoothstep(.012,.045,line2(p,base,tip));foliagePaint(c,alpha,mix(vec3(.035,.18,.065),vec3(.12,.29,.075),fract(float(f)*.37+h))+vec3(.05,.06,.01)*vein,leaf);}
+    }
+  }
+  return vec4(c,alpha);
+}
+vec4 tropicalBorder(vec2 p,float h,float sight){
+  vec3 c=vec3(0.);float alpha=0.;
+  // Ferns and colorful cordyline-like leaves grow in layered clumps.
+  if(h<.78)for(int f=0;f<7;f++){
+    float a=(float(f)-3.)*.4;
+    vec2 base=vec2(-.75,0.),tip=base+vec2(sin(a)*1.45,cos(a)*(1.25+.25*h));
+    float leaf=leaf2(p,base,tip,.2);
+    float t=dot(p-base,tip-base)/dot(tip-base,tip-base);
+    float phaseAA=foliageAA*27./length(tip-base);
+    float resolved=1.-smoothstep(.35,1.4,phaseAA);
+    leaf*=mix(.85879,smoothstep(.22-phaseAA,.22+phaseAA,abs(sin(t*27.))),resolved);
+    if(leaf>.001)foliagePaint(c,alpha,mix(vec3(.035,.19,.075),vec3(.12,.32,.09),float(f)/7.),leaf);
+  }
+  if(h>.2&&h<.72)for(int f=0;f<5;f++){
+    vec2 base=vec2(.7,0.),tip=base+vec2((float(f)-2.)*.42,1.1+.3*sin(float(f)+h));
+    float leaf=leaf2(p,base,tip,.22);
+    if(leaf>.001)foliagePaint(c,alpha,mix(vec3(.24,.045,.085),vec3(.44,.12,.16),float(f)/5.),leaf);
+  }
+  if(h<.3){
+    // Upright heliconia stems with alternating boat-shaped orange/red bracts.
+    for(int stem=0;stem<2;stem++){
+      float sx=-.13+float(stem)*.48,top=1.45+float(stem)*.3;
+      if(line2(p,vec2(sx,.05),vec2(sx,top))<.025){alpha=1.;c=vec3(.08,.23,.065);}
+      for(int k=0;k<4;k++){
+        float sideK=mod(float(k+stem),2.)*2.-1.,by=.55+float(k)*.23+float(stem)*.1;
+        vec2 base=vec2(sx,by),tip=base+vec2(sideK*.5,.21);
+        if(leaf2(p,base,tip,.13)>.5){alpha=1.;c=mix(vec3(.65,.055,.03),vec3(.95,.27,.035),float(k)/4.);}
+      }
+    }
+  }else if(h>.62&&h<.9){
+    // Recognizable five-petalled flowers in pink and purple roadside clusters.
+    for(int fl=0;fl<5;fl++){
+      vec2 center=vec2((float(fl)-2.)*.28,.65+.42*sin(float(fl)*1.4+h));
+      if(line2(p,vec2(center.x*.7,0.),center)<.018){alpha=1.;c=vec3(.05,.2,.055);}
+      for(int petal=0;petal<5;petal++){
+        float a=float(petal)*1.2566;vec2 d=p-center-vec2(sin(a),cos(a))*.105;
+        if(length(d/vec2(.095,.095))<1.){alpha=1.;c=mix(vec3(.47,.07,.31),vec3(.68,.19,.44),h);}
+      }
+      if(length(p-center)<.04){alpha=1.;c=vec3(.95,.63,.11);}
+    }
+  }
+  // Occasional toucan-like bird, resting on a woody branch above the flowers.
+  if(sight<.055){
+    vec2 perch=vec2(.25,1.9);
+    if(line2(p,vec2(.8,.1),perch+vec2(.35,-.08))<.045||line2(p,perch-vec2(.1,.1),perch+vec2(.55,-.1))<.035){alpha=1.;c=vec3(.22,.13,.07);}
+    vec2 q=p-perch;
+    float bird=step(length((q-vec2(0.,.22))/vec2(.24,.3)),1.);
+    bird=max(bird,leaf2(q,vec2(-.04,.08),vec2(-.34,-.28),.085));
+    if(bird>.5){alpha=1.;c=vec3(.025,.055,.085);}
+    if(length((q-vec2(.12,.47))/vec2(.16,.17))<1.){alpha=1.;c=vec3(.035,.07,.08);}
+    if(length((q-vec2(.1,.3))/vec2(.1,.13))<1.){alpha=1.;c=vec3(.9,.72,.23);}
+    if(leaf2(q,vec2(.2,.5),vec2(.68,.42),.13)>.5){alpha=1.;c=vec3(.94,.36,.035);}
+    if(length(q-vec2(.17,.5))<.025){alpha=1.;c=vec3(.005);}
+  }
+  // A small lizard rests on a low rock, off the riding surface.
+  if(sight>.94){
+    vec2 q=p-vec2(.2,.24);
+    if(length((p-vec2(.15,.09))/vec2(.72,.22))<1.){alpha=1.;c=vec3(.26,.23,.17);}
+    float liz=step(length(q/vec2(.27,.09)),1.);
+    liz=max(liz,step(length((q-vec2(.29,.03))/vec2(.1,.075)),1.));
+    float tailY=.04*sin((q.x+.27)*7.);
+    liz=max(liz,step(-.85,q.x)*step(q.x,-.18)*step(abs(q.y-tailY),.035*(q.x+.9)/.72));
+    for(int leg=0;leg<4;leg++){
+      float sideL=mod(float(leg),2.)*2.-1.,lx=leg<2?-.13:.14;
+      liz=max(liz,step(line2(q,vec2(lx,0.),vec2(lx-.08,sideL*.19)),.025));
+    }
+    if(liz>.5){alpha=1.;c=vec3(.15,.27,.08)*(1.+.18*sin(q.x*31.));}
+  }
+  return vec4(c,alpha);
+}
+
+// Small, non-emissive roadside details. p is metres from a roadside ground point:
+// x across the path, y up. h is the existing stable per-row random number in [0,1].
+// Call AFTER the row's depth/terrain rejection, only within abs(p.x)<1.5 and -.16<p.y<1.35.
+// Returns straight RGB + coverage; multiply RGB by the scene's existing lighting/fog.
+// Fixed upper bound: three stems, five petals each, one small animal. No texture reads.
+float epHash(float v){return fract(sin(v*127.13+3.7)*43758.5453);}
+float epCross(vec2 a,vec2 b){return a.x*b.y-a.y*b.x;}
+float epLine(vec2 p,vec2 a,vec2 b,float width,float aa){
+  vec2 ab=b-a;float q=clamp(dot(p-a,ab)/max(dot(ab,ab),.00001),0.,1.);
+  return foliageBand(length(p-a-ab*q),width,aa);
+}
+float epOval(vec2 p,vec2 r,float aa){
+  float d=(length(p/r)-1.)*min(r.x,r.y);
+  return (1.-smoothstep(-aa,aa,d))*min(1.,min(r.x,r.y)/aa);
+}
+float epTriangle(vec2 p,vec2 a,vec2 b,vec2 c,float aa){
+  vec2 e0=b-a,e1=c-b,e2=a-c;float side=sign(epCross(e0,c-a));
+  float d=min(side*epCross(e0,p-a)/length(e0),min(side*epCross(e1,p-b)/length(e1),side*epCross(e2,p-c)/length(e2)));
+  return smoothstep(-aa,aa,d);
+}
+vec4 epPaint(vec4 base,vec3 pigment,float mask){
+  float m=clamp(mask,0.,1.),a=m+base.a*(1.-m);
+  return vec4((pigment*m+base.rgb*base.a*(1.-m))/max(a,.00001),a);
+}
+// A lance-shaped leaf or petal: pointed at both ends, widest halfway along its length.
+float epLance(vec2 p,vec2 root,vec2 tip,float width,float aa){
+  vec2 d=tip-root;float len=length(d);d/=max(len,.0001);
+  vec2 q=vec2(epCross(d,p-root),dot(d,p-root));
+  float w=width*sin(3.14159265*clamp(q.y/len,0.,1.));
+  return foliageBand(q.x,w,aa)*foliageSpan(q.y,0.,len,aa);
+}
+vec4 seasonalPlants(vec2 p,float h,float coast,float meadow,float alpine,float canyon){
+  vec4 outp=vec4(0.);
+  float floral=clamp(coast*.8+meadow+alpine*.75,0.,1.);
+  if(abs(p.x)>1.5||p.y<-.16||p.y>1.35||floral+canyon<.002)return outp;
+  float aa=foliageAA;
+  vec3 stem=vec3(.085,.15,.035);
+  if(floral>.002&&h>.18){
+    for(int i=0;i<3;i++){
+      float v=epHash(h*81.+float(i)*7.3),x=-.72+float(i)*.61+(v-.5)*.18;
+      float tall=(.38+v*.4)*(1.-alpine*.35),lean=(v-.5)*.26;
+      vec2 foot=vec2(x,0.),tip=vec2(x+lean,tall);
+      outp=epPaint(outp,stem,epLine(p,foot,tip,.012,aa)*floral);
+      vec2 leaf=foot+(tip-foot)*.35;
+      outp=epPaint(outp,stem*1.12,epLance(p,leaf,leaf+vec2(-.17,.13),.034,aa)*floral);
+      leaf=foot+(tip-foot)*.57;
+      outp=epPaint(outp,stem*.9,epLance(p,leaf,leaf+vec2(.15,.12),.028,aa)*floral);
+      vec3 flower=v<.34?vec3(.62,.36,.055):v<.68?vec3(.42,.075,.19):vec3(.28,.09,.36);
+      // Alpine patches are mostly violet and butter yellow; coastal flowers include pink thrift.
+      if(alpine>.5)flower=v<.52?vec3(.31,.12,.38):vec3(.61,.39,.075);
+      float size=.105+v*.035;
+      for(int k=0;k<5;k++){
+        float angle=float(k)*1.256637+v*3.;vec2 dir=vec2(cos(angle),sin(angle));
+        outp=epPaint(outp,flower,epLance(p,tip,tip+dir*size,.038,aa)*floral);
+      }
+      outp=epPaint(outp,vec3(.35,.20,.035),epOval(p-tip,vec2(.025),aa)*floral);
+    }
+  }
+  // A low prickly pear complements the tall canyon saguaros; blooms are small and seasonal.
+  if(canyon>.002&&h>.36&&h<.86){
+    float x=-.25+(h-.5)*.7;
+    float pad=epOval(p-vec2(x,.24),vec2(.15,.25),aa);
+    pad=max(pad,epOval(p-vec2(x-.15,.43),vec2(.12,.19),aa));
+    pad=max(pad,epOval(p-vec2(x+.17,.34),vec2(.13,.18),aa));
+    outp=epPaint(outp,vec3(.12,.22,.115),pad*canyon);
+    outp=epPaint(outp,vec3(.065,.115,.055),epLine(p,vec2(x,.05),vec2(x,.44),.007,aa)*canyon);
+    vec2 top=vec2(x-.15,.62);
+    for(int k=0;k<5;k++){
+      float angle=.2+float(k)*.68;vec2 dir=vec2(cos(angle),sin(angle));
+      outp=epPaint(outp,vec3(.64,.22,.075),epLance(p,top,top+dir*.085,.024,aa)*canyon);
+    }
+  }
+  float birdWeight=coast*step(.91,h)+meadow*step(.88,h)+alpine*step(.955,h);
+  if(birdWeight>.002){
+    // Ground/perched bird: two fine legs, pointed tail and beak, layered wing, separate head.
+    vec2 b=p-vec2(.38,.13);b.x*=h>.96?-1.:1.;
+    float scale=1.+coast*.3;b/=scale;
+    vec3 feather=mix(vec3(.23,.145,.085),vec3(.49,.52,.49),coast);
+    feather=mix(feather,vec3(.24,.255,.24),alpine);
+    outp=epPaint(outp,vec3(.18,.11,.045),max(epLine(b,vec2(-.055,.07),vec2(-.065,-.1),.011,aa),epLine(b,vec2(.035,.07),vec2(.055,-.1),.011,aa))*birdWeight);
+    outp=epPaint(outp,feather*.65,epTriangle(b,vec2(-.12,.15),vec2(-.39,.26),vec2(-.19,.035),aa)*birdWeight);
+    outp=epPaint(outp,feather,epOval(b-vec2(0.,.18),vec2(.21,.135),aa)*birdWeight);
+    outp=epPaint(outp,feather*.64,epLance(b,vec2(.09,.22),vec2(-.21,.12),.07,aa)*birdWeight);
+    outp=epPaint(outp,mix(vec3(.38,.105,.04),feather,coast+alpine),epOval(b-vec2(.12,.16),vec2(.075,.09),aa)*birdWeight);
+    outp=epPaint(outp,feather*1.05,epOval(b-vec2(.17,.32),vec2(.09,.085),aa)*birdWeight);
+    outp=epPaint(outp,vec3(.33,.22,.055),epTriangle(b,vec2(.235,.345),vec2(.36,.31),vec2(.23,.29),aa)*birdWeight);
+    outp=epPaint(outp,vec3(.012,.016,.01),epOval(b-vec2(.20,.34),vec2(.012),aa)*birdWeight);
+  }
+  if(canyon>.002&&h>.91){
+    // A small desert lizard on a sun-warmed rock, with tapered tail and four angular legs.
+    vec2 b=p-vec2(.15,.11);b.x*=h>.96?-1.:1.;
+    outp=epPaint(outp,vec3(.30,.21,.13),epOval(b-vec2(0.,-.06),vec2(.53,.18),aa)*canyon);
+    vec3 skin=vec3(.29,.27,.11);
+    for(int k=0;k<2;k++){
+      float side=k==0?-1.:1.;
+      float legs=epLine(b,vec2(-.11,.04),vec2(-.21,.04+side*.13),.015,aa);
+      legs=max(legs,epLine(b,vec2(-.21,.04+side*.13),vec2(-.29,.02+side*.15),.012,aa));
+      legs=max(legs,epLine(b,vec2(.13,.04),vec2(.18,.04+side*.12),.015,aa));
+      legs=max(legs,epLine(b,vec2(.18,.04+side*.12),vec2(.28,.02+side*.16),.012,aa));
+      outp=epPaint(outp,skin*.8,legs*canyon);
+    }
+    outp=epPaint(outp,skin,epTriangle(b,vec2(-.16,-.015),vec2(-.65,.10),vec2(-.15,.09),aa)*canyon);
+    outp=epPaint(outp,skin,epOval(b-vec2(0.,.04),vec2(.23,.067),aa)*canyon);
+    outp=epPaint(outp,skin*1.16,epTriangle(b,vec2(.17,-.015),vec2(.37,.045),vec2(.17,.11),aa)*canyon);
+    outp=epPaint(outp,vec3(.11,.12,.045),epLine(b,vec2(-.17,.04),vec2(.24,.055),.012,aa)*canyon);
+    outp=epPaint(outp,vec3(.012,.014,.006),epOval(b-vec2(.265,.069),vec2(.011),aa)*canyon);
+  }
+  return outp;
+}
+
 const float SEA=-14.;
 float height(vec2 p,bool hi){
   float px=pathX(p.y),ry=roadY(p.y),dx=p.x-px,d=abs(dx);
@@ -843,7 +1089,7 @@ float height(vec2 p,bool hi){
     coast=max(coast,SEA-4.+26.*(1.-smoothstep(7.,15.,length(stack))));
     h+=coast*uCoast;
   }
-  if(uForest>.001)h+=(ry+shoulder*(.5+n*3.5)+smoothstep(25.,120.,d)*n*15.)*uForest;
+  if(uForest>.001)h+=(ry+shoulder*(.2+n*.9)+smoothstep(35.,150.,d)*n*6.)*uForest;
   if(uMeadow>.001)h+=(ry+shoulder*(n-.35)*5.+smoothstep(20.,180.,d)*n*14.)*uMeadow;
   if(uAlpine>.001){
     float peaks=.6+.4*fbm2(vec2(p.y*.012,uSeed+5.));
@@ -946,7 +1192,8 @@ void main(){
     // the road
     float rm=1.-smoothstep(uWidth-.12,uWidth+.12,d);
     if(!water){
-      vec3 asphalt=mix(vec3(.07,.075,.07),vec3(.31,.25,.16),uForest*.95+uCanyon*.35)*( .88+.18*dn);
+      vec3 asphalt=mix(vec3(.07,.075,.07),vec3(.31,.25,.16),uCanyon*.35)*( .88+.18*dn);
+      asphalt=mix(asphalt,vec3(.44,.32,.17)*(.9+.14*dn),uForest);
       c=mix(c,asphalt*(uSunC*dif*1.2+amb),rm);
     }
     float em=0.;vec3 emC=vec3(0.);
@@ -979,18 +1226,31 @@ void main(){
   // A bounded set of planes avoids expensive per-step tree geometry on mobile GPUs.
   if(rd.z>.02){
     for(int row=21;row>=0;row--){
-      float cell=floor(ro.z/14.)+float(row)+1.;
-      float z=cell*14.;
+      float spacing=14.; // fixed grid: scenery blends never rehash object positions
+      float cell=floor(ro.z/spacing)+float(row)+1.;
+      float z=cell*spacing;
       float ot=(z-ro.z)/rd.z;
       if(ot>t||ot>300.||ot<.2)continue;
       vec3 hit=ro+rd*ot;
+      // Project the actual ray/pixel derivatives onto this fixed-z billboard.
+      // The footprint grows with distance and oblique viewing; capping it in
+      // world metres leaves far-away foliage undersampled and shimmering.
+      float pixelFactor=2.*ot*dot(rd,uFwd)/(uRes.y*uFocal);
+      vec2 pixelX=pixelFactor*(uRight.xy-rd.xy*uRight.z/rd.z);
+      vec2 pixelY=pixelFactor*(uUp.xy-rd.xy*uUp.z/rd.z);
+      float worldAA=max(.003,.5*max(abs(pixelX.x)+abs(pixelY.x),abs(pixelX.y)+abs(pixelY.y)));
+      foliageAA=worldAA;
       for(int sideI=0;sideI<2;sideI++){
         float signX=sideI==0?-1.:1.;
         float h=fract(sin(cell*12.71+signX*91.+uSeed)*43758.54);
-        float offset=uWidth+2.4+h*7.;
+        float offset=uWidth+mix(2.4,2.,uForest)+h*mix(7.,5.,uForest);
         float x=pathX(z)+signX*offset;
         float dx=hit.x-x;
-        if(abs(dx)>6.)continue;
+        float nearX=pathX(z)+signX*(uWidth+1.25+h*1.3);
+        float farX=pathX(z)+signX*(uWidth+11.+h*7.);
+        // Separate bounds keep near-road flowers and wildlife visible even when
+        // the row's main tree happens to be far from the trail.
+        if(abs(dx)>6.&&abs(hit.x-nearX)>1.5&&(uForest<.001||abs(hit.x-farX)>5.))continue;
         float base=height(vec2(x,z),false), y=hit.y-base;
         float treeH=7.+h*9., treeW=1.8+h*1.6;
         float pine=0.;
@@ -1001,9 +1261,43 @@ void main(){
           pine=max(pine,step(by,y)*step(y,top)*step(abs(dx),radius));
         }
         float trunk=step(abs(dx),.16)*step(0.,y)*step(y,treeH*.66);
-        float forestAlpha=uForest+uAlpine*step(h,.65)*step(signX,0.);
+        float forestAlpha=uAlpine*step(h,.65)*step(signX,0.);
         float silhouette=max(pine,trunk)*forestAlpha;
         vec3 obj=mix(vec3(.14,.085,.04),vec3(.025,.13,.075)*(.8+.28*h+.3*dx/treeW+.16*sin(y*5.)+.18*step(0.,dx)),pine);
+        if(uForest>.001){
+          if(abs(hit.x-farX)<5.){
+            vec2 farP=vec2(hit.x-farX,hit.y-height(vec2(farX,z),false));
+            foliageAA=worldAA/.78;
+            vec4 foliage=tropicalTree(farP/vec2(1.35,.78),.8+h*.18,signX);
+            if(foliage.a*uForest>silhouette){silhouette=foliage.a*uForest;obj=foliage.rgb*.82;}
+            if(farP.y<3.2){
+              foliageAA=worldAA/.25;
+              vec4 understory=tropicalTree(farP/vec2(1.25,.25),.8+h*.18,signX);
+              if(understory.a>.0){silhouette=understory.a*uForest;obj=understory.rgb*.72;}
+            }
+          }
+          foliageAA=worldAA;
+          vec4 palm=tropicalTree(vec2(dx,y),h,signX);
+          if(palm.a>.0&&palm.a*uForest>=silhouette){silhouette=palm.a*uForest;obj=palm.rgb;}
+          vec2 plant=vec2(hit.x-nearX,hit.y-height(vec2(nearX,z),false));
+          float sight=fract(sin(cell*37.7+signX*5.9+uSeed*3.)*878.31);
+          float cluster=fract(sin(cell*19.31+signX*17.7+uSeed)*1237.2);
+          // Natural gaps and varied clump sizes instead of one repeated bouquet.
+          if(abs(plant.x)<1.5&&plant.y<2.4&&plant.y>-.2&&(cluster>.22||sight<.055||sight>.94)){
+            float scale=.65+.2*h;
+            foliageAA=worldAA/scale;
+            vec4 border=tropicalBorder(plant/scale,h,sight);
+            if(border.a*uForest>0.){silhouette=border.a*uForest;obj=border.rgb;}
+          }
+        }
+        if(uCoast+uMeadow+uAlpine+uCanyon>.001&&h>mix(.55,.78,uAlpine)&&abs(hit.x-nearX)<1.5){
+          vec2 detail=vec2(hit.x-nearX,hit.y-height(vec2(nearX,z),false));
+          if(detail.y>-.16&&detail.y<1.35){
+            foliageAA=worldAA;
+            vec4 small=seasonalPlants(detail,h,uCoast,uMeadow,uAlpine,uCanyon);
+            if(small.a>.001){obj=mix(obj,small.rgb,small.a);silhouette=max(silhouette,small.a);}
+          }
+        }
         // Country trees have round crowns; farms sit behind the split-rail fence.
         float crownShape=length(vec2(dx/(2.7+h*1.5),(y-5.2)/(2.7+h)));
         float crown=step(crownShape,1.+.06*sin(dx*8.)*sin(y*7.));
@@ -1185,7 +1479,7 @@ void main(){
       <tr><th>Each revolution</th><td>Sends a ring of light down the road.</td></tr>
       <tr><th>Grade</th><td>The procedural road's slope changes your speed by up to 40%, never the zoom curve.</td></tr>
       <tr><th>Distance</th><td>Counts only the speed your cadence makes, never the slow drift at rest.</td></tr>
-      <tr><th>Scenery</th><td>Five different routes: a cliffside coast, a pine trail, country lanes, an alpine lake and a sandstone canyon. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
+      <tr><th>Scenery</th><td>Five different routes: a cliffside coast, a tropical nature preserve, country lanes, an alpine lake and a sandstone canyon. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
       <tr><th>Time of day</th><td>A four-minute cycle from golden hour to night, or held where you choose.</td></tr>
       <tr><th>Look</th><td>Clear, Dreamy and Wild set how much of the last frame stays and how much it warps. The sliders under Scenery fine-tune both.</td></tr>
     </tbody></table>
@@ -1797,7 +2091,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       const bloom = Post.bloom(dreamA.tex, 1.15);
       Post.finish(dreamA.tex, bloom, {
         uBloomK: 0.25, uExposure: 0.98 + S.dusk * 0.25,
-        uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000, uVig: 0.25, uSat: 1.02, rate: RM.matches ? 0.16 : 0.36,
+        uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000, uVig: 0.25, uSat: 1.02, rate: RM.matches ? 0.16 : 0.36, maxGain: 1,
       }, dtMs / 1000);
 
       if (lumaRec) lumaRec(now);

@@ -56,34 +56,58 @@ def analyze(frames):
     return {'frames': len(frames), 'fps': round(len(frames) / ((times[-1] - times[0]) / 1000), 1), 'worstRegionOver3PerSec': round(worst_region, 3), 'worstCell': max(per_cell),
             'wholeFrame': flashes_per_second(means, times), 'meanLuminancePct': [round(min(mean_pct), 1), round(max(mean_pct), 1)]}
 
-bad = []
+# Capture first, analyze after all browser intervals have stopped. Python analysis may
+# take seconds; leaving a scene-cycling interval running would choose an arbitrary
+# final biome for the next check and make failures depend on the test computer.
+records, bad = [], []
 with sync_playwright() as p:
     b = p.chromium.launch(channel='chrome', headless=True, args=['--enable-gpu', '--use-angle=metal', '--ignore-gpu-blocklist', '--enable-webgl'])
     for page in (os.environ.get('FLASH_PAGES') or 'endless-cockpit.html biofeedback-path-cockpit.html').split():
         for motion in ('no-preference', 'reduce'):
-            pg = b.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=1, reduced_motion=motion).new_page()
-            pg.goto(f'{BASE}/{page}'); pg.wait_for_timeout(1500)
+            ctx = b.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=1, reduced_motion=motion)
+            pg = ctx.new_page()
+            pg.goto(f'{BASE}/{page}'); pg.wait_for_function('window.__app'); pg.wait_for_timeout(1500)
+            def capture(name, ms=6000):
+                frames = pg.evaluate(f'__app.recordLuma({ms})')
+                records.append((page, motion, name, frames))
+                print(f'captured {page} {motion} {name}: {len(frames)} frames', flush=True)
             pg.click('#demo-button'); pg.wait_for_timeout(1500)
-            runs = [('demo', analyze(pg.evaluate('__app.recordLuma(9000)')))]
+            capture('demo', 9000)
             if page == 'endless-cockpit.html':
-                # the ride's hardest cases: top cadence in the Wild look while the scene changes every 2 s,
-                # and the time of day flipping between golden hour and night, faster than anyone would tap it
-                pg.click('#demo-button')  # demo cadence takes precedence over a steady setting
-                pg.evaluate("__app.S.steady = 130; __app.setLook('wild'); window.__cyc = setInterval(() => __app.nextBiome(), 2000)")
+                pg.click('#demo-button')
+                pg.evaluate("__app.setAuto(false); __app.S.steady=130; __app.setLook('wild'); window.__cyc=setInterval(()=>__app.nextBiome(),2000)")
                 pg.wait_for_function('__app.S.rpm > 125')
-                runs.append(('hardest', analyze(pg.evaluate('__app.recordLuma(9000)'))))
-                pg.evaluate("clearInterval(window.__cyc); __app.S.steady = 100; let k = 0; window.__tod = setInterval(() => __app.setTod(k++ % 2 ? 3 : 1), 1500)")
-                runs.append(('time flips', analyze(pg.evaluate('__app.recordLuma(9000)'))))
+                capture('hardest', 9000)
+                pg.evaluate('clearInterval(window.__cyc)')
+                # Check each world explicitly: a single final scene can miss the dense
+                # canopy, narrow rails or farm silhouettes that carry the most contrast.
+                for biome in range(5):
+                    pg.evaluate(f"__app.setBiome({biome},true); __app.S.vis=240; __app.S.steady=100; __app.setTod(1,true)")
+                    pg.wait_for_timeout(1500)
+                    pg.evaluate("window.__tod=setInterval(()=>__app.setTod(__app.S.tod===1?3:1,true),1500)")
+                    capture(f'time flips scene {biome}')
+                    pg.evaluate('clearInterval(window.__tod)')
+                # A slower time transition must not hide flicker from moving foliage
+                # under sustained illumination. Test the dense canopy at both ends.
+                for look in ('wild', 'clear'):
+                    pg.evaluate(f"__app.setLook('{look}')")
+                    for tod, label in ((1, 'golden'), (3, 'night')):
+                        pg.evaluate(f'__app.setBiome(1,true); __app.S.vis=240; __app.setTod({tod},true)')
+                        pg.wait_for_function(f'Math.abs(__app.S.dusk-({0.18 if tod == 1 else 1}))<.015', timeout=20000)
+                        capture(f'tropical {look} held {label}')
             else:
-                # Biofeedback has no hits to stack: its hardest cases are the demo in each of its other modes
                 for mode in ('ride', 'train'):
                     pg.click(f'[data-mode={mode}]'); pg.wait_for_timeout(2500)
-                    runs.append((mode, analyze(pg.evaluate('__app.recordLuma(9000)'))))
-            for name, x in runs:
-                print(page, motion, name, json.dumps(x))
-                if x['worstRegionOver3PerSec'] > 0.25: bad.append(f'{page} {motion} {name}: {x["worstRegionOver3PerSec"]:.0%} of a region flashes more than 3 times a second')
-                if x['wholeFrame'] > 3: bad.append(f'{page} {motion} {name}: the whole frame flashes {x["wholeFrame"]} times in a second')
+                    capture(mode, 9000)
+            ctx.close()
     b.close()
 srv.shutdown()
+for page, motion, name, frames in records:
+    x = analyze(frames)
+    print(page, motion, name, json.dumps(x), flush=True)
+    if x['worstRegionOver3PerSec'] > 0.25:
+        bad.append(f'{page} {motion} {name}: {x["worstRegionOver3PerSec"]:.0%} of a region flashes more than 3 times a second')
+    if x['wholeFrame'] > 3:
+        bad.append(f'{page} {motion} {name}: the whole frame flashes {x["wholeFrame"]} times in a second')
 print('\n'.join(bad) or 'flicker check passed')
 sys.exit(1 if bad else 0)

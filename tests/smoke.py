@@ -34,6 +34,14 @@ with sync_playwright() as p:
             pass
         v = pg.evaluate(moving)
         if v < 3: bad.append(f'{page}: the demo did not move it ({v})')
+        # Moving readouts do not prove that the shared WebGL output rendered.
+        # Catch black/flat canvases after postprocessing changes as well.
+        try:
+            pixels = pg.evaluate("Promise.race([__app.pixel(), new Promise((_, reject) => setTimeout(() => reject(new Error('canvas readback timed out')), 45000))])")
+            if pixels['mean'] < 3 or pixels['max'] - pixels['min'] < 10:
+                bad.append(f'{page}: blank or flat canvas')
+        except Exception as e:
+            bad.append(f'{page}: canvas readback failed: {str(e)[:160]}')
         if page == 'endless-cockpit.html':
             info = pg.evaluate('__app.renderInfo')
             if info['softwareRenderer'] and info['width'] * info['height'] > 82000:
