@@ -19,16 +19,18 @@ JS = r"""() => {
   for (const e of document.querySelectorAll('.dock button, #pedal, #source-badge, .chip, #demo-button, #fs-button, .scene-tile, .scene-row button, .mode-switch button')) {
     if (!vis(e)) continue;
     const r = e.getBoundingClientRect();
-    const inScroller = e.closest('.scene-tiles, .scene-row');
-    const off = r.bottom > innerHeight + 1 || r.top < -1 || (!inScroller && (r.right > innerWidth + 1 || r.left < -1));
-    if (off) out.push((e.innerText || e.id || '').trim().slice(0, 24) + ' is off screen');
+    // Anything past an edge counts as cut off, even inside a row that could be swiped: a visitor has to see it.
+    const off = r.bottom > innerHeight + 1 || r.top < -1 || r.right > innerWidth + 1 || r.left < -1;
+    if (off) out.push((e.innerText || e.id || '').trim().slice(0, 24) + ' is cut off');
   }
   const sb = box('.scenebar'), ms = box('.mode-switch'), hd = box('.header'), dw = box('.dock-wrap'), hud = box('#hud'), intro = box('.intro');
   const overlap = (a, b) => a && b && a.b > b.t && b.b > a.t && a.r > b.l && b.r > a.l;
   const top = sb || ms;
   if (top && dw && top.b > dw.t) out.push(`top controls (bottom ${top.b}) run into the bottom stack (top ${dw.t})`);
   if (sb && hd && sb.t < hd.b - 2 && innerWidth < 900) out.push(`scene bar (top ${sb.t}) under the header (bottom ${hd.b})`);
-  if (intro && sb && overlap(intro, sb) && getComputedStyle(document.querySelector('.intro')).opacity > 0.1) out.push('intro text overlaps the scene bar');
+  const introOn = intro && getComputedStyle(document.querySelector('.intro')).opacity > 0.1;
+  if (introOn && sb && overlap(intro, sb)) out.push('intro text overlaps the scene bar');
+  if (introOn && dw && intro.b > dw.t) out.push(`intro text (bottom ${intro.b}) runs into the bottom stack (top ${dw.t})`);
   return { problems: out, scrollW: document.documentElement.scrollWidth, w: innerWidth, top: top && top.b, stackTop: dw && dw.t };
 }"""
 bad = 0

@@ -253,7 +253,7 @@ void main(){
 
   const TOD = [
     { v: null, label: 'Moving', title: 'A four-minute cycle from golden hour to night' },
-    { v: 0.18, label: 'Golden hour' }, { v: 0.55, label: 'Dusk' }, { v: 1, label: 'Night' },
+    { v: 0.18, label: 'Golden hour', short: 'Golden' }, { v: 0.55, label: 'Dusk' }, { v: 1, label: 'Night' },
   ];
   const LOOKS = { clear: { label: 'Clear', dream: 0.15, wild: 0.1 }, dreamy: { label: 'Dreamy', dream: 0.55, wild: 0.35 }, wild: { label: 'Wild', dream: 0.78, wild: 0.85 } };
   const sceneBar = `
@@ -262,9 +262,9 @@ void main(){
         ${BIOMES.map((b, i) => `<button class="scene-tile" data-b="${i}" aria-pressed="${i === 0}"><canvas width="336" height="196" aria-hidden="true" style="background:linear-gradient(${b.skyTop},${b.skyHz} 54%,${b.ground} 55%)"></canvas><span>${b.name}</span></button>`).join('')}
       </div>
       <div class="scene-row">
-        <div class="seg" role="group" aria-label="Time of day">${TOD.map((t, i) => `<button data-tod="${i}" aria-pressed="${i === 0}"${t.title ? ` title="${t.title}"` : ''}>${t.label}</button>`).join('')}</div>
+        <div class="seg" role="group" aria-label="Time of day">${TOD.map((t, i) => `<button data-tod="${i}" aria-pressed="${i === 0}"${t.title ? ` title="${t.title}"` : ''}${t.short ? ` aria-label="${t.label}"><span class="long">${t.label}</span><span class="short">${t.short}</span>` : `>${t.label}`}</button>`).join('')}</div>
         <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'dreamy'}">${l.label}</button>`).join('')}</div>
-        <button class="seg-solo" id="auto-scene" aria-pressed="true">New scenery every mile</button>
+        <button class="seg-solo" id="auto-scene" aria-pressed="true" aria-label="New scenery every mile" title="A new scene blends in after each mile you ride"><span class="long">New scenery every mile</span><span class="short">Auto scenery</span></button>
         <button class="seg-solo" id="new-route">New route</button>
       </div>
     </div>`;

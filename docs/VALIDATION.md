@@ -67,9 +67,9 @@ An earlier build of this road was published on 2026-11-02 before this check exis
 
 ## Layout
 
-`tests/layout_check.py` renders both cockpits at seven sizes: a desktop, a short laptop window, three phones upright and two held sideways, with touch on the phones. Every control must be on screen, the top controls must not run into the bottom stack, and the page must never scroll sideways. All 14 renders passed on 2026-11-03.
+`tests/layout_check.py` renders both cockpits at seven sizes: a desktop, a short laptop window, three phones upright and two held sideways, with touch on the phones. Every control must be fully on screen, even one inside a row that could be swiped, the top controls and the welcome text must not run into the bottom stack, and the page must never scroll sideways. All 14 renders passed on 2026-11-03.
 
-**The first public build failed this.** Held sideways, a phone showed only the demo button and half of the pedal button, because the frame kept a minimum height of 540 pixels and cut off the rest. Its text also told phone users to hold Space. Both were fixed on 2026-11-03, and on a 360-pixel phone Biofeedback's long name no longer pushes the full-screen button off the screen.
+**The first public build failed this.** Held sideways, a phone showed only the demo button and half of the pedal button, because the frame kept a minimum height of 540 pixels and cut off the rest. Its text also told phone users to hold Space. Both were fixed on 2026-11-03, and on a 360-pixel phone Biofeedback's long name no longer pushes the full-screen button off the screen. The first version of the scenery then put the scenes and options in rows you had to swipe, so an upright phone showed three of the five scenes and five of the nine options. The check let that pass because it excused swipeable rows, and it no longer does: the scenes now sit five across with names underneath, and the options fit on two rows.
 
 ## The smoke test
 
