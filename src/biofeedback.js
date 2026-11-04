@@ -1135,7 +1135,7 @@
         uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd,
         uSkyTop: skyTop, uSkyHz: skyHz, uSunC: sunC, uGround: mix3('ground'), uRock: mix3('rock'), uFog: fogC, uEdge: mix3('edge'), uSunDir: sd,
         uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: dusk, uFogK: mixN('fogK') * (1 + haze * 7),
-        uSpark: 0.12, uShimmer: 0.1, uAurora: S.load * S.load * 0.26,
+        uSpark: 0.12, uShimmer: 0.1, uAurora: S.load * S.load * 0.26, uTravelSpeed: S.speed,
         uRing: ringData,
         uHaze: haze, uWeather: S.load, uWarm: smooth(0.16, 0.74, S.load), uBreath: br.ee, uBreathOn: train ? 1 : 0, uNebula: nebulaAmt, uGhost: ghostU,
       });

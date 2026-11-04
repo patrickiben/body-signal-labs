@@ -3558,7 +3558,7 @@ uniform vec3 uCam,uRight,uUp,uFwd;
 uniform sampler2D uN,uS;
 uniform vec3 uSkyTop,uSkyHz,uSunC,uGround,uRock,uFog,uEdge,uSunDir;
 uniform float uAmp,uRidge,uSea,uSnow,uStrata,uGrid,uTrees,uDusk,uFogK;
-uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uOrbit,uMisty,uSnake,uWidth;
+uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uOrbit,uMisty,uSnake,uWidth,uTravelSpeed;
 uniform float uShimmer,uAurora,uHaze,uWeather,uWarm,uBreath,uBreathOn,uNebula;
 uniform vec4 uGhost;
 uniform vec4 uRouteA; uniform float uRouteB,uRouteC,uRouteD,uRouteE;
@@ -4383,6 +4383,8 @@ void main(){
   // World-space roadside silhouettes: each has a fixed seeded position, parallax and terrain occlusion.
   // A bounded set of planes avoids expensive per-step tree geometry on mobile GPUs.
   if(rd.z>.02&&(uOrbit+uSnake)<.999&&uMisty<.999){
+    vec2 cameraSlope=vec2(0.);
+    if(uForest>.001)cameraSlope=vec2(pathX(ro.z+.5)-pathX(ro.z-.5),roadY(ro.z+.5)-roadY(ro.z-.5));
     for(int row=21;row>=0;row--){
       float spacing=14.; // fixed grid: scenery blends never rehash object positions
       float cell=floor(ro.z/spacing)+float(row)+1.;
@@ -4397,6 +4399,13 @@ void main(){
       vec2 pixelX=pixelFactor*(uRight.xy-rd.xy*uRight.z/rd.z);
       vec2 pixelY=pixelFactor*(uUp.xy-rd.xy*uUp.z/rd.z);
       float worldAA=max(.003,.5*max(abs(pixelX.x)+abs(pixelY.x),abs(pixelX.y)+abs(pixelY.y)));
+      // Integrate tropical foliage over a 160 ms travel exposure as well as a
+      // pixel footprint. This filters fronds moving across bright sky without
+      // storing old images, shifting scenery, or blurring the road.
+      if(uForest>.001){
+        vec2 sweep=abs(cameraSlope-rd.xy/rd.z)*uTravelSpeed*.08;
+        worldAA=max(worldAA,uForest*max(sweep.x,sweep.y));
+      }
       foliageAA=worldAA;
       for(int sideI=0;sideI<2;sideI++){
         float signX=sideI==0?-1.:1.;
@@ -4409,7 +4418,8 @@ void main(){
         float farX=pathX(z)+signX*(uWidth+11.+h*7.);
         // Separate bounds keep near-road flowers and wildlife visible even when
         // the row's main tree happens to be far from the trail.
-        if(abs(dx)>6.&&abs(hit.x-nearX)>1.5&&(uForest<.001||abs(hit.x-farX)>5.))continue;
+        float mainBound=6.+uForest*(1.+worldAA),farBound=7.+worldAA;
+        if(abs(dx)>mainBound&&abs(hit.x-nearX)>1.5&&(uForest<.001||abs(hit.x-farX)>farBound))continue;
         float base=height(vec2(x,z),false), y=hit.y-base;
         float treeH=7.+h*9., treeW=1.8+h*1.6;
         float pine=0.;
@@ -4427,20 +4437,23 @@ void main(){
           vec4 fall=autumnTree(vec2(dx,y),h);obj=fall.rgb;silhouette=fall.a*uAlpine;
         }
         if(uForest>.001){
-          if(abs(hit.x-farX)<5.){
+          // Composite each antialiased layer over the previous one. Replacing
+          // its alpha by a tiny foreground edge opened holes in opaque canopy;
+          // choosing the largest alpha snapped palm edges on at full coverage.
+          if(abs(hit.x-farX)<farBound){
             vec2 farP=vec2(hit.x-farX,hit.y-height(vec2(farX,z),false));
             foliageAA=worldAA/.78;
             vec4 foliage=tropicalTree(farP/vec2(1.35,.78),.8+h*.18,signX);
-            if(foliage.a*uForest>silhouette){silhouette=foliage.a*uForest;obj=foliage.rgb*.82;}
+            foliagePaint(obj,silhouette,foliage.rgb*.82,foliage.a*uForest);
             if(farP.y<3.2){
               foliageAA=worldAA/.25;
               vec4 understory=tropicalTree(farP/vec2(1.25,.25),.8+h*.18,signX);
-              if(understory.a>.0){silhouette=understory.a*uForest;obj=understory.rgb*.72;}
+              foliagePaint(obj,silhouette,understory.rgb*.72,understory.a*uForest);
             }
           }
           foliageAA=worldAA;
           vec4 palm=tropicalTree(vec2(dx,y),h,signX);
-          if(palm.a>.0&&palm.a*uForest>=silhouette){silhouette=palm.a*uForest;obj=palm.rgb;}
+          foliagePaint(obj,silhouette,palm.rgb,palm.a*uForest);
           vec2 plant=vec2(hit.x-nearX,hit.y-height(vec2(nearX,z),false));
           float sight=fract(sin(cell*37.7+signX*5.9+uSeed*3.)*878.31);
           float cluster=fract(sin(cell*19.31+signX*17.7+uSeed)*1237.2);
@@ -4449,7 +4462,7 @@ void main(){
             float scale=.65+.2*h;
             foliageAA=worldAA/scale;
             vec4 border=tropicalBorder(plant/scale,h,sight);
-            if(border.a*uForest>0.){silhouette=border.a*uForest;obj=border.rgb;}
+            foliagePaint(obj,silhouette,border.rgb,border.a*uForest);
           }
         }
         if(uCoast+uMeadow+uAlpine+uCanyon>.001&&h>mix(.55,.78,uAlpine)&&abs(hit.x-nearX)<1.5){
@@ -5755,7 +5768,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
         uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd,
         uSkyTop: skyTop, uSkyHz: skyHz, uSunC: sunC, uGround: mix3('ground'), uRock: mix3('rock'), uFog: fogC, uEdge: mix3('edge'), uSunDir: sd,
         uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: dusk, uFogK: mixN('fogK') * (1 + haze * 7),
-        uSpark: 0.12, uShimmer: 0.1, uAurora: S.load * S.load * 0.26,
+        uSpark: 0.12, uShimmer: 0.1, uAurora: S.load * S.load * 0.26, uTravelSpeed: S.speed,
         uRing: ringData,
         uHaze: haze, uWeather: S.load, uWarm: smooth(0.16, 0.74, S.load), uBreath: br.ee, uBreathOn: train ? 1 : 0, uNebula: nebulaAmt, uGhost: ghostU,
       });

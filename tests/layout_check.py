@@ -11,7 +11,8 @@ class Q(http.server.SimpleHTTPRequestHandler):
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Q)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 SIZES = [('desktop', 1440, 900, 1, False), ('laptop-short', 1280, 600, 1, False), ('iphone-15', 393, 852, 3, True), ('iphone-se', 375, 667, 2, True), ('android', 360, 800, 3, True), ('sideways', 852, 393, 3, True), ('se-sideways', 667, 375, 2, True)]
-PAGES = ['endless-cockpit.html', 'biofeedback-path-cockpit.html']
+PAGES = os.environ.get('LAYOUT_PAGES', 'endless-cockpit.html biofeedback-path-cockpit.html').split()
+ONLY_SIZES = set(filter(None, os.environ.get('LAYOUT_SIZES', '').split(',')))
 JS = r"""() => {
   const vis = (e) => { const r = e.getBoundingClientRect(), s = getComputedStyle(e); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; };
   const box = (sel) => { const e = document.querySelector(sel); if (!e || !vis(e)) return null; const r = e.getBoundingClientRect(); return { t: Math.round(r.top), b: Math.round(r.bottom), l: Math.round(r.left), r: Math.round(r.right) }; };
@@ -39,6 +40,8 @@ with sync_playwright() as p:
     for page in PAGES:
         sizes = SIZES + ([('compact-upright', 320, 568, 2, True), ('compact-sideways', 568, 320, 2, True)] if page == 'endless-cockpit.html' else [])
         for name, w, h, dpr, mobile in sizes:
+            if ONLY_SIZES and name not in ONLY_SIZES:
+                continue
             c = b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=dpr, is_mobile=mobile, has_touch=mobile)
             pg = c.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)[:120]))
             pg.goto(f'http://127.0.0.1:{srv.server_port}/{page}')
