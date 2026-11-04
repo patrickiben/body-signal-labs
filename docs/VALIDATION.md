@@ -4,6 +4,12 @@ Checked between 2026-11-02 and 2026-11-04 in Chrome 156 on an Apple M4 Max Mac. 
 
 A browser test cannot pair a real Bluetooth device, and a page that opens Chrome's device list closes headless Chrome, so every sensor state below uses a stub of `navigator.bluetooth` that sends real packet bytes through the page's own parsers.
 
+## Follow-up reliability review, 2026-11-04
+
+The failure cases and further product ideas are recorded in [REVIEW.md](REVIEW.md). `tests/session_regressions.cjs` passed **20/20** deterministic checks covering contact loss, missing versus zero cadence fields, synthetic provenance, malformed session rejection, recording isolation, relative ghost distance and route restoration. The full existing Biofeedback browser state suite passed **45/45**. `tests/pedal_focus.py` passed for both cockpits, covering keyboard/pointer focus loss and hidden pages, plus leaving Biofeedback Ride mode.
+
+`tests/bio_sessions.py` verified mixed-source labeling, invalid import rejection without stopping the demo, relative distance, restored replay/ghost starting state and a real browser video download. The 3,699,487-byte recording was identified as VP9 at 1280 × 800. Sensor packets remain simulated; no new physical-device claim follows from these results. The Node regressions now run in CI.
+
 ## Rainbow orbit, 2026-11-04
 
 Rainbow orbit is appended as scene 5, preserving the existing five scene indices. Its finite rainbow ribbon, open space, ringed planet, moon and raised rails were inspected in rendered browser captures. The route/camera calculation, thumbnails, optional ride sound and saved/replayed scene state all include the sixth scene.

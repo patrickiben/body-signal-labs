@@ -2372,6 +2372,38 @@ void main(){
     return ['failed', m ? `Could not connect: ${m}` : 'Could not connect.'];
   }
 
+  // Validate an imported file completely before it can replace a live source.
+  function validateBioSession(raw) {
+    const object = (v) => v && typeof v === 'object' && !Array.isArray(v);
+    const finite = (v, lo, hi) => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
+    const fail = (what) => { throw new Error(`Invalid session ${what}.`); };
+    if (!object(raw) || !finite(raw.durationMs, 0, Number.MAX_SAFE_INTEGER) || !object(raw.lanes)) fail('duration or lanes');
+    if (raw.synthetic != null && typeof raw.synthetic !== 'boolean') fail('source label');
+    if (raw.distanceRelative != null && typeof raw.distanceRelative !== 'boolean') fail('distance format');
+    const bounds = { rpm: [0, 250], hr: [0, 300], rmssd: [0, 500], sdnn: [0, 500], idx: [0, 100], swing: [0, 300], clarity: [0, 1], dawn: [0, 1], hold: [0, 1e9], dist: [0, 1e12], vis: [-1e12, 1e12], seed: [-1e6, 1e6], baseHr: [0, 300], gradeLoad: [0, .045] };
+    const optional = new Set(['hr', 'rmssd', 'sdnn', 'idx', 'swing', 'baseHr']);
+    const mode = (v) => ['watch', 'ride', 'train'].includes(v);
+    const biome = (v) => Number.isInteger(v) && v >= 0 && v < 5;
+    const map = (v) => object(v) && Object.entries({ idle: [0, 60], max: [60, 130], maxZoom: [.004, .04], gamma: [.6, 3.2] }).every(([k, lim]) => finite(v[k], ...lim));
+    if (raw.start != null) {
+      const s = raw.start;
+      if (!object(s) || !finite(s.vis, -1e12, 1e12) || !finite(s.seed, -1e6, 1e6) || !biome(s.biome) || !mode(s.mode) || !map(s.map)) fail('starting route');
+      for (const [k, lim] of Object.entries({ rpm: [0, 250], dist: [0, 1e12], gradeLoad: [0, .045], fullOver: [20, 100], fullSwing: [6, 16], pace: [3, 12], hold: [0, 1e9], dawn: [0, 1] })) if (s[k] != null && !finite(s[k], ...lim)) fail(`starting ${k}`);
+      if (s.baseHr != null && !finite(s.baseHr, 0, 300)) fail('starting baseline');
+    }
+    for (const [name, lane] of Object.entries(raw.lanes)) {
+      if (!Array.isArray(lane)) fail(`${name} lane`);
+      let previous = -1;
+      for (const point of lane) {
+        if (!Array.isArray(point) || point.length !== 2 || !finite(point[0], 0, raw.durationMs) || point[0] < previous) fail(`${name} timing`);
+        previous = point[0]; const value = point[1];
+        if (bounds[name] && !(optional.has(name) && value === null) && !finite(value, ...bounds[name])) fail(`${name} value`);
+        if ((name === 'mode' && !mode(value)) || (name === 'biome' && !biome(value))) fail(`${name} value`);
+      }
+    }
+    return raw;
+  }
+
   function createBio() {
     const listeners = {};
     const on = (ev, fn) => { (listeners[ev] = listeners[ev] || []).push(fn); return bio; };
@@ -2447,7 +2479,17 @@ void main(){
     }
     function deviceHeart(p) {
       hr.noContact = p.contact === false || p.bpm === 0;
-      if (hr.noContact) return;
+      if (hr.noContact) {
+        hr.deviceBpm = null;
+        if (hr.connected) setHr('no-signal');
+        if (!demo && !replay) {
+          hr.bpm = null; lastHrWall = 0; lastRrWall = 0; beatLog = []; hrSeries = []; rrWarm = false;
+          features = { valid: false, reason: 'The sensor reports no skin contact.' };
+          feedEngine(); readSnapshot();
+          Object.assign(now_, { hr: null, rmssd: null, sdnn: null, swing: null });
+        }
+        return;
+      }
       hr.lastAt = performance.now(); hr.deviceBpm = p.bpm; hr.warming = false; hr.reportsBeats = hr.reportsBeats || p.rr.length > 0;
       if (hr.connected && hr.state !== 'live') setHr('live');
       if (!demo && !replay) takeHeart(p);
@@ -2521,9 +2563,16 @@ void main(){
         try { const svc = await gatt.getPrimaryService('cycling_speed_and_cadence'); ch = await svc.getCharacteristic('csc_measurement'); kind = 'csc'; } catch (e) { const svc = await gatt.getPrimaryService('fitness_machine'); ch = await svc.getCharacteristic('indoor_bike_data'); kind = 'ftms'; }
         cadence.kind = kind;
         ch.addEventListener('characteristicvaluechanged', (e) => {
+          const value = kind === 'csc' ? BioMath.parseCSC(e.target.value) : BioMath.parseFTMS(e.target.value);
+          // FTMS may send other fields without cadence. Those packets do not
+          // refresh the age of the last actual cadence measurement.
+          if (value == null) {
+            if (kind === 'csc' && !demo && !replay) takeCrank(null);
+            return;
+          }
           deviceCadence();
           if (demo || replay) return;
-          if (kind === 'csc') takeCrank(BioMath.parseCSC(e.target.value)); else takeTrainer(BioMath.parseFTMS(e.target.value));
+          if (kind === 'csc') takeCrank(value); else takeTrainer(value);
         });
         await ch.startNotifications();
         cadence.connected = true; cadence.connectedAt = performance.now();
@@ -2568,7 +2617,7 @@ void main(){
         },
       };
       // A strap that reports beat intervals needs one full window first, or the reference would restart when they arrive.
-      if (rrSeen && !rrWarm) return;
+      if (rrSeen && !rrWarm && fresh) return;
       engine.ingest(frame);
     }
     function readSnapshot() {
@@ -2652,22 +2701,23 @@ void main(){
     };
 
     /* ---- recording and replay ---- */
-    bio.startRecording = (appName) => { session = { t0: performance.now(), app: appName, created: new Date().toISOString(), lanes: {}, synthetic: !!demo }; emit('state'); };
-    bio.noteLane = (name, value) => { if (session) (session.lanes[name] = session.lanes[name] || []).push([Math.round(performance.now() - session.t0), value]); };
+    bio.startRecording = (appName, start) => { session = { t0: performance.now(), app: appName, created: new Date().toISOString(), lanes: {}, start: start ? JSON.parse(JSON.stringify(start)) : undefined, synthetic: !!demo || !!(replay && replay.s.synthetic) }; emit('state'); };
+    bio.noteLane = (name, value) => { if (session) { session.synthetic = session.synthetic || !!demo || !!(replay && replay.s.synthetic); (session.lanes[name] = session.lanes[name] || []).push([Math.round(performance.now() - session.t0), value]); } };
     bio.stopRecording = () => {
       if (!session) return null;
       const s = session; session = null;
       emit('state');
-      return { schema: 'body-signal-labs/biofeedback-session@1', app: s.app, created: s.created, durationMs: Math.round(performance.now() - s.t0), synthetic: s.synthetic, note: 'Readings once a second and cadence ten times a second. Inferred values are inferred, not measured. Not a medical record.', lanes: s.lanes };
+      return { schema: 'body-signal-labs/biofeedback-session@1', app: s.app, created: s.created, durationMs: Math.round(performance.now() - s.t0), synthetic: s.synthetic, start: s.start, distanceRelative: !!s.start, note: 'Readings once a second and cadence ten times a second. Inferred values are inferred, not measured. Not a medical record.', lanes: s.lanes };
     };
     bio.readSession = (raw) => {
-      if (raw && /\/biofeedback-session@1$/.test(raw.schema || '')) return raw;
+      if (raw && /\/biofeedback-session@1$/.test(raw.schema || '')) return validateBioSession(raw);
       // A ride saved by the old page. Its body signals were always the synthetic script.
       if (raw && raw.timeline && Array.isArray(raw.timeline.rpm) && raw.timeline.rpm.length) {
-        const dt = (raw.timeline.dt || 0.1) * 1000, au = raw.autoTimeline || {}, ad = (au.dt || 1) * 1000, m = raw.meta || {};
+        const dt = (raw.timeline.dt == null ? 0.1 : raw.timeline.dt) * 1000, au = raw.autoTimeline || {}, ad = (au.dt == null ? 1 : au.dt) * 1000, m = raw.meta || {};
+        if (!Number.isFinite(dt) || dt <= 0 || !Number.isFinite(ad) || ad <= 0) throw new Error('Invalid session sample interval.');
         const lane = (a, f) => (Array.isArray(a) ? a.map((v, i) => [Math.round(i * ad), f ? f(v) : v]) : []);
         const lanes = { rpm: raw.timeline.rpm.map((v, i) => [Math.round(i * dt), v]), idx: lane(au.idx), hr: lane(au.HR), clarity: lane(au.clarity), dawn: lane(au.dawn), mode: [[0, raw.mode === 'train' || raw.mode === 'ride' ? raw.mode : 'watch']], biome: [[0, ((m.promptIdx || 0) % 5 + 5) % 5]], seed: [[0, m.route && typeof m.route.seed === 'number' ? m.route.seed % 40 : 0]] };
-        return { schema: 'body-signal-labs/biofeedback-session@1', app: 'biofeedback-path-cockpit', created: raw.createdAt, durationMs: raw.timeline.rpm.length * dt, synthetic: true, note: 'Converted from a ride saved by the older page.', lanes };
+        return validateBioSession({ schema: 'body-signal-labs/biofeedback-session@1', app: 'biofeedback-path-cockpit', created: raw.createdAt, durationMs: Math.max(raw.timeline.rpm.length * dt, ...Object.values(lanes).map((a) => a.length ? a[a.length-1][0] : 0)), synthetic: true, note: 'Converted from a ride saved by the older page.', lanes });
       }
       throw new Error('This is not a session file from this page.');
     };
@@ -2676,6 +2726,7 @@ void main(){
       if (demo) bio.stopDemo();
       replay = { s, t0: performance.now(), lanes: Object.entries(s.lanes || {}).map(([k, v]) => ({ k, v, i: 0 })) };
       hist.fill(0); hrSeries = [];
+      Object.assign(now_, { hr: null, rmssd: null, sdnn: null, idx: null, swing: null, baseHr: s.start ? s.start.baseHr : null, phase: 'waiting', coverage: 'From a recording' });
       emit('state'); emit('replay', true);
     };
     bio.stopReplay = () => {
@@ -2692,6 +2743,7 @@ void main(){
           const value = l.v[l.i++][1];
           if (l.k === 'hr') { now_.hr = value; if (value) hrSeries.push({ t: t / 1000, hr: value }); } else if (l.k === 'rmssd') now_.rmssd = value;
           else if (l.k === 'sdnn') now_.sdnn = value;
+          else if (l.k === 'baseHr') now_.baseHr = value;
           else if (l.k === 'idx') { now_.idx = value; now_.phase = value == null ? 'held' : 'ready'; now_.label = value == null ? '' : value >= 68 ? 'Elevated model response' : value >= 46 ? 'Raised model response' : value >= 25 ? 'Mild model response' : 'Low model response'; now_.reason = 'Replaying what the model computed when this was recorded.'; now_.coverage = 'From a recording'; } else if (l.k === 'swing') now_.swing = value;
           emit('lane', { name: l.k, value });
         }
@@ -3199,7 +3251,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       <p>The index is Autonomic Telemetry's own engine, <code>multivariate-1</code>, unchanged. It forms a personal reference from 120 seconds of quiet data, then scores your shift from it. 0 is your reference, and 25, 46 and 68 are its tier boundaries. These are engineering choices, not clinical cutoffs.</p>
       <p>Heart rate alone is an explicitly limited one-channel profile. If a channel in the reference goes missing, the number is withheld rather than rescaled. It has no validation against any outcome.</p>
       <p>Beat intervals outside 333 to 1500 ms, or more than 25% from the window's median, are dropped and never repaired. If more than a tenth drop, the window is rejected.</p>
-      <p class="note" style="margin-bottom:0"><a href="../autonomic-telemetry/docs/METHODS.md">Autonomic's methods</a> · <a href="https://github.com/patrickiben/generative-av-labs/blob/main/docs/BIOFEEDBACK.md" rel="noopener">This page's methods</a></p>
+      <p class="note" style="margin-bottom:0"><a href="../autonomic-telemetry/docs/METHODS.md">Autonomic's methods</a> · <a href="docs/BIOFEEDBACK.md" rel="noopener">This page's methods</a></p>
     </details>
     <details id="safety"><summary>Safety and privacy</summary>
       <p>The rings are small, and each region of the picture may change brightness only so fast. If moving light troubles you, turn on your system's reduced-motion setting: the page then calms the camera and removes the pulse.</p>
@@ -3290,6 +3342,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   };
   function setMode(m) {
     S.mode = m; bio.setMode(m);
+    if (m !== 'ride') pedalOff();
     S.holdT = 0; S.dawn = 0; S.complete = false; S.clarity = 0;
     document.querySelectorAll('.hud-set').forEach((h) => { h.hidden = h.dataset.for !== m; });
     $('pedal').hidden = m !== 'ride';
@@ -3303,6 +3356,8 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   addEventListener('keyup', (e) => { if (e.code === 'Space') pedalOff(); });
   function pedalOn() { S.pedal = true; S.auto = false; syncAuto(); $('pedal').classList.add('on'); }
   function pedalOff() { S.pedal = false; $('pedal').classList.remove('on'); }
+  addEventListener('blur', pedalOff);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pedalOff(); });
   $('pedal').addEventListener('pointerdown', (e) => { e.preventDefault(); pedalOn(); });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => $('pedal').addEventListener(ev, pedalOff));
 
@@ -3339,7 +3394,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   const manualRide = () => S.mode === 'ride' && (S.steady != null || S.pedal || S.auto);
   function sourceView() {
     if (bio.demoOn) return ['demo', 'Demo · synthetic signals, not your body'];
-    if (bio.replayOn) return ['replay', bio.syntheticReplay ? 'Replay · a recording of synthetic signals' : 'Replay · a recorded session, not live'];
+    if (bio.replayOn) return ['replay', bio.syntheticReplay ? 'Replay · recording includes synthetic signals' : 'Replay · a recorded session, not live'];
     const h = bio.hr.state === 'live', c = bio.cadence.state === 'live';
     if (h && c) return ['live', 'Live · heart rate and cadence from your sensors'];
     if (h) return ['live', 'Live · heart rate from your sensor'];
@@ -3390,9 +3445,9 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   $('ref-reset').addEventListener('click', () => { bio.resetReference(); shell.toast('Your reference starts again now.'); });
 
   /* ---- Route sheet ---- */
-  function setBiome(i) {
-    if (i === S.biomeNext) return;
-    S.biome = S.biomeNext; S.biomeNext = i; S.biomeT = 0;
+  function setBiome(i, instant) {
+    if (!BIOMES[i] || (i === S.biomeNext && !instant)) return;
+    S.biome = instant ? i : S.biomeNext; S.biomeNext = i; S.biomeT = instant ? 1 : 0;
     bio.noteLane('biome', i);
     document.querySelectorAll('#biome-row button').forEach((b, k) => b.classList.toggle('on', k === i));
     document.body.style.setProperty('--accent', BIOMES[i].edge);
@@ -3456,27 +3511,46 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   });
 
   /* ---- sessions, replay and the Ghost Deck ---- */
-  let recorder = null, recChunks = [], lastRide = null;
+  let recorder = null, lastRide = null, recordBaseDist = 0;
   const stamp = () => new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
   const num = (v, d) => (v == null ? null : +v.toFixed(d));
   $('rec-toggle').addEventListener('click', () => {
     if (!bio.recording) {
-      bio.startRecording('biofeedback-path-cockpit');
+      recordBaseDist = S.dist;
+      bio.startRecording('biofeedback-path-cockpit', sessionStart());
       bio.noteLane('mode', S.mode); bio.noteLane('biome', S.biomeNext); bio.noteLane('seed', S.seed);
+      bio.noteLane('dist', 0); bio.noteLane('vis', S.vis); bio.noteLane('rpm', S.rpm);
+      bio.noteLane('baseHr', bio.now.baseHr);
+      let videoWarning = '';
       if ($('rec-video').checked && cv.captureStream && window.MediaRecorder) {
-        const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported(m));
-        recChunks = [];
-        recorder = new MediaRecorder(cv.captureStream(60), mime ? { mimeType: mime, videoBitsPerSecond: 14e6 } : {});
-        recorder.ondataavailable = (e) => { if (e.data.size) recChunks.push(e.data); };
-        recorder.onstop = () => shell.download(new Blob(recChunks, { type: recorder.mimeType }), `biofeedback-path-cockpit-${stamp()}.${(recorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm'}`);
-        recorder.start(1000);
+        let capture = null;
+        try {
+          capture = cv.captureStream(60);
+          const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported(m));
+          const chunks = [], activeRecorder = new MediaRecorder(capture, mime ? { mimeType: mime, videoBitsPerSecond: 14e6 } : {});
+          recorder = activeRecorder;
+          // This option captures video only; it never owns the ride sound's
+          // persistent audio tracks. Chunks and cleanup belong to this recorder.
+          activeRecorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+          activeRecorder.onstop = () => {
+            try {
+              if (chunks.length) shell.download(new Blob(chunks, { type: activeRecorder.mimeType }), `biofeedback-path-cockpit-${stamp()}.${(activeRecorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm'}`);
+            } finally { capture.getTracks().forEach((track) => track.stop()); }
+          };
+          activeRecorder.onerror = () => { capture.getTracks().forEach((track) => track.stop()); if (recorder === activeRecorder) recorder = null; $('rec-status').textContent = 'Video capture stopped. The session is still recording.'; };
+          activeRecorder.start(1000);
+        } catch (err) {
+          if (capture) capture.getTracks().forEach((track) => track.stop());
+          recorder = null; videoWarning = ' Video could not start; the session will still save.';
+        }
       }
       $('rec-toggle').textContent = 'Stop and save';
       $('session-button').classList.add('rec');
-      $('rec-status').textContent = 'Recording. Ride, then press Stop and save.';
+      $('rec-status').textContent = 'Recording. Ride, then press Stop and save.' + videoWarning;
     } else {
+      bio.noteLane('dist', Math.max(0, S.dist - recordBaseDist)); bio.noteLane('vis', S.vis);
       const s = bio.stopRecording();
-      if (recorder) { recorder.stop(); recorder = null; }
+      if (recorder) { const active = recorder; recorder = null; if (active.state !== 'inactive') active.stop(); }
       lastRide = s; $('ghost-last').disabled = false;
       shell.download(new Blob([JSON.stringify(s)], { type: 'application/json' }), `biofeedback-path-cockpit-session-${stamp()}.json`);
       $('rec-toggle').textContent = 'Start recording';
@@ -3492,7 +3566,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     $('session-analysis').innerHTML = `
       <div class="statgrid">
         <div class="stat"><span class="k">Length</span><span class="v">${mmss(s.durationMs / 1000)}</span></div>
-        <div class="stat"><span class="k">Distance</span><span class="v">${dist.length ? (dist[dist.length - 1] / M_PER_MI).toFixed(2) : '0.00'} mi</span></div>
+        <div class="stat"><span class="k">Distance</span><span class="v">${dist.length ? ((dist[dist.length - 1] - (s.distanceRelative ? 0 : dist[0])) / M_PER_MI).toFixed(2) : '0.00'} mi</span></div>
         <div class="stat"><span class="k">Cadence</span><span class="v">${rpm ? `${Math.round(rpm)} rpm` : 'none'}</span><span class="n">mean while moving</span></div>
         <div class="stat"><span class="k">Heart rate</span><span class="v">${hr ? `${Math.round(hr)} bpm` : 'none'}</span><span class="n">mean</span></div>
         <div class="stat"><span class="k">Index</span><span class="v">${peak.length ? Math.round(Math.max(...peak)) : 'none'}</span><span class="n">highest, inferred</span></div>
@@ -3511,16 +3585,43 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       $('session-sheet').close();
     } catch (err) { $('rec-status').textContent = `That file could not be replayed: ${err.message}`; }
   });
-  function startReplay(s) {
-    stopGhost();
-    S.dist = 0; S.dawn = 0; S.holdT = 0; S.complete = false;
+  function sessionStart() {
+    return { vis: S.vis, seed: S.seed, biome: S.biomeNext, mode: S.mode, dist: S.dist, rpm: S.rpm,
+      map: { ...S.map }, gradeLoad: S.gradeLoad, baseHr: bio.now.baseHr, fullOver: bio.fullOver,
+      fullSwing: bio.fullSwing, pace: bio.pace.rate, hold: S.holdT, dawn: S.dawn };
+  }
+  function restoreStart(s, ghost) {
+    const first = (name, fallback) => s.lanes[name] && s.lanes[name].length ? s.lanes[name][0][1] : fallback;
+    const v = s.start;
+    S.vis = v ? v.vis : 40; S.seed = v ? v.seed : first('seed', 0);
+    setBiome(v ? v.biome : first('biome', 1), true);
+    shell.setMode(ghost ? 'ride' : v ? v.mode : first('mode', 'watch'));
+    S.dist = 0; S.gradeLoad = ghost ? 0 : v && v.gradeLoad || 0;
+    S.rpm = ghost ? 0 : v && v.rpm || 0; S.replayRpm = ghost ? null : S.rpm;
+    S.holdT = ghost ? 0 : v && v.hold || 0; S.dawn = ghost ? 0 : v && v.dawn || 0; S.complete = S.holdT >= SET_SECONDS;
+    if (v) {
+      Object.assign(S.map, v.map);
+      if (v.fullOver != null) bio.fullOver = v.fullOver;
+      if (v.fullSwing != null) bio.fullSwing = v.fullSwing;
+      if (v.pace != null) bio.setPace(v.pace);
+      for (const [id, value] of [['m-idle', S.map.idle], ['m-max', S.map.max], ['m-zoom', S.map.maxZoom * 1000], ['m-gamma', S.map.gamma * 100], ['full-over', bio.fullOver], ['full-swing', bio.fullSwing], ['pace', bio.pace.rate]]) {
+        $(id).value = value; $(id).dispatchEvent(new Event('input'));
+      }
+    }
+  }
+  function startReplay(raw) {
+    const s = bio.readSession(raw); // Reject the entire file before changing the current ride.
+    stopGhost(); restoreStart(s, false);
     bio.startReplay(s);
+    S.replayDistanceBase = s.distanceRelative ? 0 : s.lanes.dist && s.lanes.dist.length ? s.lanes.dist[0][1] : 0;
   }
   bio.on('lane', (l) => {
     if (l.name === 'rpm') S.replayRpm = l.value;
     else if (l.name === 'biome') setBiome(l.value);
-    else if (l.name === 'mode') shell.setMode(l.value);
+    else if (l.name === 'mode' && l.value !== S.mode) shell.setMode(l.value);
     else if (l.name === 'seed') S.seed = l.value;
+    else if (l.name === 'dist') S.dist = Math.max(0, l.value - (S.replayDistanceBase || 0));
+    else if (l.name === 'vis') S.vis = l.value;
     else if (l.name === 'clarity') S.replayClarity = l.value;
     else if (l.name === 'hold') S.holdT = l.value;
     else if (l.name === 'dawn') { S.dawn = l.value; S.complete = l.value >= 1; }
@@ -3529,22 +3630,21 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
 
   function ghostFrom(s) {
     const lanes = s.lanes || {};
-    let dist = lanes.dist;
+    let dist = lanes.dist && lanes.dist.map((p) => [p[0], p[1] - (s.distanceRelative ? 0 : lanes.dist[0][1])]);
     if (!dist || !dist.length) {
       // A ride saved by the older page has cadence only, so the ghost's distance comes from the same mapping with no hills.
       const rpm = lanes.rpm || []; let d = 0;
       dist = rpm.map((p, i) => { if (i) d += motion01(rpm[i - 1][1]) * MAX_SPEED * ((p[0] - rpm[i - 1][0]) / 1000); return [p[0], d]; });
     }
     if (!dist.length) throw new Error('This file holds no ride to race.');
-    return { dist, i: 0, t0: performance.now(), end: s.durationMs, total: dist[dist.length - 1][1], seed: lanes.seed && lanes.seed.length ? lanes.seed[0][1] : S.seed };
+    return { dist, i: 0, t0: performance.now(), end: s.durationMs, total: dist[dist.length - 1][1], seed: s.start ? s.start.seed : lanes.seed && lanes.seed.length ? lanes.seed[0][1] : 0, session: s };
   }
   function startGhost(s) {
-    const g = ghostFrom(s);
+    const g = ghostFrom(bio.readSession(s));
     if (bio.replayOn) bio.stopReplay();
-    S.seed = g.seed; S.dist = 0; S.ghost = g;
-    shell.setMode('ride');
+    restoreStart(g.session, true); S.ghost = g;
     $('g-ghost-wrap').hidden = false; $('ghost-stop').hidden = false;
-    $('ghost-status').textContent = `Racing a ride of ${(g.total / M_PER_MI).toFixed(2)} mi over ${mmss(g.end / 1000)}. Same hills, and your distance restarted at zero.`;
+    $('ghost-status').textContent = `Racing a ride of ${(g.total / M_PER_MI).toFixed(2)} mi over ${mmss(g.end / 1000)}. ${s.start ? 'Same route start and cadence mapping.' : 'Earlier file: starting position is approximate.'} Your distance restarted at zero.`;
   }
   function stopGhost() {
     S.ghost = null; S.ghostGap = null;
@@ -3742,7 +3842,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     }
   }
 
-  /* ---- motion: fixed step, so a replay lands in the same place at any frame rate ---- */
+  /* ---- motion: fixed simulation steps; saved positions anchor replay to its recorded route ---- */
   function targetRpm(h) {
     if (S.replayRpm != null) return S.replayRpm;
     if (bio.demoOn || bio.cadence.state === 'live') return bio.cadence.rpm || 0;
@@ -3800,11 +3900,11 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   function noteLanes(now) {
     if (!bio.recording) return;
     if (now - noteLanes.fast > 100) { noteLanes.fast = now; bio.noteLane('rpm', +S.rpm.toFixed(1)); }
-    if (now - noteLanes.mid > 500) { noteLanes.mid = now; bio.noteLane('dist', +S.dist.toFixed(1)); }
+    if (now - noteLanes.mid > 500) { noteLanes.mid = now; bio.noteLane('dist', +Math.max(0, S.dist - recordBaseDist).toFixed(1)); bio.noteLane('vis', +S.vis.toFixed(3)); }
     if (now - noteLanes.slow > 1000) {
       noteLanes.slow = now;
       const n = bio.now;
-      [['hr', num(n.hr, 1)], ['rmssd', num(n.rmssd, 1)], ['sdnn', num(n.sdnn, 1)], ['idx', num(n.idx, 1)], ['swing', num(n.swing, 2)], ['clarity', +S.clarity.toFixed(3)], ['hold', +S.holdT.toFixed(1)], ['dawn', +S.dawn.toFixed(3)]].forEach(([k, v]) => bio.noteLane(k, v));
+      [['hr', num(n.hr, 1)], ['baseHr', num(n.baseHr, 1)], ['rmssd', num(n.rmssd, 1)], ['sdnn', num(n.sdnn, 1)], ['idx', num(n.idx, 1)], ['swing', num(n.swing, 2)], ['clarity', +S.clarity.toFixed(3)], ['hold', +S.holdT.toFixed(1)], ['dawn', +S.dawn.toFixed(3)]].forEach(([k, v]) => bio.noteLane(k, v));
     }
   }
   noteLanes.fast = noteLanes.mid = noteLanes.slow = 0;

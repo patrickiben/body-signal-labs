@@ -40,6 +40,7 @@ Edit `src/`, then run `python3 build.py`, which inlines everything into the page
 - [Inputs](docs/INPUTS.md): the Bluetooth profiles each cockpit reads, and browser support.
 - [Methods](docs/METHODS.md): Endless Cockpit's road, feedback loop and flicker limiter.
 - [Biofeedback Path Cockpit](docs/BIOFEEDBACK.md): its signals, modes and the inferred index.
+- [Review](docs/REVIEW.md): repaired failure cases and recommended next improvements.
 - [Validation](docs/VALIDATION.md): what was tested, how, and what still needs a real sensor.
 
 ## Credit

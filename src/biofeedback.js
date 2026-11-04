@@ -172,7 +172,7 @@
       <p>The index is Autonomic Telemetry's own engine, <code>multivariate-1</code>, unchanged. It forms a personal reference from 120 seconds of quiet data, then scores your shift from it. 0 is your reference, and 25, 46 and 68 are its tier boundaries. These are engineering choices, not clinical cutoffs.</p>
       <p>Heart rate alone is an explicitly limited one-channel profile. If a channel in the reference goes missing, the number is withheld rather than rescaled. It has no validation against any outcome.</p>
       <p>Beat intervals outside 333 to 1500 ms, or more than 25% from the window's median, are dropped and never repaired. If more than a tenth drop, the window is rejected.</p>
-      <p class="note" style="margin-bottom:0"><a href="../autonomic-telemetry/docs/METHODS.md">Autonomic's methods</a> · <a href="https://github.com/patrickiben/generative-av-labs/blob/main/docs/BIOFEEDBACK.md" rel="noopener">This page's methods</a></p>
+      <p class="note" style="margin-bottom:0"><a href="../autonomic-telemetry/docs/METHODS.md">Autonomic's methods</a> · <a href="docs/BIOFEEDBACK.md" rel="noopener">This page's methods</a></p>
     </details>
     <details id="safety"><summary>Safety and privacy</summary>
       <p>The rings are small, and each region of the picture may change brightness only so fast. If moving light troubles you, turn on your system's reduced-motion setting: the page then calms the camera and removes the pulse.</p>
@@ -263,6 +263,7 @@
   };
   function setMode(m) {
     S.mode = m; bio.setMode(m);
+    if (m !== 'ride') pedalOff();
     S.holdT = 0; S.dawn = 0; S.complete = false; S.clarity = 0;
     document.querySelectorAll('.hud-set').forEach((h) => { h.hidden = h.dataset.for !== m; });
     $('pedal').hidden = m !== 'ride';
@@ -276,6 +277,8 @@
   addEventListener('keyup', (e) => { if (e.code === 'Space') pedalOff(); });
   function pedalOn() { S.pedal = true; S.auto = false; syncAuto(); $('pedal').classList.add('on'); }
   function pedalOff() { S.pedal = false; $('pedal').classList.remove('on'); }
+  addEventListener('blur', pedalOff);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pedalOff(); });
   $('pedal').addEventListener('pointerdown', (e) => { e.preventDefault(); pedalOn(); });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => $('pedal').addEventListener(ev, pedalOff));
 
@@ -312,7 +315,7 @@
   const manualRide = () => S.mode === 'ride' && (S.steady != null || S.pedal || S.auto);
   function sourceView() {
     if (bio.demoOn) return ['demo', 'Demo · synthetic signals, not your body'];
-    if (bio.replayOn) return ['replay', bio.syntheticReplay ? 'Replay · a recording of synthetic signals' : 'Replay · a recorded session, not live'];
+    if (bio.replayOn) return ['replay', bio.syntheticReplay ? 'Replay · recording includes synthetic signals' : 'Replay · a recorded session, not live'];
     const h = bio.hr.state === 'live', c = bio.cadence.state === 'live';
     if (h && c) return ['live', 'Live · heart rate and cadence from your sensors'];
     if (h) return ['live', 'Live · heart rate from your sensor'];
@@ -363,9 +366,9 @@
   $('ref-reset').addEventListener('click', () => { bio.resetReference(); shell.toast('Your reference starts again now.'); });
 
   /* ---- Route sheet ---- */
-  function setBiome(i) {
-    if (i === S.biomeNext) return;
-    S.biome = S.biomeNext; S.biomeNext = i; S.biomeT = 0;
+  function setBiome(i, instant) {
+    if (!BIOMES[i] || (i === S.biomeNext && !instant)) return;
+    S.biome = instant ? i : S.biomeNext; S.biomeNext = i; S.biomeT = instant ? 1 : 0;
     bio.noteLane('biome', i);
     document.querySelectorAll('#biome-row button').forEach((b, k) => b.classList.toggle('on', k === i));
     document.body.style.setProperty('--accent', BIOMES[i].edge);
@@ -429,27 +432,46 @@
   });
 
   /* ---- sessions, replay and the Ghost Deck ---- */
-  let recorder = null, recChunks = [], lastRide = null;
+  let recorder = null, lastRide = null, recordBaseDist = 0;
   const stamp = () => new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
   const num = (v, d) => (v == null ? null : +v.toFixed(d));
   $('rec-toggle').addEventListener('click', () => {
     if (!bio.recording) {
-      bio.startRecording('biofeedback-path-cockpit');
+      recordBaseDist = S.dist;
+      bio.startRecording('biofeedback-path-cockpit', sessionStart());
       bio.noteLane('mode', S.mode); bio.noteLane('biome', S.biomeNext); bio.noteLane('seed', S.seed);
+      bio.noteLane('dist', 0); bio.noteLane('vis', S.vis); bio.noteLane('rpm', S.rpm);
+      bio.noteLane('baseHr', bio.now.baseHr);
+      let videoWarning = '';
       if ($('rec-video').checked && cv.captureStream && window.MediaRecorder) {
-        const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported(m));
-        recChunks = [];
-        recorder = new MediaRecorder(cv.captureStream(60), mime ? { mimeType: mime, videoBitsPerSecond: 14e6 } : {});
-        recorder.ondataavailable = (e) => { if (e.data.size) recChunks.push(e.data); };
-        recorder.onstop = () => shell.download(new Blob(recChunks, { type: recorder.mimeType }), `biofeedback-path-cockpit-${stamp()}.${(recorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm'}`);
-        recorder.start(1000);
+        let capture = null;
+        try {
+          capture = cv.captureStream(60);
+          const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported(m));
+          const chunks = [], activeRecorder = new MediaRecorder(capture, mime ? { mimeType: mime, videoBitsPerSecond: 14e6 } : {});
+          recorder = activeRecorder;
+          // This option captures video only; it never owns the ride sound's
+          // persistent audio tracks. Chunks and cleanup belong to this recorder.
+          activeRecorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+          activeRecorder.onstop = () => {
+            try {
+              if (chunks.length) shell.download(new Blob(chunks, { type: activeRecorder.mimeType }), `biofeedback-path-cockpit-${stamp()}.${(activeRecorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm'}`);
+            } finally { capture.getTracks().forEach((track) => track.stop()); }
+          };
+          activeRecorder.onerror = () => { capture.getTracks().forEach((track) => track.stop()); if (recorder === activeRecorder) recorder = null; $('rec-status').textContent = 'Video capture stopped. The session is still recording.'; };
+          activeRecorder.start(1000);
+        } catch (err) {
+          if (capture) capture.getTracks().forEach((track) => track.stop());
+          recorder = null; videoWarning = ' Video could not start; the session will still save.';
+        }
       }
       $('rec-toggle').textContent = 'Stop and save';
       $('session-button').classList.add('rec');
-      $('rec-status').textContent = 'Recording. Ride, then press Stop and save.';
+      $('rec-status').textContent = 'Recording. Ride, then press Stop and save.' + videoWarning;
     } else {
+      bio.noteLane('dist', Math.max(0, S.dist - recordBaseDist)); bio.noteLane('vis', S.vis);
       const s = bio.stopRecording();
-      if (recorder) { recorder.stop(); recorder = null; }
+      if (recorder) { const active = recorder; recorder = null; if (active.state !== 'inactive') active.stop(); }
       lastRide = s; $('ghost-last').disabled = false;
       shell.download(new Blob([JSON.stringify(s)], { type: 'application/json' }), `biofeedback-path-cockpit-session-${stamp()}.json`);
       $('rec-toggle').textContent = 'Start recording';
@@ -465,7 +487,7 @@
     $('session-analysis').innerHTML = `
       <div class="statgrid">
         <div class="stat"><span class="k">Length</span><span class="v">${mmss(s.durationMs / 1000)}</span></div>
-        <div class="stat"><span class="k">Distance</span><span class="v">${dist.length ? (dist[dist.length - 1] / M_PER_MI).toFixed(2) : '0.00'} mi</span></div>
+        <div class="stat"><span class="k">Distance</span><span class="v">${dist.length ? ((dist[dist.length - 1] - (s.distanceRelative ? 0 : dist[0])) / M_PER_MI).toFixed(2) : '0.00'} mi</span></div>
         <div class="stat"><span class="k">Cadence</span><span class="v">${rpm ? `${Math.round(rpm)} rpm` : 'none'}</span><span class="n">mean while moving</span></div>
         <div class="stat"><span class="k">Heart rate</span><span class="v">${hr ? `${Math.round(hr)} bpm` : 'none'}</span><span class="n">mean</span></div>
         <div class="stat"><span class="k">Index</span><span class="v">${peak.length ? Math.round(Math.max(...peak)) : 'none'}</span><span class="n">highest, inferred</span></div>
@@ -484,16 +506,43 @@
       $('session-sheet').close();
     } catch (err) { $('rec-status').textContent = `That file could not be replayed: ${err.message}`; }
   });
-  function startReplay(s) {
-    stopGhost();
-    S.dist = 0; S.dawn = 0; S.holdT = 0; S.complete = false;
+  function sessionStart() {
+    return { vis: S.vis, seed: S.seed, biome: S.biomeNext, mode: S.mode, dist: S.dist, rpm: S.rpm,
+      map: { ...S.map }, gradeLoad: S.gradeLoad, baseHr: bio.now.baseHr, fullOver: bio.fullOver,
+      fullSwing: bio.fullSwing, pace: bio.pace.rate, hold: S.holdT, dawn: S.dawn };
+  }
+  function restoreStart(s, ghost) {
+    const first = (name, fallback) => s.lanes[name] && s.lanes[name].length ? s.lanes[name][0][1] : fallback;
+    const v = s.start;
+    S.vis = v ? v.vis : 40; S.seed = v ? v.seed : first('seed', 0);
+    setBiome(v ? v.biome : first('biome', 1), true);
+    shell.setMode(ghost ? 'ride' : v ? v.mode : first('mode', 'watch'));
+    S.dist = 0; S.gradeLoad = ghost ? 0 : v && v.gradeLoad || 0;
+    S.rpm = ghost ? 0 : v && v.rpm || 0; S.replayRpm = ghost ? null : S.rpm;
+    S.holdT = ghost ? 0 : v && v.hold || 0; S.dawn = ghost ? 0 : v && v.dawn || 0; S.complete = S.holdT >= SET_SECONDS;
+    if (v) {
+      Object.assign(S.map, v.map);
+      if (v.fullOver != null) bio.fullOver = v.fullOver;
+      if (v.fullSwing != null) bio.fullSwing = v.fullSwing;
+      if (v.pace != null) bio.setPace(v.pace);
+      for (const [id, value] of [['m-idle', S.map.idle], ['m-max', S.map.max], ['m-zoom', S.map.maxZoom * 1000], ['m-gamma', S.map.gamma * 100], ['full-over', bio.fullOver], ['full-swing', bio.fullSwing], ['pace', bio.pace.rate]]) {
+        $(id).value = value; $(id).dispatchEvent(new Event('input'));
+      }
+    }
+  }
+  function startReplay(raw) {
+    const s = bio.readSession(raw); // Reject the entire file before changing the current ride.
+    stopGhost(); restoreStart(s, false);
     bio.startReplay(s);
+    S.replayDistanceBase = s.distanceRelative ? 0 : s.lanes.dist && s.lanes.dist.length ? s.lanes.dist[0][1] : 0;
   }
   bio.on('lane', (l) => {
     if (l.name === 'rpm') S.replayRpm = l.value;
     else if (l.name === 'biome') setBiome(l.value);
-    else if (l.name === 'mode') shell.setMode(l.value);
+    else if (l.name === 'mode' && l.value !== S.mode) shell.setMode(l.value);
     else if (l.name === 'seed') S.seed = l.value;
+    else if (l.name === 'dist') S.dist = Math.max(0, l.value - (S.replayDistanceBase || 0));
+    else if (l.name === 'vis') S.vis = l.value;
     else if (l.name === 'clarity') S.replayClarity = l.value;
     else if (l.name === 'hold') S.holdT = l.value;
     else if (l.name === 'dawn') { S.dawn = l.value; S.complete = l.value >= 1; }
@@ -502,22 +551,21 @@
 
   function ghostFrom(s) {
     const lanes = s.lanes || {};
-    let dist = lanes.dist;
+    let dist = lanes.dist && lanes.dist.map((p) => [p[0], p[1] - (s.distanceRelative ? 0 : lanes.dist[0][1])]);
     if (!dist || !dist.length) {
       // A ride saved by the older page has cadence only, so the ghost's distance comes from the same mapping with no hills.
       const rpm = lanes.rpm || []; let d = 0;
       dist = rpm.map((p, i) => { if (i) d += motion01(rpm[i - 1][1]) * MAX_SPEED * ((p[0] - rpm[i - 1][0]) / 1000); return [p[0], d]; });
     }
     if (!dist.length) throw new Error('This file holds no ride to race.');
-    return { dist, i: 0, t0: performance.now(), end: s.durationMs, total: dist[dist.length - 1][1], seed: lanes.seed && lanes.seed.length ? lanes.seed[0][1] : S.seed };
+    return { dist, i: 0, t0: performance.now(), end: s.durationMs, total: dist[dist.length - 1][1], seed: s.start ? s.start.seed : lanes.seed && lanes.seed.length ? lanes.seed[0][1] : 0, session: s };
   }
   function startGhost(s) {
-    const g = ghostFrom(s);
+    const g = ghostFrom(bio.readSession(s));
     if (bio.replayOn) bio.stopReplay();
-    S.seed = g.seed; S.dist = 0; S.ghost = g;
-    shell.setMode('ride');
+    restoreStart(g.session, true); S.ghost = g;
     $('g-ghost-wrap').hidden = false; $('ghost-stop').hidden = false;
-    $('ghost-status').textContent = `Racing a ride of ${(g.total / M_PER_MI).toFixed(2)} mi over ${mmss(g.end / 1000)}. Same hills, and your distance restarted at zero.`;
+    $('ghost-status').textContent = `Racing a ride of ${(g.total / M_PER_MI).toFixed(2)} mi over ${mmss(g.end / 1000)}. ${s.start ? 'Same route start and cadence mapping.' : 'Earlier file: starting position is approximate.'} Your distance restarted at zero.`;
   }
   function stopGhost() {
     S.ghost = null; S.ghostGap = null;
@@ -715,7 +763,7 @@
     }
   }
 
-  /* ---- motion: fixed step, so a replay lands in the same place at any frame rate ---- */
+  /* ---- motion: fixed simulation steps; saved positions anchor replay to its recorded route ---- */
   function targetRpm(h) {
     if (S.replayRpm != null) return S.replayRpm;
     if (bio.demoOn || bio.cadence.state === 'live') return bio.cadence.rpm || 0;
@@ -773,11 +821,11 @@
   function noteLanes(now) {
     if (!bio.recording) return;
     if (now - noteLanes.fast > 100) { noteLanes.fast = now; bio.noteLane('rpm', +S.rpm.toFixed(1)); }
-    if (now - noteLanes.mid > 500) { noteLanes.mid = now; bio.noteLane('dist', +S.dist.toFixed(1)); }
+    if (now - noteLanes.mid > 500) { noteLanes.mid = now; bio.noteLane('dist', +Math.max(0, S.dist - recordBaseDist).toFixed(1)); bio.noteLane('vis', +S.vis.toFixed(3)); }
     if (now - noteLanes.slow > 1000) {
       noteLanes.slow = now;
       const n = bio.now;
-      [['hr', num(n.hr, 1)], ['rmssd', num(n.rmssd, 1)], ['sdnn', num(n.sdnn, 1)], ['idx', num(n.idx, 1)], ['swing', num(n.swing, 2)], ['clarity', +S.clarity.toFixed(3)], ['hold', +S.holdT.toFixed(1)], ['dawn', +S.dawn.toFixed(3)]].forEach(([k, v]) => bio.noteLane(k, v));
+      [['hr', num(n.hr, 1)], ['baseHr', num(n.baseHr, 1)], ['rmssd', num(n.rmssd, 1)], ['sdnn', num(n.sdnn, 1)], ['idx', num(n.idx, 1)], ['swing', num(n.swing, 2)], ['clarity', +S.clarity.toFixed(3)], ['hold', +S.holdT.toFixed(1)], ['dawn', +S.dawn.toFixed(3)]].forEach(([k, v]) => bio.noteLane(k, v));
     }
   }
   noteLanes.fast = noteLanes.mid = noteLanes.slow = 0;

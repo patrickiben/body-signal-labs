@@ -51,7 +51,7 @@ A stated script, sent as real packet bytes through the same parsers: a rest that
 
 ## Sessions and the Ghost Deck
 
-A session file holds cadence ten times a second, distance twice a second, and heart rate, RMSSD, SDNN, the index, the swing, clarity, the hold and dawn once a second, with the mode, scene and route seed. It is your own record, not a medical record, and nothing leaves the computer unless you share it. Replay plays back what was computed, without re-running the model. The Ghost Deck races a session on the same hills as a light on the road, with the gap in meters. A ride saved by the older page also replays and races, marked synthetic.
+A session file holds cadence ten times a second, distance twice a second, and heart rate, RMSSD, SDNN, the index, the swing, clarity, the hold and dawn once a second, with the mode, scene and route seed. It is your own record, not a medical record, and nothing leaves the computer unless you share it. Replay plays back what was computed, without re-running the model. New files include the starting route, cadence mapping and baseline/settings. Their distance begins at zero when recording starts. The Ghost Deck restores that start and races the recorded distance as a light on the road, with the gap in meters. Older files are rebased to zero and label their starting position as approximate. A ride saved by the older page also replays and races, marked synthetic.
 
 ## Not verified
 

@@ -140,6 +140,38 @@
     return ['failed', m ? `Could not connect: ${m}` : 'Could not connect.'];
   }
 
+  // Validate an imported file completely before it can replace a live source.
+  function validateBioSession(raw) {
+    const object = (v) => v && typeof v === 'object' && !Array.isArray(v);
+    const finite = (v, lo, hi) => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
+    const fail = (what) => { throw new Error(`Invalid session ${what}.`); };
+    if (!object(raw) || !finite(raw.durationMs, 0, Number.MAX_SAFE_INTEGER) || !object(raw.lanes)) fail('duration or lanes');
+    if (raw.synthetic != null && typeof raw.synthetic !== 'boolean') fail('source label');
+    if (raw.distanceRelative != null && typeof raw.distanceRelative !== 'boolean') fail('distance format');
+    const bounds = { rpm: [0, 250], hr: [0, 300], rmssd: [0, 500], sdnn: [0, 500], idx: [0, 100], swing: [0, 300], clarity: [0, 1], dawn: [0, 1], hold: [0, 1e9], dist: [0, 1e12], vis: [-1e12, 1e12], seed: [-1e6, 1e6], baseHr: [0, 300], gradeLoad: [0, .045] };
+    const optional = new Set(['hr', 'rmssd', 'sdnn', 'idx', 'swing', 'baseHr']);
+    const mode = (v) => ['watch', 'ride', 'train'].includes(v);
+    const biome = (v) => Number.isInteger(v) && v >= 0 && v < 5;
+    const map = (v) => object(v) && Object.entries({ idle: [0, 60], max: [60, 130], maxZoom: [.004, .04], gamma: [.6, 3.2] }).every(([k, lim]) => finite(v[k], ...lim));
+    if (raw.start != null) {
+      const s = raw.start;
+      if (!object(s) || !finite(s.vis, -1e12, 1e12) || !finite(s.seed, -1e6, 1e6) || !biome(s.biome) || !mode(s.mode) || !map(s.map)) fail('starting route');
+      for (const [k, lim] of Object.entries({ rpm: [0, 250], dist: [0, 1e12], gradeLoad: [0, .045], fullOver: [20, 100], fullSwing: [6, 16], pace: [3, 12], hold: [0, 1e9], dawn: [0, 1] })) if (s[k] != null && !finite(s[k], ...lim)) fail(`starting ${k}`);
+      if (s.baseHr != null && !finite(s.baseHr, 0, 300)) fail('starting baseline');
+    }
+    for (const [name, lane] of Object.entries(raw.lanes)) {
+      if (!Array.isArray(lane)) fail(`${name} lane`);
+      let previous = -1;
+      for (const point of lane) {
+        if (!Array.isArray(point) || point.length !== 2 || !finite(point[0], 0, raw.durationMs) || point[0] < previous) fail(`${name} timing`);
+        previous = point[0]; const value = point[1];
+        if (bounds[name] && !(optional.has(name) && value === null) && !finite(value, ...bounds[name])) fail(`${name} value`);
+        if ((name === 'mode' && !mode(value)) || (name === 'biome' && !biome(value))) fail(`${name} value`);
+      }
+    }
+    return raw;
+  }
+
   function createBio() {
     const listeners = {};
     const on = (ev, fn) => { (listeners[ev] = listeners[ev] || []).push(fn); return bio; };
@@ -215,7 +247,17 @@
     }
     function deviceHeart(p) {
       hr.noContact = p.contact === false || p.bpm === 0;
-      if (hr.noContact) return;
+      if (hr.noContact) {
+        hr.deviceBpm = null;
+        if (hr.connected) setHr('no-signal');
+        if (!demo && !replay) {
+          hr.bpm = null; lastHrWall = 0; lastRrWall = 0; beatLog = []; hrSeries = []; rrWarm = false;
+          features = { valid: false, reason: 'The sensor reports no skin contact.' };
+          feedEngine(); readSnapshot();
+          Object.assign(now_, { hr: null, rmssd: null, sdnn: null, swing: null });
+        }
+        return;
+      }
       hr.lastAt = performance.now(); hr.deviceBpm = p.bpm; hr.warming = false; hr.reportsBeats = hr.reportsBeats || p.rr.length > 0;
       if (hr.connected && hr.state !== 'live') setHr('live');
       if (!demo && !replay) takeHeart(p);
@@ -289,9 +331,16 @@
         try { const svc = await gatt.getPrimaryService('cycling_speed_and_cadence'); ch = await svc.getCharacteristic('csc_measurement'); kind = 'csc'; } catch (e) { const svc = await gatt.getPrimaryService('fitness_machine'); ch = await svc.getCharacteristic('indoor_bike_data'); kind = 'ftms'; }
         cadence.kind = kind;
         ch.addEventListener('characteristicvaluechanged', (e) => {
+          const value = kind === 'csc' ? BioMath.parseCSC(e.target.value) : BioMath.parseFTMS(e.target.value);
+          // FTMS may send other fields without cadence. Those packets do not
+          // refresh the age of the last actual cadence measurement.
+          if (value == null) {
+            if (kind === 'csc' && !demo && !replay) takeCrank(null);
+            return;
+          }
           deviceCadence();
           if (demo || replay) return;
-          if (kind === 'csc') takeCrank(BioMath.parseCSC(e.target.value)); else takeTrainer(BioMath.parseFTMS(e.target.value));
+          if (kind === 'csc') takeCrank(value); else takeTrainer(value);
         });
         await ch.startNotifications();
         cadence.connected = true; cadence.connectedAt = performance.now();
@@ -336,7 +385,7 @@
         },
       };
       // A strap that reports beat intervals needs one full window first, or the reference would restart when they arrive.
-      if (rrSeen && !rrWarm) return;
+      if (rrSeen && !rrWarm && fresh) return;
       engine.ingest(frame);
     }
     function readSnapshot() {
@@ -420,22 +469,23 @@
     };
 
     /* ---- recording and replay ---- */
-    bio.startRecording = (appName) => { session = { t0: performance.now(), app: appName, created: new Date().toISOString(), lanes: {}, synthetic: !!demo }; emit('state'); };
-    bio.noteLane = (name, value) => { if (session) (session.lanes[name] = session.lanes[name] || []).push([Math.round(performance.now() - session.t0), value]); };
+    bio.startRecording = (appName, start) => { session = { t0: performance.now(), app: appName, created: new Date().toISOString(), lanes: {}, start: start ? JSON.parse(JSON.stringify(start)) : undefined, synthetic: !!demo || !!(replay && replay.s.synthetic) }; emit('state'); };
+    bio.noteLane = (name, value) => { if (session) { session.synthetic = session.synthetic || !!demo || !!(replay && replay.s.synthetic); (session.lanes[name] = session.lanes[name] || []).push([Math.round(performance.now() - session.t0), value]); } };
     bio.stopRecording = () => {
       if (!session) return null;
       const s = session; session = null;
       emit('state');
-      return { schema: 'body-signal-labs/biofeedback-session@1', app: s.app, created: s.created, durationMs: Math.round(performance.now() - s.t0), synthetic: s.synthetic, note: 'Readings once a second and cadence ten times a second. Inferred values are inferred, not measured. Not a medical record.', lanes: s.lanes };
+      return { schema: 'body-signal-labs/biofeedback-session@1', app: s.app, created: s.created, durationMs: Math.round(performance.now() - s.t0), synthetic: s.synthetic, start: s.start, distanceRelative: !!s.start, note: 'Readings once a second and cadence ten times a second. Inferred values are inferred, not measured. Not a medical record.', lanes: s.lanes };
     };
     bio.readSession = (raw) => {
-      if (raw && /\/biofeedback-session@1$/.test(raw.schema || '')) return raw;
+      if (raw && /\/biofeedback-session@1$/.test(raw.schema || '')) return validateBioSession(raw);
       // A ride saved by the old page. Its body signals were always the synthetic script.
       if (raw && raw.timeline && Array.isArray(raw.timeline.rpm) && raw.timeline.rpm.length) {
-        const dt = (raw.timeline.dt || 0.1) * 1000, au = raw.autoTimeline || {}, ad = (au.dt || 1) * 1000, m = raw.meta || {};
+        const dt = (raw.timeline.dt == null ? 0.1 : raw.timeline.dt) * 1000, au = raw.autoTimeline || {}, ad = (au.dt == null ? 1 : au.dt) * 1000, m = raw.meta || {};
+        if (!Number.isFinite(dt) || dt <= 0 || !Number.isFinite(ad) || ad <= 0) throw new Error('Invalid session sample interval.');
         const lane = (a, f) => (Array.isArray(a) ? a.map((v, i) => [Math.round(i * ad), f ? f(v) : v]) : []);
         const lanes = { rpm: raw.timeline.rpm.map((v, i) => [Math.round(i * dt), v]), idx: lane(au.idx), hr: lane(au.HR), clarity: lane(au.clarity), dawn: lane(au.dawn), mode: [[0, raw.mode === 'train' || raw.mode === 'ride' ? raw.mode : 'watch']], biome: [[0, ((m.promptIdx || 0) % 5 + 5) % 5]], seed: [[0, m.route && typeof m.route.seed === 'number' ? m.route.seed % 40 : 0]] };
-        return { schema: 'body-signal-labs/biofeedback-session@1', app: 'biofeedback-path-cockpit', created: raw.createdAt, durationMs: raw.timeline.rpm.length * dt, synthetic: true, note: 'Converted from a ride saved by the older page.', lanes };
+        return validateBioSession({ schema: 'body-signal-labs/biofeedback-session@1', app: 'biofeedback-path-cockpit', created: raw.createdAt, durationMs: Math.max(raw.timeline.rpm.length * dt, ...Object.values(lanes).map((a) => a.length ? a[a.length-1][0] : 0)), synthetic: true, note: 'Converted from a ride saved by the older page.', lanes });
       }
       throw new Error('This is not a session file from this page.');
     };
@@ -444,6 +494,7 @@
       if (demo) bio.stopDemo();
       replay = { s, t0: performance.now(), lanes: Object.entries(s.lanes || {}).map(([k, v]) => ({ k, v, i: 0 })) };
       hist.fill(0); hrSeries = [];
+      Object.assign(now_, { hr: null, rmssd: null, sdnn: null, idx: null, swing: null, baseHr: s.start ? s.start.baseHr : null, phase: 'waiting', coverage: 'From a recording' });
       emit('state'); emit('replay', true);
     };
     bio.stopReplay = () => {
@@ -460,6 +511,7 @@
           const value = l.v[l.i++][1];
           if (l.k === 'hr') { now_.hr = value; if (value) hrSeries.push({ t: t / 1000, hr: value }); } else if (l.k === 'rmssd') now_.rmssd = value;
           else if (l.k === 'sdnn') now_.sdnn = value;
+          else if (l.k === 'baseHr') now_.baseHr = value;
           else if (l.k === 'idx') { now_.idx = value; now_.phase = value == null ? 'held' : 'ready'; now_.label = value == null ? '' : value >= 68 ? 'Elevated model response' : value >= 46 ? 'Raised model response' : value >= 25 ? 'Mild model response' : 'Low model response'; now_.reason = 'Replaying what the model computed when this was recorded.'; now_.coverage = 'From a recording'; } else if (l.k === 'swing') now_.swing = value;
           emit('lane', { name: l.k, value });
         }

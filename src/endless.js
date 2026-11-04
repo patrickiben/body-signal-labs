@@ -1077,6 +1077,8 @@ void main(){
   ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => pedalBtn.addEventListener(ev, pedalOff));
   addEventListener('keydown', (e) => { if (e.code === 'Space' && !e.repeat && !e.target.closest('dialog[open], input, select, button')) { e.preventDefault(); pedalOn(); } });
   addEventListener('keyup', (e) => { if (e.code === 'Space') pedalOff(); });
+  addEventListener('blur', pedalOff);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pedalOff(); });
   /* ---- recording and replay: cadence, scene and route, with an optional video of the screen ---- */
   let recorder = null;
   const stamp = () => new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
