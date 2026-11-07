@@ -18,6 +18,9 @@ HEAD = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="{theme}">
 <title>{title}</title>
@@ -60,7 +63,7 @@ def static(out, src, title, description):
 
 
 if __name__ == "__main__":
-    page("endless-cockpit.html", "Endless Cockpit", "Eight procedural cycling routes: coast, tropical preserve, meadows, New England Autumn, canyon, Rainbow orbit, Misty ridges and Snake Way above golden clouds, moving at your cadence.", ["ride.js", "cadence-motion.js", "cyclingscene.js", "endless.js"], extra_css=(SRC / "endless.css").read_text())
+    page("endless-cockpit.html", "Endless Cockpit", "Eight procedural cycling routes: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges and Snake Way above golden clouds, moving at your cadence.", ["ride.js", "cadence-motion.js", "cyclingscene.js", "endless.js"], extra_css=(SRC / "endless.css").read_text())
     page("biofeedback-path-cockpit.html", "Biofeedback Path Cockpit", "Eight cycling scenes whose weather, grade and fog follow your body, with cadence-powered riding or an optional Muse S Athena EEG balance game control. Not a medical device.", ["vendor/autonomic/research-math.js", "vendor/autonomic/multivariate-engine.js", "bio.js", "eeg-drive.js", "cadence-motion.js", "pathscene.js", "cyclingscene.js", "biofeedback.js"], extra_css=(SRC / "biofeedback.css").read_text())
     static("index.html", "index.src.html", "Body Signal Labs", "Autonomic Telemetry, Endless Cockpit and Biofeedback Path Cockpit: immersive scenes that follow signals from your body, in the browser.")
     static("field-guide.html", "field-guide.src.html", "Field Guide", "How to connect a cadence or heart-rate sensor to these pages, what each status means, and what is measured or inferred.")
