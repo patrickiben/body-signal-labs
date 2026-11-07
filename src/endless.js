@@ -60,21 +60,28 @@
     </div></details>`;
 
   const TOD = [
-    { v: null, label: 'Moving', title: 'A four-minute cycle from golden hour to night' },
-    { v: 0.18, label: 'Golden hour', short: 'Golden' }, { v: 0.36, label: 'Sunset' }, { v: 0.55, label: 'Dusk' }, { v: 1, label: 'Night' },
+    { v: null, label: 'Moving', title: 'A four-minute cycle from golden hour to night (Key: T)' },
+    { v: 0.18, label: 'Golden hour', short: 'Golden', title: 'Hold sky at golden hour (Key: T)' },
+    { v: 0.36, label: 'Sunset', title: 'Hold sky at sunset (Key: T)' },
+    { v: 0.55, label: 'Dusk', title: 'Hold sky at dusk (Key: T)' },
+    { v: 1, label: 'Night', title: 'Hold sky at night (Key: T)' },
   ];
-  const LOOKS = { clear: { label: 'Clear', dream: 0.0, wild: 0.0 }, dreamy: { label: 'Dreamy', dream: 0.62, wild: 0.25 }, wild: { label: 'Wild', dream: 0.86, wild: 1.0 } };
+  const LOOKS = {
+    clear: { label: 'Clear', dream: 0.0, wild: 0.0, title: 'Crisp, unwarped road view (Key: L)' },
+    dreamy: { label: 'Dreamy', dream: 0.62, wild: 0.25, title: 'Soft frame persistence and atmospheric glow (Key: L)' },
+    wild: { label: 'Wild', dream: 0.86, wild: 1.0, title: 'Amplified chromatic warp and dream trails (Key: L)' },
+  };
   const sceneBar = `
     <div class="scenebar chrome" id="scenebar">
       <div class="scene-tiles" id="scene-tiles" role="group" aria-label="Scenery">
-        ${BIOMES.map((b, i) => `<button class="scene-tile" data-b="${i}" aria-pressed="${i === 0}" title="${b.description}"><canvas width="336" height="196" aria-hidden="true" style="background:linear-gradient(${b.skyTop},${b.skyHz} 54%,${b.ground} 55%)"></canvas><span>${b.name}</span></button>`).join('')}
+        ${BIOMES.map((b, i) => `<button class="scene-tile" data-b="${i}" aria-pressed="${i === 0}" title="${b.name} (Key: ${i + 1}) — ${b.description}"><canvas width="336" height="196" aria-hidden="true" style="background:linear-gradient(${b.skyTop},${b.skyHz} 54%,${b.ground} 55%)"></canvas><span>${b.name}</span></button>`).join('')}
       </div>
       <p class="route-caption" id="route-caption">${BIOMES[0].description}</p>
       <div class="scene-row">
         <div class="seg" role="group" aria-label="Time of day">${TOD.map((t, i) => `<button data-tod="${i}" aria-pressed="${i === 0}"${t.title ? ` title="${t.title}"` : ''}${t.short ? ` aria-label="${t.label}"><span class="long">${t.label}</span><span class="short">${t.short}</span>` : `>${t.label}`}</button>`).join('')}</div>
-        <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'clear'}">${l.label}</button>`).join('')}</div>
+        <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'clear'}" title="${l.title}">${l.label}</button>`).join('')}</div>
         <button class="seg-solo" id="auto-scene" aria-pressed="true" aria-label="Auto scenery: new scenery every mile" title="A new scene blends in after each mile you ride"><span class="long">New scenery every mile</span><span class="short">Auto scenery</span></button>
-        <button class="seg-solo" id="new-route">New route</button>
+        <button class="seg-solo" id="new-route" title="Generate a new procedural road layout (Keys: R / B for next scene · Middle-click for random combo)">New route</button>
       </div>
     </div>`;
 
@@ -380,6 +387,7 @@
   /* the pedal button lives on the stage */
   const pedalBtn = document.createElement('button');
   pedalBtn.className = 'pill primary chrome'; pedalBtn.id = 'pedal'; pedalBtn.textContent = 'Hold to pedal';
+  pedalBtn.title = 'Hold with mouse/touch or hold Spacebar to pedal at 88 rpm';
   document.querySelector('.dock-wrap').insertBefore(pedalBtn, document.querySelector('.badges'));
   const pedalOn = () => { S.pedal = true; pedalBtn.classList.add('on'); };
   const pedalOff = () => { S.pedal = false; pedalBtn.classList.remove('on'); };
@@ -662,16 +670,23 @@
     $('grade-read').textContent = `grade ${(S.grade * 100 >= 0 ? '+' : '') + (S.grade * 100).toFixed(1)}%`;
   }
   function drawCurve() {
-    const c = $('curve').getContext('2d'), w = 880, h = 170;
+    const c = $('curve').getContext('2d'), w = 880, h = 170, edge = BIOMES[S.biomeNext].edge;
     c.clearRect(0, 0, w, h);
     c.strokeStyle = 'rgba(191,194,236,.16)'; c.lineWidth = 1;
     [0.25, 0.5, 0.75].forEach((f) => { c.beginPath(); c.moveTo(0, f * h); c.lineTo(w, f * h); c.stroke(); });
     const X = (rpm) => (rpm / 130) * w, Y = (m) => h - 10 - m * (h - 20);
     c.beginPath();
     for (let r = 0; r <= 130; r += 1) { const y = Y(motion01(r)); if (r) c.lineTo(X(r), y); else c.moveTo(X(r), y); }
-    c.strokeStyle = BIOMES[S.biomeNext].edge; c.lineWidth = 2.4; c.stroke();
-    c.fillStyle = '#fff'; c.beginPath(); c.arc(X(clamp(S.rpm, 0, 130)), Y(motion01(S.rpm)), 6, 0, 6.3); c.fill();
-    c.fillStyle = 'rgba(238,237,251,.7)'; c.font = '19px ui-sans-serif,-apple-system,sans-serif';
+    c.lineTo(w, h); c.lineTo(0, h); c.closePath();
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, `${edge}44`); g.addColorStop(1, `${edge}04`);
+    c.fillStyle = g; c.fill();
+    c.beginPath();
+    for (let r = 0; r <= 130; r += 1) { const y = Y(motion01(r)); if (r) c.lineTo(X(r), y); else c.moveTo(X(r), y); }
+    c.strokeStyle = edge; c.lineWidth = 2.4; c.stroke();
+    const dotX = X(clamp(S.rpm, 0, 130)), dotY = Y(motion01(S.rpm));
+    c.fillStyle = `${edge}44`; c.beginPath(); c.arc(dotX, dotY, 11, 0, 6.3); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(dotX, dotY, 5.5, 0, 6.3); c.fill();
+    c.fillStyle = 'rgba(238,237,251,.78)'; c.font = '19px ui-sans-serif,-apple-system,sans-serif';
     c.fillText(`${Math.round(S.rpm)} rpm → ${(S.zoom * 100).toFixed(2)}% a frame`, 14, 28);
   }
 

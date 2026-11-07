@@ -3,19 +3,20 @@
 .scenebar { position: absolute; top: max(92px, calc(env(safe-area-inset-top) + 66px)); left: 50%; transform: translateX(-50%); width: min(900px, calc(100% - 24px)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .scene-tiles { display: flex; gap: 10px; justify-content: center; max-width: 100%; padding: 3px; }
 /* each tile is the scene itself, with its name on a dark fade so it reads over any sky */
-.scene-tile { flex: none; position: relative; display: block; padding: 0; border-radius: 13px; transition: transform 0.25s; }
-.scene-tile canvas { display: block; width: 100px; height: 60px; border-radius: 13px; border: 1px solid var(--line); box-shadow: 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
-.scene-tile::after { content: ""; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 58%; border-radius: 0 0 12px 12px; background: linear-gradient(transparent, rgba(6, 8, 18, 0.78)); pointer-events: none; }
-.scene-tile span { position: absolute; left: 9px; right: 6px; bottom: 6px; z-index: 1; text-align: left; font-size: 11px; letter-spacing: 0.2px; color: rgba(238, 237, 251, 0.82); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-@media (hover: hover) { .scene-tile:hover { transform: translateY(-2px); } }
-.scene-tile[aria-pressed="true"] canvas { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 22px color-mix(in srgb, var(--accent) 35%, transparent), 0 10px 30px var(--shadow); }
+.scene-tile { flex: none; position: relative; display: block; padding: 0; border-radius: 13px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
+.scene-tile canvas { display: block; width: 100px; height: 60px; border-radius: 13px; border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
+.scene-tile::after { content: ""; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 62%; border-radius: 0 0 12px 12px; background: linear-gradient(180deg, transparent 0%, rgba(5, 8, 18, 0.38) 45%, rgba(5, 8, 18, 0.86) 100%); pointer-events: none; }
+.scene-tile span { position: absolute; left: 9px; right: 6px; bottom: 6px; z-index: 1; text-align: left; font-size: 11px; letter-spacing: 0.2px; color: rgba(238, 237, 251, 0.86); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (hover: hover) { .scene-tile:hover { transform: translateY(-2.5px) scale(1.02); } }
+.scene-tile[aria-pressed="true"] canvas { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent), 0 6px 22px color-mix(in srgb, var(--accent) 40%, transparent), 0 10px 30px var(--shadow); }
 .scene-tile[aria-pressed="true"] span { color: #fff; font-weight: 500; }
 .scene-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; max-width: 100%; }
-.seg { display: flex; padding: 3px; border: 1px solid var(--line); border-radius: 22px; background: var(--glass); backdrop-filter: blur(12px); }
-.seg button, .seg-solo { padding: 7px 13px; min-height: 32px; border-radius: 18px; font-size: 12px; color: var(--muted); white-space: nowrap; transition: background 0.3s, color 0.3s; }
+.seg { display: flex; padding: 3px; border: 1px solid var(--line); border-radius: 22px; background: var(--glass); backdrop-filter: blur(16px) saturate(135%); -webkit-backdrop-filter: blur(16px) saturate(135%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 8px 24px rgba(2, 6, 19, 0.35); }
+.seg button, .seg-solo { padding: 7px 13px; min-height: 32px; border-radius: 18px; font-size: 12px; color: var(--muted); white-space: nowrap; transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
 .seg button:hover, .seg-solo:hover { color: var(--ink); }
-.seg button[aria-pressed="true"] { background: var(--soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
-.seg-solo { border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(12px); }
+.seg button[aria-pressed="true"] { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 24%, rgba(255, 255, 255, 0.12)), color-mix(in srgb, var(--accent) 12%, rgba(255, 255, 255, 0.04))); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, var(--line)); }
+.seg-solo { border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(16px) saturate(135%); -webkit-backdrop-filter: blur(16px) saturate(135%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 8px 24px rgba(2, 6, 19, 0.35); }
+.seg-solo:hover { border-color: color-mix(in srgb, var(--accent) 38%, var(--line)); }
 .seg-solo[aria-pressed]::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--faint); vertical-align: 1px; }
 .seg-solo[aria-pressed="true"] { color: var(--ink); }
 .seg-solo[aria-pressed="true"]::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
@@ -70,7 +71,7 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
   .seg button, .seg-solo { padding: 5px 10px; min-height: 30px; font-size: 11px; }
 }
 
-.route-caption { margin: 0; color: var(--ink); font-size: 11px; line-height: 1.4; text-align: center; text-shadow: 0 1px 5px #101820; padding: 4px 12px; border-radius: 12px; background: rgba(12,22,25,.62); backdrop-filter: blur(8px); }
+.route-caption { margin: 0; color: var(--ink); font-size: 11px; line-height: 1.4; text-align: center; text-shadow: 0 1px 5px #101820; padding: 4px 12px; border-radius: 12px; border: 1px solid rgba(191, 194, 236, 0.13); background: rgba(10, 16, 26, 0.64); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 14px rgba(2, 6, 19, 0.3); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 @media (max-width: 860px) { .route-caption { max-width: 95%; font-size: 10px; padding: 3px 9px; } }
 @media (max-height: 520px) { .route-caption { display: none; } }
 /* Compact landscape phones need the options on one row above the ride readouts. */
@@ -82,4 +83,4 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
 
 /* Readouts stay legible over the bright cloud sea without covering the route. */
 body[data-app="endless-cockpit"] #hud { position: relative; isolation: isolate; }
-body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute; inset: -8px -10px; z-index: -1; pointer-events: none; border-radius: 14px; background: rgba(7,13,23,.65); }
+body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute; inset: -8px -14px; z-index: -1; pointer-events: none; border-radius: 16px; border: 1px solid rgba(191, 194, 236, 0.14); background: linear-gradient(180deg, rgba(14, 19, 34, 0.72), rgba(8, 12, 23, 0.84)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 12px 32px rgba(2, 6, 19, 0.45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }

@@ -46,7 +46,7 @@ a { color: var(--accent); }
 
 .scene { position: relative; height: 100svh; min-height: 320px; isolation: isolate; overflow: hidden; }
 #stage { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; display: block; touch-action: none; }
-.vignette { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(5, 8, 18, 0.5) 0%, transparent 18%, transparent 58%, rgba(5, 8, 18, 0.72) 100%); }
+.vignette { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(5, 8, 18, 0.56) 0%, rgba(5, 8, 18, 0.16) 14%, transparent 28%, transparent 56%, rgba(5, 8, 18, 0.78) 100%); }
 .chrome { transition: opacity 0.7s ease; }
 body.quiet .chrome { opacity: 0; }
 body.quiet .chrome:focus-within { opacity: 1; }
@@ -62,17 +62,19 @@ body.zen #hud {
 }
 
 .header { position: absolute; left: max(42px, env(safe-area-inset-left)); right: max(42px, env(safe-area-inset-right)); top: max(28px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-.brand { display: flex; align-items: center; gap: 12px; font-size: 16px; letter-spacing: -0.35px; color: var(--ink); text-shadow: 0 1px 14px rgba(0, 0, 0, 0.6); text-decoration: none; }
-.brand svg { width: 24px; height: 28px; stroke: var(--accent); fill: none; stroke-width: 1.15; }
+.brand { display: flex; align-items: center; gap: 12px; font-size: 16px; letter-spacing: -0.35px; color: var(--ink); text-shadow: 0 1px 14px rgba(0, 0, 0, 0.6); text-decoration: none; transition: opacity 0.2s ease; }
+.brand:hover { opacity: 0.88; }
+.brand svg { width: 24px; height: 28px; stroke: var(--accent); fill: none; stroke-width: 1.15; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 35%, transparent)); }
 .brand span { font-weight: 500; }
 .top-actions { display: flex; align-items: center; gap: 10px; }
-.top-action { border: 1px solid var(--line); border-radius: 999px; padding: 10px 15px; color: var(--ink); font-size: 12px; background: var(--glass); backdrop-filter: blur(12px); transition: background 0.25s; }
-.top-action:hover { background: var(--soft); }
+.top-action { border: 1px solid var(--line); border-radius: 999px; padding: 10px 15px; color: var(--ink); font-size: 12px; background: var(--glass); backdrop-filter: blur(16px) saturate(135%); -webkit-backdrop-filter: blur(16px) saturate(135%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 24px rgba(2, 6, 19, 0.35); transition: background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease; }
+.top-action:hover { background: var(--soft); border-color: color-mix(in srgb, var(--accent) 42%, var(--line)); }
 .top-action.icon { padding: 9px; display: grid; place-items: center; }
 .top-action.icon svg { width: 16px; height: 16px; }
-.mode-switch { position: absolute; top: max(25px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; padding: 4px; border: 1px solid var(--line); border-radius: 30px; background: var(--glass); backdrop-filter: blur(12px); }
-.mode-switch button { padding: 10px 27px; min-height: 38px; border-radius: 25px; font-size: 13px; color: var(--muted); transition: background 0.35s, color 0.35s; }
-.mode-switch button[aria-pressed="true"] { background: var(--soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.mode-switch { position: absolute; top: max(25px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; padding: 4px; border: 1px solid var(--line); border-radius: 30px; background: var(--glass); backdrop-filter: blur(16px) saturate(135%); -webkit-backdrop-filter: blur(16px) saturate(135%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 28px rgba(2, 6, 19, 0.38); }
+.mode-switch button { padding: 10px 27px; min-height: 38px; border-radius: 25px; font-size: 13px; color: var(--muted); transition: background 0.28s ease, color 0.28s ease, box-shadow 0.28s ease; }
+.mode-switch button:hover { color: var(--ink); }
+.mode-switch button[aria-pressed="true"] { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 24%, rgba(255, 255, 255, 0.12)), color-mix(in srgb, var(--accent) 12%, rgba(255, 255, 255, 0.04))); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 0 0 1px color-mix(in srgb, var(--accent) 32%, var(--line)), 0 2px 10px rgba(2, 6, 19, 0.35); }
 
 .intro { position: absolute; top: 17%; left: 20px; right: 20px; text-align: center; pointer-events: none; transition: opacity 0.9s ease, transform 0.9s ease; text-shadow: 0 1px 3px rgba(4, 6, 16, 0.55), 0 2px 26px rgba(4, 6, 16, 0.85); }
 .intro::before { content: ""; position: absolute; left: 50%; top: 50%; width: min(1100px, 130%); height: 340px; transform: translate(-50%, -50%); background: radial-gradient(ellipse at center, rgba(8, 10, 22, 0.52), rgba(8, 10, 22, 0.28) 45%, transparent 72%); z-index: -1; }
@@ -95,7 +97,8 @@ body.playing .intro { opacity: 0; transform: translateY(-10px); }
 .hitdot i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); opacity: 0.16; box-shadow: 0 0 calc(var(--l, 0) * 18px) var(--accent); }
 
 .badges { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; align-items: center; }
-.source-badge, .chip { display: inline-flex; gap: 8px; align-items: center; font-size: 11px; color: var(--ink); border: 1px solid var(--line); border-radius: 20px; background: rgba(20, 24, 40, 0.68); padding: 8px 12px; backdrop-filter: blur(8px); }
+.source-badge, .chip { display: inline-flex; gap: 8px; align-items: center; font-size: 11px; color: var(--ink); border: 1px solid var(--line); border-radius: 20px; background: rgba(18, 22, 38, 0.72); padding: 8px 12px; backdrop-filter: blur(12px) saturate(130%); -webkit-backdrop-filter: blur(12px) saturate(130%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 14px rgba(2, 6, 19, 0.3); transition: border-color 0.2s ease, background 0.2s ease; }
+.source-badge:hover, .chip:hover { border-color: color-mix(in srgb, var(--accent) 38%, var(--line)); background: rgba(26, 31, 52, 0.8); }
 .chip { color: var(--muted); max-width: 46vw; }
 .chip span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); flex: none; }
@@ -112,29 +115,34 @@ body.playing .intro { opacity: 0; transform: translateY(-10px); }
 body.quiet .keep-visible { opacity: 0.85; }
 @keyframes pulse { 50% { opacity: 0.3; } }
 
-.dock { display: flex; align-items: center; padding: 7px 9px; border: 1px solid var(--line); background: var(--glass); border-radius: 24px; box-shadow: 0 16px 60px var(--shadow); backdrop-filter: blur(24px); gap: 4px; }
-.dock button { display: flex; align-items: center; flex-direction: column; gap: 7px; padding: 11px 19px 10px; border-radius: 17px; min-width: 74px; transition: background 0.2s; }
+.dock { display: flex; align-items: center; padding: 7px 9px; border: 1px solid var(--line); background: linear-gradient(180deg, rgba(28, 33, 54, 0.78), rgba(18, 22, 38, 0.84)); border-radius: 24px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.13), 0 16px 60px var(--shadow); backdrop-filter: blur(24px) saturate(140%); -webkit-backdrop-filter: blur(24px) saturate(140%); gap: 4px; }
+.dock button { display: flex; align-items: center; flex-direction: column; gap: 7px; padding: 11px 19px 10px; border-radius: 17px; min-width: 74px; transition: background 0.2s ease, color 0.2s ease; }
+.dock button svg { transition: transform 0.2s ease, color 0.2s ease; }
 .dock button:hover, .dock button[aria-expanded="true"] { background: var(--soft); }
-.dock button span { font-size: 10px; letter-spacing: 0.2px; color: var(--muted); }
+.dock button:hover svg { transform: translateY(-1.5px); color: var(--accent); }
+.dock button:hover span, .dock button[aria-expanded="true"] span { color: var(--ink); }
+.dock button span { font-size: 10px; letter-spacing: 0.2px; color: var(--muted); transition: color 0.2s ease; }
 .dock button.connected svg { color: var(--accent); }
 .dock button.rec svg { color: var(--bad); }
 .dock-divider { height: 30px; width: 1px; background: var(--line); margin: 0 5px; }
 .truth { font-size: 10px; letter-spacing: 0.3px; color: var(--muted); text-align: center; margin: 0; max-width: 680px; line-height: 1.5; text-shadow: 0 1px 10px rgba(4, 6, 16, 0.9); }
 
 .sheet:focus { outline: none; }
-.sheet { color: var(--ink); background: var(--sheet); border: 1px solid var(--line); border-radius: 28px; padding: 30px; width: calc(100% - 32px); max-width: 480px; max-height: min(86svh, 780px); overflow-y: auto; box-shadow: 0 25px 100px #0005; }
+.sheet { color: var(--ink); background: linear-gradient(165deg, #1f263c 0%, #151a2b 100%); border: 1px solid var(--line); border-radius: 28px; padding: 30px; width: calc(100% - 32px); max-width: 480px; max-height: min(86svh, 780px); overflow-y: auto; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 28px 100px rgba(0, 0, 0, 0.65); }
 .sheet.wide { max-width: 780px; }
 .sheet::backdrop { background: #060c1690; backdrop-filter: blur(9px); }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; gap: 16px; }
 .sheet h2 { font-family: var(--serif); font-size: 30px; letter-spacing: -0.5px; font-weight: 400; margin: 0; }
-.close { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); background: var(--soft); flex: none; }
+.close { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); background: var(--soft); flex: none; transition: background 0.2s ease, color 0.2s ease; }
+.close:hover { color: var(--ink); background: rgba(184, 183, 255, 0.2); }
 .close svg { width: 17px; height: 17px; }
 .sheet-intro { color: var(--muted); font-size: 13px; line-height: 1.65; margin: 12px 0 22px; }
-.pill { border: 1px solid var(--line); border-radius: 999px; padding: 9px 15px; font-size: 12px; background: var(--soft); color: var(--ink); white-space: nowrap; transition: background 0.2s, border-color 0.2s; }
+.pill { border: 1px solid var(--line); border-radius: 999px; padding: 9px 15px; font-size: 12px; background: var(--soft); color: var(--ink); white-space: nowrap; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease; }
 .pill:hover:not(:disabled) { border-color: var(--accent); }
-.pill.primary { background: var(--accent); color: #141627; border-color: transparent; font-weight: 500; }
+.pill.primary { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, #fff), var(--accent)); color: #121526; border-color: transparent; font-weight: 500; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 6px 20px color-mix(in srgb, var(--accent) 30%, rgba(2, 6, 19, 0.45)); }
+.pill.primary:hover:not(:disabled) { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 8px 24px color-mix(in srgb, var(--accent) 45%, rgba(2, 6, 19, 0.55)); }
 .pill.wide { width: 100%; padding: 12px 15px; font-size: 13px; }
-.pill.on { background: var(--accent); color: #141627; }
+.pill.on { background: var(--accent); color: #141627; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 32%, transparent), 0 0 22px color-mix(in srgb, var(--accent) 55%, transparent); }
 .device-card { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0 12px; border-top: 1px solid var(--line); margin-top: 14px; }
 .device-card svg.ic { width: 26px; height: 26px; fill: none; stroke: var(--accent); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; flex: none; margin-top: 2px; }
 .device-info { flex: 1; min-width: 0; }
@@ -154,7 +162,8 @@ select { background: #111627; color: var(--ink); border: 1px solid var(--line); 
 input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; background: transparent; margin: 0; }
 input[type="range"]::-webkit-slider-runnable-track { height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) calc(var(--val, 50) * 1%), var(--line) calc(var(--val, 50) * 1%)); }
 input[type="range"]::-moz-range-track { height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) calc(var(--val, 50) * 1%), var(--line) calc(var(--val, 50) * 1%)); }
-input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--ink); margin-top: -5.5px; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.25); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--ink); margin-top: -5.5px; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.25), 0 0 10px color-mix(in srgb, var(--accent) 40%, transparent); transition: transform 0.15s ease; }
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.15); }
 input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 50%; background: var(--ink); }
 .meter { display: grid; gap: 3px; }
 .meter div { height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
@@ -249,28 +258,29 @@ table.maptable th { color: var(--ink); font-weight: 500; white-space: nowrap; }
 
 /* the same-tab link among the three pages of the suite */
 .family { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 4px; font-size: 10px; letter-spacing: 0.3px; }
-.family a { color: var(--muted); text-decoration: none; padding: 7px 8px; border-radius: 12px; text-shadow: 0 1px 10px rgba(4, 6, 16, 0.9); transition: color 0.2s; }
-.family a:hover { color: var(--ink); }
-.family a[aria-current="page"] { color: var(--ink); }
+.family a { color: var(--muted); text-decoration: none; padding: 7px 8px; border-radius: 12px; text-shadow: 0 1px 10px rgba(4, 6, 16, 0.9); transition: color 0.2s ease, background 0.2s ease; }
+.family a:hover { color: var(--ink); background: rgba(184, 183, 255, 0.07); }
+.family a[aria-current="page"] { color: var(--ink); background: rgba(184, 183, 255, 0.11); box-shadow: inset 0 0 0 1px rgba(191, 194, 236, 0.16); }
 @media (max-height: 640px) { .family { display: none; } }
 
 /* Endless Cockpit: the scenery on the main screen */
 .scenebar { position: absolute; top: max(92px, calc(env(safe-area-inset-top) + 66px)); left: 50%; transform: translateX(-50%); width: min(900px, calc(100% - 24px)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .scene-tiles { display: flex; gap: 10px; justify-content: center; max-width: 100%; padding: 3px; }
 /* each tile is the scene itself, with its name on a dark fade so it reads over any sky */
-.scene-tile { flex: none; position: relative; display: block; padding: 0; border-radius: 13px; transition: transform 0.25s; }
-.scene-tile canvas { display: block; width: 100px; height: 60px; border-radius: 13px; border: 1px solid var(--line); box-shadow: 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
-.scene-tile::after { content: ""; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 58%; border-radius: 0 0 12px 12px; background: linear-gradient(transparent, rgba(6, 8, 18, 0.78)); pointer-events: none; }
-.scene-tile span { position: absolute; left: 9px; right: 6px; bottom: 6px; z-index: 1; text-align: left; font-size: 11px; letter-spacing: 0.2px; color: rgba(238, 237, 251, 0.82); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-@media (hover: hover) { .scene-tile:hover { transform: translateY(-2px); } }
-.scene-tile[aria-pressed="true"] canvas { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 22px color-mix(in srgb, var(--accent) 35%, transparent), 0 10px 30px var(--shadow); }
+.scene-tile { flex: none; position: relative; display: block; padding: 0; border-radius: 13px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
+.scene-tile canvas { display: block; width: 100px; height: 60px; border-radius: 13px; border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
+.scene-tile::after { content: ""; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 62%; border-radius: 0 0 12px 12px; background: linear-gradient(180deg, transparent 0%, rgba(5, 8, 18, 0.38) 45%, rgba(5, 8, 18, 0.86) 100%); pointer-events: none; }
+.scene-tile span { position: absolute; left: 9px; right: 6px; bottom: 6px; z-index: 1; text-align: left; font-size: 11px; letter-spacing: 0.2px; color: rgba(238, 237, 251, 0.86); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (hover: hover) { .scene-tile:hover { transform: translateY(-2.5px) scale(1.02); } }
+.scene-tile[aria-pressed="true"] canvas { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent), 0 6px 22px color-mix(in srgb, var(--accent) 40%, transparent), 0 10px 30px var(--shadow); }
 .scene-tile[aria-pressed="true"] span { color: #fff; font-weight: 500; }
 .scene-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; max-width: 100%; }
-.seg { display: flex; padding: 3px; border: 1px solid var(--line); border-radius: 22px; background: var(--glass); backdrop-filter: blur(12px); }
-.seg button, .seg-solo { padding: 7px 13px; min-height: 32px; border-radius: 18px; font-size: 12px; color: var(--muted); white-space: nowrap; transition: background 0.3s, color 0.3s; }
+.seg { display: flex; padding: 3px; border: 1px solid var(--line); border-radius: 22px; background: var(--glass); backdrop-filter: blur(16px) saturate(135%); -webkit-backdrop-filter: blur(16px) saturate(135%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 8px 24px rgba(2, 6, 19, 0.35); }
+.seg button, .seg-solo { padding: 7px 13px; min-height: 32px; border-radius: 18px; font-size: 12px; color: var(--muted); white-space: nowrap; transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
 .seg button:hover, .seg-solo:hover { color: var(--ink); }
-.seg button[aria-pressed="true"] { background: var(--soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
-.seg-solo { border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(12px); }
+.seg button[aria-pressed="true"] { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 24%, rgba(255, 255, 255, 0.12)), color-mix(in srgb, var(--accent) 12%, rgba(255, 255, 255, 0.04))); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, var(--line)); }
+.seg-solo { border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(16px) saturate(135%); -webkit-backdrop-filter: blur(16px) saturate(135%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 8px 24px rgba(2, 6, 19, 0.35); }
+.seg-solo:hover { border-color: color-mix(in srgb, var(--accent) 38%, var(--line)); }
 .seg-solo[aria-pressed]::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--faint); vertical-align: 1px; }
 .seg-solo[aria-pressed="true"] { color: var(--ink); }
 .seg-solo[aria-pressed="true"]::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
@@ -325,7 +335,7 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
   .seg button, .seg-solo { padding: 5px 10px; min-height: 30px; font-size: 11px; }
 }
 
-.route-caption { margin: 0; color: var(--ink); font-size: 11px; line-height: 1.4; text-align: center; text-shadow: 0 1px 5px #101820; padding: 4px 12px; border-radius: 12px; background: rgba(12,22,25,.62); backdrop-filter: blur(8px); }
+.route-caption { margin: 0; color: var(--ink); font-size: 11px; line-height: 1.4; text-align: center; text-shadow: 0 1px 5px #101820; padding: 4px 12px; border-radius: 12px; border: 1px solid rgba(191, 194, 236, 0.13); background: rgba(10, 16, 26, 0.64); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 14px rgba(2, 6, 19, 0.3); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 @media (max-width: 860px) { .route-caption { max-width: 95%; font-size: 10px; padding: 3px 9px; } }
 @media (max-height: 520px) { .route-caption { display: none; } }
 /* Compact landscape phones need the options on one row above the ride readouts. */
@@ -337,7 +347,7 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
 
 /* Readouts stay legible over the bright cloud sea without covering the route. */
 body[data-app="endless-cockpit"] #hud { position: relative; isolation: isolate; }
-body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute; inset: -8px -10px; z-index: -1; pointer-events: none; border-radius: 14px; background: rgba(7,13,23,.65); }
+body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute; inset: -8px -14px; z-index: -1; pointer-events: none; border-radius: 16px; border: 1px solid rgba(191, 194, 236, 0.14); background: linear-gradient(180deg, rgba(14, 19, 34, 0.72), rgba(8, 12, 23, 0.84)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 12px 32px rgba(2, 6, 19, 0.45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 
 </style>
 </head>
@@ -398,13 +408,13 @@ body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute;
     scene.insertAdjacentHTML('beforeend', `
       <div class="vignette"></div>
       <header class="header chrome">
-        <a class="brand" href="index.html" aria-label="${esc(cfg.name)}: back to the home page">${cfg.brand}<span>${esc(cfg.name)}</span></a>
+        <a class="brand" href="index.html" aria-label="${esc(cfg.name)}: back to the home page" title="Back to Body Signal Labs home">${cfg.brand}<span>${esc(cfg.name)}</span></a>
         <div class="top-actions">
-          <button class="top-action" id="demo-button">Try a demo</button>
-          <button class="top-action icon" id="fs-button" aria-label="Full screen">${svg('full')}</button>
+          <button class="top-action" id="demo-button" title="Start or stop a synthetic demo (Key: D)">Try a demo</button>
+          <button class="top-action icon" id="fs-button" aria-label="Full screen" title="Toggle full screen (Key: F · Key: Z for Zen mode)">${svg('full')}</button>
         </div>
       </header>
-      ${cfg.modes ? `<nav class="mode-switch chrome" aria-label="${esc(cfg.modeLabel)}">${cfg.modes.map((m) => `<button data-mode="${m.id}" aria-pressed="${m.id === cfg.mode}">${esc(m.label)}</button>`).join('')}</nav>` : ''}
+      ${cfg.modes ? `<nav class="mode-switch chrome" aria-label="${esc(cfg.modeLabel)}">${cfg.modes.map((m) => `<button data-mode="${m.id}" aria-pressed="${m.id === cfg.mode}"${m.title ? ` title="${esc(m.title)}"` : ''}>${esc(m.label)}</button>`).join('')}</nav>` : ''}
       <div class="intro">
         <p class="eyebrow" id="intro-eyebrow"></p>
         <h1 id="intro-title"></h1>
@@ -418,9 +428,9 @@ body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute;
         ${cfg.beforeBadges || ''}
         <div class="badges">${cfg.badges}</div>
         <nav class="dock chrome" aria-label="Controls">
-          ${cfg.sheets.filter((s) => s.id !== 'about').map((s) => `<button id="${s.id}-button" aria-haspopup="dialog" aria-expanded="false">${svg(s.icon)}<span>${esc(s.label)}</span></button>`).join('')}
+          ${cfg.sheets.filter((s) => s.id !== 'about').map((s) => `<button id="${s.id}-button" aria-haspopup="dialog" aria-expanded="false" title="${esc(s.title)}">${svg(s.icon)}<span>${esc(s.label)}</span></button>`).join('')}
           <div class="dock-divider"></div>
-          <button id="about-button" aria-haspopup="dialog" aria-expanded="false">${svg('about')}<span>About</span></button>
+          <button id="about-button" aria-haspopup="dialog" aria-expanded="false" title="How the cockpit works and keyboard shortcuts">${svg('about')}<span>About</span></button>
         </nav>
         <p class="truth chrome" id="truth">${esc(cfg.truth)}</p>
         ${global.familyNav ? global.familyNav(cfg.id) : ''}
@@ -2219,21 +2229,28 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     </div></details>`;
 
   const TOD = [
-    { v: null, label: 'Moving', title: 'A four-minute cycle from golden hour to night' },
-    { v: 0.18, label: 'Golden hour', short: 'Golden' }, { v: 0.36, label: 'Sunset' }, { v: 0.55, label: 'Dusk' }, { v: 1, label: 'Night' },
+    { v: null, label: 'Moving', title: 'A four-minute cycle from golden hour to night (Key: T)' },
+    { v: 0.18, label: 'Golden hour', short: 'Golden', title: 'Hold sky at golden hour (Key: T)' },
+    { v: 0.36, label: 'Sunset', title: 'Hold sky at sunset (Key: T)' },
+    { v: 0.55, label: 'Dusk', title: 'Hold sky at dusk (Key: T)' },
+    { v: 1, label: 'Night', title: 'Hold sky at night (Key: T)' },
   ];
-  const LOOKS = { clear: { label: 'Clear', dream: 0.0, wild: 0.0 }, dreamy: { label: 'Dreamy', dream: 0.62, wild: 0.25 }, wild: { label: 'Wild', dream: 0.86, wild: 1.0 } };
+  const LOOKS = {
+    clear: { label: 'Clear', dream: 0.0, wild: 0.0, title: 'Crisp, unwarped road view (Key: L)' },
+    dreamy: { label: 'Dreamy', dream: 0.62, wild: 0.25, title: 'Soft frame persistence and atmospheric glow (Key: L)' },
+    wild: { label: 'Wild', dream: 0.86, wild: 1.0, title: 'Amplified chromatic warp and dream trails (Key: L)' },
+  };
   const sceneBar = `
     <div class="scenebar chrome" id="scenebar">
       <div class="scene-tiles" id="scene-tiles" role="group" aria-label="Scenery">
-        ${BIOMES.map((b, i) => `<button class="scene-tile" data-b="${i}" aria-pressed="${i === 0}" title="${b.description}"><canvas width="336" height="196" aria-hidden="true" style="background:linear-gradient(${b.skyTop},${b.skyHz} 54%,${b.ground} 55%)"></canvas><span>${b.name}</span></button>`).join('')}
+        ${BIOMES.map((b, i) => `<button class="scene-tile" data-b="${i}" aria-pressed="${i === 0}" title="${b.name} (Key: ${i + 1}) — ${b.description}"><canvas width="336" height="196" aria-hidden="true" style="background:linear-gradient(${b.skyTop},${b.skyHz} 54%,${b.ground} 55%)"></canvas><span>${b.name}</span></button>`).join('')}
       </div>
       <p class="route-caption" id="route-caption">${BIOMES[0].description}</p>
       <div class="scene-row">
         <div class="seg" role="group" aria-label="Time of day">${TOD.map((t, i) => `<button data-tod="${i}" aria-pressed="${i === 0}"${t.title ? ` title="${t.title}"` : ''}${t.short ? ` aria-label="${t.label}"><span class="long">${t.label}</span><span class="short">${t.short}</span>` : `>${t.label}`}</button>`).join('')}</div>
-        <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'clear'}">${l.label}</button>`).join('')}</div>
+        <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'clear'}" title="${l.title}">${l.label}</button>`).join('')}</div>
         <button class="seg-solo" id="auto-scene" aria-pressed="true" aria-label="Auto scenery: new scenery every mile" title="A new scene blends in after each mile you ride"><span class="long">New scenery every mile</span><span class="short">Auto scenery</span></button>
-        <button class="seg-solo" id="new-route">New route</button>
+        <button class="seg-solo" id="new-route" title="Generate a new procedural road layout (Keys: R / B for next scene · Middle-click for random combo)">New route</button>
       </div>
     </div>`;
 
@@ -2539,6 +2556,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   /* the pedal button lives on the stage */
   const pedalBtn = document.createElement('button');
   pedalBtn.className = 'pill primary chrome'; pedalBtn.id = 'pedal'; pedalBtn.textContent = 'Hold to pedal';
+  pedalBtn.title = 'Hold with mouse/touch or hold Spacebar to pedal at 88 rpm';
   document.querySelector('.dock-wrap').insertBefore(pedalBtn, document.querySelector('.badges'));
   const pedalOn = () => { S.pedal = true; pedalBtn.classList.add('on'); };
   const pedalOff = () => { S.pedal = false; pedalBtn.classList.remove('on'); };
@@ -2821,16 +2839,23 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     $('grade-read').textContent = `grade ${(S.grade * 100 >= 0 ? '+' : '') + (S.grade * 100).toFixed(1)}%`;
   }
   function drawCurve() {
-    const c = $('curve').getContext('2d'), w = 880, h = 170;
+    const c = $('curve').getContext('2d'), w = 880, h = 170, edge = BIOMES[S.biomeNext].edge;
     c.clearRect(0, 0, w, h);
     c.strokeStyle = 'rgba(191,194,236,.16)'; c.lineWidth = 1;
     [0.25, 0.5, 0.75].forEach((f) => { c.beginPath(); c.moveTo(0, f * h); c.lineTo(w, f * h); c.stroke(); });
     const X = (rpm) => (rpm / 130) * w, Y = (m) => h - 10 - m * (h - 20);
     c.beginPath();
     for (let r = 0; r <= 130; r += 1) { const y = Y(motion01(r)); if (r) c.lineTo(X(r), y); else c.moveTo(X(r), y); }
-    c.strokeStyle = BIOMES[S.biomeNext].edge; c.lineWidth = 2.4; c.stroke();
-    c.fillStyle = '#fff'; c.beginPath(); c.arc(X(clamp(S.rpm, 0, 130)), Y(motion01(S.rpm)), 6, 0, 6.3); c.fill();
-    c.fillStyle = 'rgba(238,237,251,.7)'; c.font = '19px ui-sans-serif,-apple-system,sans-serif';
+    c.lineTo(w, h); c.lineTo(0, h); c.closePath();
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, `${edge}44`); g.addColorStop(1, `${edge}04`);
+    c.fillStyle = g; c.fill();
+    c.beginPath();
+    for (let r = 0; r <= 130; r += 1) { const y = Y(motion01(r)); if (r) c.lineTo(X(r), y); else c.moveTo(X(r), y); }
+    c.strokeStyle = edge; c.lineWidth = 2.4; c.stroke();
+    const dotX = X(clamp(S.rpm, 0, 130)), dotY = Y(motion01(S.rpm));
+    c.fillStyle = `${edge}44`; c.beginPath(); c.arc(dotX, dotY, 11, 0, 6.3); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(dotX, dotY, 5.5, 0, 6.3); c.fill();
+    c.fillStyle = 'rgba(238,237,251,.78)'; c.font = '19px ui-sans-serif,-apple-system,sans-serif';
     c.fillText(`${Math.round(S.rpm)} rpm → ${(S.zoom * 100).toFixed(2)}% a frame`, 14, 28);
   }
 

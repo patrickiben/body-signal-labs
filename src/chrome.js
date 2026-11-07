@@ -33,13 +33,13 @@
     scene.insertAdjacentHTML('beforeend', `
       <div class="vignette"></div>
       <header class="header chrome">
-        <a class="brand" href="index.html" aria-label="${esc(cfg.name)}: back to the home page">${cfg.brand}<span>${esc(cfg.name)}</span></a>
+        <a class="brand" href="index.html" aria-label="${esc(cfg.name)}: back to the home page" title="Back to Body Signal Labs home">${cfg.brand}<span>${esc(cfg.name)}</span></a>
         <div class="top-actions">
-          <button class="top-action" id="demo-button">Try a demo</button>
-          <button class="top-action icon" id="fs-button" aria-label="Full screen">${svg('full')}</button>
+          <button class="top-action" id="demo-button" title="Start or stop a synthetic demo (Key: D)">Try a demo</button>
+          <button class="top-action icon" id="fs-button" aria-label="Full screen" title="Toggle full screen (Key: F · Key: Z for Zen mode)">${svg('full')}</button>
         </div>
       </header>
-      ${cfg.modes ? `<nav class="mode-switch chrome" aria-label="${esc(cfg.modeLabel)}">${cfg.modes.map((m) => `<button data-mode="${m.id}" aria-pressed="${m.id === cfg.mode}">${esc(m.label)}</button>`).join('')}</nav>` : ''}
+      ${cfg.modes ? `<nav class="mode-switch chrome" aria-label="${esc(cfg.modeLabel)}">${cfg.modes.map((m) => `<button data-mode="${m.id}" aria-pressed="${m.id === cfg.mode}"${m.title ? ` title="${esc(m.title)}"` : ''}>${esc(m.label)}</button>`).join('')}</nav>` : ''}
       <div class="intro">
         <p class="eyebrow" id="intro-eyebrow"></p>
         <h1 id="intro-title"></h1>
@@ -53,9 +53,9 @@
         ${cfg.beforeBadges || ''}
         <div class="badges">${cfg.badges}</div>
         <nav class="dock chrome" aria-label="Controls">
-          ${cfg.sheets.filter((s) => s.id !== 'about').map((s) => `<button id="${s.id}-button" aria-haspopup="dialog" aria-expanded="false">${svg(s.icon)}<span>${esc(s.label)}</span></button>`).join('')}
+          ${cfg.sheets.filter((s) => s.id !== 'about').map((s) => `<button id="${s.id}-button" aria-haspopup="dialog" aria-expanded="false" title="${esc(s.title)}">${svg(s.icon)}<span>${esc(s.label)}</span></button>`).join('')}
           <div class="dock-divider"></div>
-          <button id="about-button" aria-haspopup="dialog" aria-expanded="false">${svg('about')}<span>About</span></button>
+          <button id="about-button" aria-haspopup="dialog" aria-expanded="false" title="How the cockpit works and keyboard shortcuts">${svg('about')}<span>About</span></button>
         </nav>
         <p class="truth chrome" id="truth">${esc(cfg.truth)}</p>
         ${global.familyNav ? global.familyNav(cfg.id) : ''}
