@@ -254,5 +254,36 @@ function harness(options = {}) {
     pending.reject(Error('Old scan failed')); await opening;
     assert.notEqual(h.drive.state.phase, 'error'); assert.doesNotMatch(h.drive.state.message, /Old scan/);
   });
+  await test('Muse S Athena fNIRS optical, PRV, IMU stillness and 4-sensor fusion calibrate and drive automation', async () => {
+    const h = harness(); await h.drive.start();
+    for (let i = 0; i < 20; i++) {
+      h.advance(1000);
+      const stamp = h.clock;
+      h.eeg(1, {
+        payload: {
+          optical_od: 2.35, optical_drift: 0.002, pulse_rmssd_ms: 52, pulse_sdnn_ms: 48, heart_rate_bpm: 66, motion: 0.006,
+          quality: {
+            eeg_beta_alpha: {valid: true, received_at: stamp, channels: [0, 1], source: 'muse:athena:eeg:0,1', source_kind: 'device-reported', sample_rate_hz: 256, window_seconds: 4},
+            optical_od: {valid: true, received_at: stamp, channels: [0, 1, 2, 3], source: 'muse:athena:fnirs:0,1,2,3', source_kind: 'device-reported', sample_rate_hz: 64, window_seconds: 20},
+            pulse_rmssd_ms: {valid: true, received_at: stamp, source: 'muse:athena:optical-channel-1', source_kind: 'device-reported'},
+            motion: {valid: true, received_at: stamp, source: 'muse:accelerometer-vector-rms', source_kind: 'device-reported'},
+          },
+        },
+      });
+    }
+    assert.equal(h.drive.state.sensors.fnirs.valid, true);
+    assert.equal(h.drive.state.sensors.fnirs.score, 0.5);
+    assert.equal(h.drive.state.sensors.prv.valid, true);
+    assert.equal(h.drive.state.sensors.prv.score, 0.5);
+    assert.equal(h.drive.state.sensors.stillness.valid, true);
+    assert.ok(h.drive.state.sensors.stillness.score > 0.8);
+    assert.equal(h.drive.state.sensors.fusion.valid, true);
+    assert.deepEqual([...h.drive.state.sensors.fusion.activeChannels], ['eeg', 'fnirs', 'prv', 'stillness']);
+    h.drive.setSensorMode('fnirs');
+    assert.equal(h.drive.state.sensorMode, 'fnirs');
+    h.drive.tick(2);
+    assert.ok(h.drive.activeDrive('fnirs') > 0.25);
+    assert.ok(h.drive.activeDrive('fusion') > 0.25);
+  });
   console.log(`\n${checks}/${checks} EEG drive checks passed.`);
 })().catch(error => { console.error(error); process.exitCode = 1; });

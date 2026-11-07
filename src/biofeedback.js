@@ -76,9 +76,24 @@
       <button class="pill" id="cad-connect">Connect</button>
     </div>
     <section class="eeg-connect" aria-labelledby="eeg-title">
-      <div class="device-info" id="eeg-info" data-tone="idle"><strong id="eeg-title">Muse S / Athena brainwaves <span class="dot"></span></strong>
+      <div class="device-info" id="eeg-info" data-tone="idle"><strong id="eeg-title">Muse S / Athena brainwaves &amp; optical <span class="dot"></span></strong>
         <p class="state" id="eeg-state">Not connected</p><p class="why" id="eeg-why"></p></div>
-      <p class="note">An EEG balance game control, calibrated to you. Use Brainwaves in Ride without a cadence sensor.</p>
+      <p class="note">Calibrated headband automation. Choose EEG balance (8–12 Hz α / 13–30 Hz β), fNIRS slow optical density (&lt;0.18 Hz), forehead optical PRV, 3-axis IMU stillness, or 4-sensor fusion.</p>
+      <div class="field" style="margin-top:8px"><span>Headband automation source</span>
+        <div class="row-actions" id="athena-sensor-row" role="group" aria-label="Headband automation source" style="margin-top:4px">
+          <button class="pill on" data-athena="eeg" aria-pressed="true">EEG balance</button>
+          <button class="pill" data-athena="fnirs" aria-pressed="false">fNIRS optical</button>
+          <button class="pill" data-athena="prv" aria-pressed="false">Optical PRV</button>
+          <button class="pill" data-athena="stillness" aria-pressed="false">Head stillness</button>
+          <button class="pill" data-athena="fusion" aria-pressed="false">4-sensor fusion</button>
+        </div>
+      </div>
+      <div class="statgrid" id="athena-grid" style="margin-top:10px">
+        <div class="stat"><span class="k">EEG β/α</span><span class="v" id="ath-eeg">-</span><span class="n" id="ath-eeg-n">256 Hz · 4 s PSD</span></div>
+        <div class="stat"><span class="k">fNIRS ΔOD</span><span class="v" id="ath-fnirs">-</span><span class="n" id="ath-fnirs-n">64 Hz · &lt;0.18 Hz</span></div>
+        <div class="stat"><span class="k">Optical PRV</span><span class="v" id="ath-prv">-</span><span class="n" id="ath-prv-n">forehead RMSSD</span></div>
+        <div class="stat"><span class="k">IMU stillness</span><span class="v" id="ath-still">-</span><span class="n" id="ath-still-n">52 Hz · 3-axis g</span></div>
+      </div>
       <p class="note" id="eeg-setup">Muse S needs the optional private relay. <a href="docs/EEG_SETUP.md">Set up the Muse S connection</a>. The synthetic preview works without it.</p>
       <div class="row-actions"><button class="pill" id="eeg-start">Find Muse S</button><button class="pill" id="eeg-scan">Scan again</button><button class="pill" id="eeg-disconnect">Disconnect</button></div>
       <label class="field">Headset<select id="eeg-device"><option value="">No Muse found yet</option></select></label>
@@ -307,7 +322,7 @@
     onMode: (m) => setMode(m),
     stage, hud: hudHtml,
     beforeBadges: `
-      <div class="ride-power chrome" id="ride-power" role="group" aria-label="Ride power"><span>Ride power</span><button class="pill" data-power="cadence" aria-pressed="true" title="Drive road speed from a Bluetooth cadence sensor, smart trainer, or manual pedaling">Cadence</button><button class="pill" data-power="brainwaves" aria-pressed="false" title="Drive road speed from Muse S EEG balance or synthetic preview">Brainwaves</button></div>
+      <div class="ride-power chrome" id="ride-power" role="group" aria-label="Ride power"><span>Ride power</span><button class="pill" data-power="cadence" aria-pressed="true" title="Drive road speed from a Bluetooth cadence sensor, smart trainer, or manual pedaling">Cadence</button><button class="pill" data-power="brainwaves" aria-pressed="false" title="Drive road speed from Muse S / Athena headband sensors or synthetic preview">Brainwaves</button><span id="athena-stage-row" hidden style="display:inline-flex;align-items:center;gap:4px;margin-left:4px;padding-left:6px;border-left:1px solid rgba(255,255,255,0.12)"><button class="pill" data-athena="eeg" aria-pressed="true" title="EEG alpha/beta balance (8–12 Hz α vs 13–30 Hz β)">EEG</button><button class="pill" data-athena="fnirs" aria-pressed="false" title="fNIRS slow forehead optical density (&lt;0.18 Hz)">fNIRS</button><button class="pill" data-athena="prv" aria-pressed="false" title="Forehead optical pulse-rate variability (RMSSD)">PRV</button><button class="pill" data-athena="stillness" aria-pressed="false" title="3-axis IMU accelerometer head stillness">Stillness</button><button class="pill" data-athena="fusion" aria-pressed="false" title="Weighted 4-sensor Muse S Athena fusion">Fusion</button></span></div>
       <button class="pill primary chrome" id="pedal" title="Hold with mouse/touch or hold Spacebar to pedal at 88 rpm">Hold to pedal</button>`,
     badges: `
       <button class="source-badge" id="source-badge" data-source="ambient" title="Open the sensor settings"><span class="dot" aria-hidden="true"></span><span id="source-label">Ambient · no sensor connected</span></button>
@@ -414,13 +429,29 @@
     return { tone: t[0], chip: `Cadence · ${t[1].toLowerCase()}`, state: t[1], why: c.detail || t[2] || 'Press Connect, then choose your sensor or trainer in the browser list.' };
   }
   const manualRide = () => S.mode === 'ride' && S.drivePower === 'cadence' && (S.steady != null || S.pedal || S.auto);
+  const ATHENA_POWER_LABELS = {
+    eeg: 'EEG control / 100',
+    fnirs: 'fNIRS control / 100',
+    prv: 'Optical PRV / 100',
+    stillness: 'Head stillness / 100',
+    fusion: 'Athena fusion / 100',
+  };
+  const ATHENA_CHIP_NAMES = {
+    eeg: 'EEG',
+    fnirs: 'fNIRS',
+    prv: 'PRV',
+    stillness: 'Stillness',
+    fusion: 'Fusion',
+  };
   function sourceView() {
     if (brainRide()) {
       const q = eegReading();
+      const sm = eeg.state.sensorMode || 'eeg';
+      const tag = ATHENA_CHIP_NAMES[sm] || 'EEG';
       if (bio.replayOn) return ['replay', q.simulated || bio.syntheticReplay ? 'Replay · EEG control includes synthetic data' : 'Replay · recorded EEG game control'];
-      if (bio.demoOn) return ['demo', 'Demo · synthetic EEG preview, not your brainwaves'];
-      if (q.simulated) return ['demo', q.valid ? 'Synthetic bridge · EEG game control, not headset data' : `Synthetic bridge · ${q.phase} · no usable EEG control`];
-      if (q.valid) return ['live', 'Brainwaves · Muse S · EEG balance proxy'];
+      if (bio.demoOn) return ['demo', sm === 'eeg' ? 'Demo · synthetic EEG preview, not your brainwaves' : `Demo · synthetic ${tag} preview, not your headband`];
+      if (q.simulated) return ['demo', q.valid ? `Synthetic bridge · ${tag} game control, not headset data` : `Synthetic bridge · ${q.phase} · no usable ${tag} control`];
+      if (q.valid) return ['live', sm === 'eeg' ? 'Brainwaves · Muse S · EEG balance proxy' : `Headband · Muse S Athena · ${eeg.state.activeLabel || tag} proxy`];
       return ['open', `Brainwaves · ${eeg.state.phase} · coasting to a stop`];
     }
     if (bio.demoOn) return ['demo', 'Demo · synthetic signals, not your body'];
@@ -479,10 +510,18 @@
   function eegReading() {
     if (bio.replayOn && brainRide()) return S.replayEEG || { score: null, drive: 0, ratio: null, valid: false, simulated: bio.syntheticReplay, phase: 'waiting', reason: 'Waiting for recorded EEG control.' };
     const q = eeg.state;
+    const sm = q.sensorMode || 'eeg';
+    if (sm !== 'eeg' && q.sensors && q.sensors[sm]) {
+      const s = q.sensors[sm];
+      const valid = !!(s.valid && (q.phase === 'ready' || sm === 'stillness' || sm === 'prv'));
+      return { score: Number.isFinite(s.score) ? s.score : q.activeScore, drive: eeg.activeDrive(sm), ratio: q.ratio, valid, simulated: !!q.simulated, phase: q.phase, reason: s.reason || (q.quality && q.quality.reason) || q.message || '' };
+    }
     return { score: q.score, drive: q.drive, ratio: q.ratio, valid: !!(q.quality && q.quality.valid && q.phase === 'ready'), simulated: !!q.simulated, phase: q.phase, reason: q.quality && q.quality.reason || q.message || '' };
   }
   function updateEEG(dt) {
-    const liveDrive = eeg.tick(dt, bio.demoOn && brainRide());
+    const eegDrive = eeg.tick(dt, bio.demoOn && brainRide());
+    const sm = eeg.state.sensorMode || 'eeg';
+    const liveDrive = sm === 'eeg' ? eegDrive : eeg.activeDrive(sm);
     const q = eegReading();
     S.eegScore = q.valid && Number.isFinite(q.score) ? q.score : null;
     S.eegValid = q.valid; S.eegRatio = q.ratio; S.eegSimulated = q.simulated;
@@ -494,27 +533,57 @@
   }
   function renderEEG() {
     const q = eeg.state, active = brainRide(), reading = eegReading();
+    const sm = q.sensorMode || 'eeg';
+    const tag = ATHENA_CHIP_NAMES[sm] || 'EEG';
     $('ride-power').hidden = S.mode !== 'ride';
+    if ($('athena-stage-row')) $('athena-stage-row').hidden = !active;
     document.querySelectorAll('[data-power]').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.power === S.drivePower)); b.disabled = bio.replayOn; });
+    document.querySelectorAll('[data-athena]').forEach((b) => {
+      const on = b.dataset.athena === sm;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    const sens = q.sensors || {};
+    if ($('ath-eeg')) {
+      const se = sens.eeg || {};
+      $('ath-eeg').textContent = se.valid && se.score != null ? `${se.score}/100` : se.ratio != null ? `${se.ratio.toFixed(2)} β/α` : '-';
+      $('ath-eeg-n').textContent = se.ratio != null ? `β/α ${se.ratio.toFixed(2)} · 256 Hz` : '256 Hz · 4 s PSD';
+    }
+    if ($('ath-fnirs')) {
+      const sf = sens.fnirs || {};
+      $('ath-fnirs').textContent = sf.valid && sf.score != null ? `${sf.score}/100` : sf.od != null ? `${sf.od >= 0 ? '+' : ''}${sf.od.toFixed(3)} OD` : '-';
+      $('ath-fnirs-n').textContent = sf.od != null ? `ΔOD ${sf.od >= 0 ? '+' : ''}${sf.od.toFixed(3)} · <0.18 Hz` : '64 Hz · <0.18 Hz';
+    }
+    if ($('ath-prv')) {
+      const sp = sens.prv || {};
+      $('ath-prv').textContent = sp.valid && sp.rmssd != null ? `${Math.round(sp.rmssd)} ms` : sp.valid && sp.score != null ? `${sp.score}/100` : '-';
+      $('ath-prv-n').textContent = sp.bpm != null ? `${Math.round(sp.bpm)} bpm · forehead` : 'forehead RMSSD';
+    }
+    if ($('ath-still')) {
+      const ss = sens.stillness || {};
+      $('ath-still').textContent = ss.valid && ss.score != null ? `${ss.score}/100` : '-';
+      $('ath-still-n').textContent = ss.rms != null ? `${ss.rms.toFixed(3)} g RMS` : '52 Hz · 3-axis g';
+    }
     $('pedal').hidden = S.mode !== 'ride' || active;
     $('ride-controls').hidden = active; $('mapping').hidden = active;
-    $('g-power-label').textContent = active ? 'EEG control / 100' : 'Cadence';
-    $('g-load-label').textContent = active ? 'EEG signal' : 'Grade-load';
+    $('g-power-label').textContent = active ? (ATHENA_POWER_LABELS[sm] || 'EEG control / 100') : 'Cadence';
+    $('g-load-label').textContent = active ? (sm === 'eeg' ? 'EEG signal' : `${tag} signal`) : 'Grade-load';
     $('g-load-tag').hidden = active;
     $('chip-cad').hidden = active; $('chip-eeg').hidden = !active;
     $('chip-eeg').dataset.tone = reading.valid ? 'good' : 'warn';
-    $('chip-eeg-text').textContent = bio.replayOn ? 'EEG · recorded proxy' : reading.simulated ? bio.demoOn ? 'EEG · synthetic preview' : 'EEG · synthetic bridge' : reading.valid ? 'EEG · personal reference ready' : `EEG · ${q.phase}`;
-    $('truth').textContent = active ? 'An EEG balance game control, calibrated to you. Higher control makes a faster, steadier ride. Not a measure of mental clarity.' : TRUTH[S.mode];
+    $('chip-eeg-text').textContent = bio.replayOn ? `${tag} · recorded proxy` : reading.simulated ? bio.demoOn ? `${tag} · synthetic preview` : `${tag} · synthetic bridge` : reading.valid ? `${tag} · personal reference ready` : `${tag} · ${q.phase}`;
+    $('truth').textContent = active ? (sm === 'eeg' ? 'An EEG balance game control, calibrated to you. Higher control makes a faster, steadier ride. Not a measure of mental clarity.' : `A Muse S Athena ${q.activeLabel || tag} game control, calibrated to your personal reference. Higher control makes a faster, steadier ride. Not a clinical or diagnostic measure.`) : TRUTH[S.mode];
     if (active) {
-      $('intro-eyebrow').textContent = 'Ride · brainwave control'; $('intro-title').textContent = 'Let the EEG balance move the road.';
-      $('intro-sub').textContent = 'Use Muse S with a personal reference. No pedaling is needed, or try a labeled synthetic preview.';
+      $('intro-eyebrow').textContent = sm === 'eeg' ? 'Ride · brainwave control' : `Ride · ${q.activeLabel || tag} control`;
+      $('intro-title').textContent = sm === 'eeg' ? 'Let the EEG balance move the road.' : `Let ${q.activeLabel || tag} move the road.`;
+      $('intro-sub').textContent = 'Use Muse S / Athena with a personal reference. Switch between EEG, fNIRS optical, optical PRV, IMU stillness, or 4-sensor fusion.';
     } else if (S.mode === 'ride') {
       $('intro-eyebrow').textContent = 'Ride · cadence sets the speed'; $('intro-title').textContent = 'Your legs set the speed.';
       $('intro-sub').textContent = 'Cadence is measured from a sensor. Grade-load is inferred from heart rate.';
     }
     $('eeg-state').textContent = q.deviceName ? `${q.deviceName} · ${q.phase}` : `Muse S · ${q.phase}`;
     $('eeg-why').textContent = q.message || 'Connect the configured private relay to look for Muse S.';
-    $('eeg-quality').textContent = q.quality && q.quality.reason || 'No usable EEG data yet.';
+    $('eeg-quality').textContent = reading.reason || (q.quality && q.quality.reason) || 'No usable EEG data yet.';
     $('eeg-transport').textContent = `Relay · ${q.transport === true ? 'connected' : q.transport || 'disconnected'}`;
     $('eeg-info').dataset.tone = q.phase === 'ready' ? 'good' : q.phase === 'error' ? 'bad' : 'warn';
     const devices = q.devices || [], key = JSON.stringify(devices.map((d) => [d.id, d.name]));
@@ -550,6 +619,10 @@
   $('cad-connect').addEventListener('click', () => (bio.cadence.connected ? bio.disconnectCadence() : bio.connectCadence()));
   $('demo-sheet').addEventListener('click', () => { toggleDemo(); if (bio.demoOn) $('connect-sheet').close(); });
   document.querySelectorAll('[data-power]').forEach((b) => b.addEventListener('click', () => setDrivePower(b.dataset.power)));
+  document.querySelectorAll('[data-athena]').forEach((b) => b.addEventListener('click', () => {
+    eeg.setSensorMode(b.dataset.athena);
+    renderStates();
+  }));
   $('eeg-start').addEventListener('click', () => eegAction(() => eeg.start()));
   $('eeg-scan').addEventListener('click', () => eegAction(() => eeg.scan()));
   $('eeg-device').addEventListener('change', renderStates);
