@@ -1141,23 +1141,18 @@
     set('t-hold', `${mmss(Math.min(SET_SECONDS, S.holdT))} of ${mmss(SET_SECONDS)}`);
     $('set-again').hidden = !S.complete;
     const br = bio.breath(), cue = $('breath-cue'), note = $('breath-note');
-    const isWatch = S.mode === 'ride' && S.stoppedTime >= 2.5;
-    $('breath').hidden = !isWatch && S.mode !== 'train';
-    if (S.mode === 'train' || isWatch) {
+    $('breath').hidden = S.mode !== 'train';
+    if (S.mode === 'train') {
       const c = br.paused ? 'Paused' : br.inhale ? 'Breathe in' : 'Breathe out';
       if (cue.textContent !== c) cue.textContent = c;
-      if (S.mode === 'train') {
-        const hasSource = bio.demoOn || bio.replayOn || bio.hr.connected;
-        let msg = '';
-        if (S.complete) msg = 'Set complete. Dawn broke, and the path is clear.';
-        else if (!hasSource) msg = 'The pacer runs without a sensor. Clarity needs one.';
-        else if (n.hr == null) msg = 'Signal unclear. This stretch counts neither way.';
-        else if (n.swing == null) msg = 'Reading the first two breaths.';
-        else if (cl >= CLARITY_TARGET) msg = 'Holding. Stay with it.';
-        if (note.textContent !== msg) note.textContent = msg;
-      } else {
-        if (note.textContent !== 'Cardiac recovery · follow the ring') note.textContent = 'Cardiac recovery · follow the ring';
-      }
+      const hasSource = bio.demoOn || bio.replayOn || bio.hr.connected;
+      let msg = '';
+      if (S.complete) msg = 'Set complete. Dawn broke, and the path is clear.';
+      else if (!hasSource) msg = 'The pacer runs without a sensor. Clarity needs one.';
+      else if (n.hr == null) msg = 'Signal unclear. This stretch counts neither way.';
+      else if (n.swing == null) msg = 'Reading the first two breaths.';
+      else if (cl >= CLARITY_TARGET) msg = 'Holding. Stay with it.';
+      if (note.textContent !== msg) note.textContent = msg;
     }
   }
 
@@ -1491,7 +1486,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       { const d = sd[0] * fwd[0] + sd[1] * fwd[1] + sd[2] * fwd[2]; if (d > 0.05) sunNdc = [((sd[0] * right[0] + sd[1] * right[1] + sd[2] * right[2]) * focal) / d / asp, ((sd[0] * up[0] + sd[1] * up[1] + sd[2] * up[2]) * focal) / d]; }
       const cT = train ? [sunNdc[0], sunNdc[1]] : [0, asp < 1 ? 0.3 : 0.27];
       S.orbitC = S.orbitC.map((v, i) => lerp(v, cT[i], Math.min(1, dtMs / 500)));
-      const aT = ride ? 0 : train ? 0.95 : (bio.demoOn || bio.replayOn || bio.hr.connected ? 0.85 : 0.42);
+      const aT = (ride && !isWatch) ? 0 : train ? 0.95 : (bio.demoOn || bio.replayOn || bio.hr.connected ? 0.85 : 0.42);
       S.orbitA += (aT - S.orbitA) * Math.min(1, dtMs / 500);
       if (S.orbitA > 0.01) {
         const R = train ? lerp(0.2, 0.37, br.ee) * scale : 0.6 * scale;
@@ -1502,7 +1497,16 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
         gl.disable(gl.BLEND);
       }
       // The cue sits inside the breathing ring, wherever the sun has drifted to.
-      if (train) { const bx = (S.orbitC[0] * 0.5 + 0.5) * cv.clientWidth, by = (0.5 - S.orbitC[1] * 0.5) * cv.clientHeight; $('breath').style.transform = `translate(${bx.toFixed(1)}px, ${by.toFixed(1)}px)`; $('breath').classList.toggle('on-light', S.dawn > 0.42); }
+      if (train) {
+        const bx = (S.orbitC[0] * 0.5 + 0.5) * cv.clientWidth;
+        const sb = $('scenebar'), dw = document.querySelector('.dock-wrap');
+        const minY = (sb ? sb.getBoundingClientRect().bottom : 80) + 32;
+        const maxY = (dw ? dw.getBoundingClientRect().top : cv.clientHeight - 160) - 48;
+        const rawY = (0.5 - S.orbitC[1] * 0.5) * cv.clientHeight;
+        const by = maxY > minY ? clamp(rawY, minY, maxY) : rawY;
+        $('breath').style.transform = `translate(${bx.toFixed(1)}px, ${by.toFixed(1)}px)`;
+        $('breath').classList.toggle('on-light', S.dawn > 0.42);
+      }
 
       if (lumaRec) lumaRec(now);
       if (wantSnap) { const done = wantSnap; wantSnap = null; cv.toBlob((blob) => done(blob), 'image/png'); }

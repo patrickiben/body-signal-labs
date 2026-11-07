@@ -24,7 +24,7 @@ JS = r"""() => {
     const off = r.bottom > innerHeight + 1 || r.top < -1 || r.right > innerWidth + 1 || r.left < -1;
     if (off) out.push((e.innerText || e.id || '').trim().slice(0, 24) + ' is cut off');
   }
-  const sb = box('.scenebar'), ms = box('.mode-switch'), hd = box('.header'), dw = box('.dock-wrap'), hud = box('#hud'), intro = box('.intro');
+  const sb = box('.scenebar'), ms = box('.mode-switch'), hd = box('.header'), dw = box('.dock-wrap'), hud = box('#hud'), intro = box('.intro'), reading = box('.reading');
   const overlap = (a, b) => a && b && a.b > b.t && b.b > a.t && a.r > b.l && b.r > a.l;
   const top = sb || ms;
   if (top && dw && top.b > dw.t) out.push(`top controls (bottom ${top.b}) run into the bottom stack (top ${dw.t})`);
@@ -32,6 +32,8 @@ JS = r"""() => {
   const introOn = intro && getComputedStyle(document.querySelector('.intro')).opacity > 0.1;
   if (introOn && sb && overlap(intro, sb)) out.push('intro text overlaps the scene bar');
   if (introOn && dw && intro.b > dw.t) out.push(`intro text (bottom ${intro.b}) runs into the bottom stack (top ${dw.t})`);
+  if (reading && sb && overlap(reading, sb)) out.push(`reading (top ${reading.t}) overlaps the scene bar (bottom ${sb.b})`);
+  if (reading && dw && reading.b > dw.t) out.push(`reading (bottom ${reading.b}) runs into the bottom stack (top ${dw.t})`);
   return { problems: out, scrollW: document.documentElement.scrollWidth, w: innerWidth, top: top && top.b, stackTop: dw && dw.t };
 }"""
 bad = 0
@@ -49,6 +51,12 @@ with sync_playwright() as p:
                 pg.evaluate('(scene) => __app.setBiome(scene, true)', int(os.environ['LAYOUT_SCENE']))
             pg.wait_for_timeout(2600)
             r = pg.evaluate(JS)
+            if page == 'biofeedback-path-cockpit.html':
+                pg.click('#demo-button')
+                pg.wait_for_timeout(500)
+                r_demo = pg.evaluate(JS)
+                for prob in r_demo['problems']:
+                    r['problems'].append('demo: ' + prob)
             if r['scrollW'] > r['w']: r['problems'].append(f"page scrolls sideways ({r['scrollW']} > {r['w']})")
             if errs: r['problems'].append('page error: ' + errs[0])
             pg.screenshot(path=f'{OUT}/new-{page[:-5]}-{name}.png')
