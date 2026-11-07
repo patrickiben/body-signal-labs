@@ -83,11 +83,10 @@
     let mode = cfg.mode;
     const modeButtons = [...document.querySelectorAll('.mode-switch button')];
     const setMode = (m) => {
-      if (!modeButtons.some((b) => b.dataset.mode === m)) return;
       mode = m;
       modeButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
-      const copy = cfg.intro[m];
-      $('intro-eyebrow').textContent = copy.eyebrow; $('intro-title').textContent = copy.title; $('intro-sub').textContent = copy.subtitle;
+      const copy = cfg.intro[m] || (cfg.intro.ride || cfg.intro);
+      if (copy && copy.eyebrow) { $('intro-eyebrow').textContent = copy.eyebrow; $('intro-title').textContent = copy.title; $('intro-sub').textContent = copy.subtitle; }
       if (cfg.onMode) cfg.onMode(m);
     };
     modeButtons.forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
@@ -118,6 +117,14 @@
       else if (key === 'd') cfg.toggleDemo();
       else if (key === 'f') fullscreen();
       else if (key === 'h') { hideChrome = !hideChrome; document.body.classList.toggle('quiet', hideChrome); }
+      else if (key === 'z') {
+        const isZen = document.body.classList.toggle('zen');
+        toast(isZen ? 'Zen mode: on (press Z to restore)' : 'Zen mode: off');
+      }
+      else if (e.key === 'Escape' && document.body.classList.contains('zen')) {
+        document.body.classList.remove('zen');
+        toast('Zen mode: off');
+      }
       else if (cfg.onKey) cfg.onKey(e, key);
     });
     const quietTick = (now, active) => { if (!hideChrome && active && now - lastMove > 9000 && !document.querySelector('dialog[open]')) document.body.classList.add('quiet'); };

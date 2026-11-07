@@ -21,7 +21,7 @@ class Q(http.server.SimpleHTTPRequestHandler):
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Q); threading.Thread(target=srv.serve_forever, daemon=True).start()
 URL = f'http://127.0.0.1:{srv.server_port}/endless-cockpit.html'
 GPU = ['--enable-gpu', '--use-angle=metal', '--ignore-gpu-blocklist', '--enable-webgl']
-SCENES = ['Golden coast', 'Tropical preserve', 'Meadow lanes', 'New England Autumn', 'Red canyon', 'Rainbow orbit', 'Misty pines', 'Snake Way']
+SCENES = ['Golden coast', 'Tropical', 'Meadow lanes', 'Autumn Lake', 'Red canyon', 'Rainbow orbit', 'Misty ridges', 'Snake Way']
 results = []
 def check(name, ok, detail=''):
     results.append(ok); print(('PASS ' if ok else 'FAIL ') + name + (f'  [{detail}]' if detail else ''), flush=True)
@@ -102,17 +102,17 @@ with sync_playwright() as p:
     pg.click(f".scene-tile[data-b='{orbit}']"); pg.wait_for_timeout(300)
     r = pg.evaluate("[__app.S.biomeNext, document.getElementById('route-caption').textContent]")
     check('the Rainbow orbit tile selects its own route', r[0] == orbit and 'skyway' in r[1].lower(), json.dumps(r))
-    for name, caption in [('New England Autumn', 'woodland'), ('Misty pines', 'misty'), ('Snake Way', 'cloud')]:
+    for name, caption in [('Autumn Lake', 'woodland'), ('Misty ridges', 'misty'), ('Snake Way', 'cloud')]:
         index = SCENES.index(name)
         pg.click(f".scene-tile[data-b='{index}']"); pg.wait_for_timeout(150)
         r = pg.evaluate("[__app.S.biomeNext, document.getElementById('route-caption').textContent]")
         check(f'{name} selects its own named environment', r[0] == index and caption in r[1].lower(), json.dumps(r))
-    pg.click("[data-tod='3']"); pg.wait_for_timeout(2500)
+    pg.click("[data-tod='4']"); pg.wait_for_timeout(2500)
     r = pg.evaluate("[__app.S.duskHold, +__app.S.dusk.toFixed(2)]")
     check('Night holds the sky at night', r[0] == 1 and r[1] > 0.8, json.dumps(r))
     pg.click("[data-look='wild']"); pg.wait_for_timeout(200)
     r = pg.evaluate("[__app.S.look, __app.S.dream, __app.S.wild, document.getElementById('wild').value]")
-    check('the Wild look sets the feedback and the warp, and the sliders follow', r == ['wild', 0.78, 0.85, '85'], json.dumps(r))
+    check('the Wild look sets the feedback and the warp, and the sliders follow', r == ['wild', 0.86, 1, '100'], json.dumps(r))
     pg.evaluate("__app.S.nextSceneAt = __app.S.dist + 25"); b0 = pg.evaluate('__app.S.biomeNext')
     pg.click('#connect-button'); pg.wait_for_timeout(300); pg.fill('#steady', '100'); pg.keyboard.press('Escape')
     pg.wait_for_function('(next) => __app.S.biomeNext === next', arg=(b0 + 1) % scene_count, timeout=15000)
@@ -125,7 +125,7 @@ with sync_playwright() as p:
     pg.click(f".scene-tile[data-b='{len(SCENES) - 1}']"); pg.wait_for_timeout(200); b1 = len(SCENES) - 1
     pg.reload(); pg.wait_for_timeout(1500)
     r = pg.evaluate("[__app.S.biomeNext, __app.S.tod, __app.S.look, __app.S.autoScene]")
-    check('the scene, time of day, look and that switch are remembered on the next visit', r == [b1, 3, 'wild', False], json.dumps(r))
+    check('the scene, time of day, look and that switch are remembered on the next visit', r == [b1, 4, 'wild', False], json.dumps(r))
     check('no page errors with the scenery', not errs, '; '.join(errs[:2]))
     pg.screenshot(path=str(OUT / 'endless-scenery.png'))
     b.close()
@@ -136,7 +136,7 @@ with sync_playwright() as p:
         r = pg.evaluate("""() => { const on = (e) => { if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.top >= 0 && r.bottom <= innerHeight && r.left >= -1 && r.right <= innerWidth + 1; };
           const need = ['#connect-button', '#route-button', '#session-button', '#about-button', '#pedal', '#source-badge', '#demo-button', '#fs-button'];
           return { missing: need.filter((s) => !on(document.querySelector(s))), tiles: [...document.querySelectorAll('.scene-tile')].filter(on).length, options: [...document.querySelectorAll('.scene-row button')].filter(on).length, sideways: document.documentElement.scrollWidth > innerWidth, sub: document.getElementById('intro-sub').textContent }; }""")
-        check(f'a phone {label} shows the dock, the pedal button, the status, all eight scenes and all nine scenery options, none cut off', not r['missing'] and r['tiles'] == len(SCENES) and r['options'] == 9 and not r['sideways'], json.dumps(r))
+        check(f'a phone {label} shows the dock, the pedal button, the status, all eight scenes and all ten scenery options, none cut off', not r['missing'] and r['tiles'] == len(SCENES) and r['options'] == 10 and not r['sideways'], json.dumps(r))
         if label == 'upright':
             check('on a phone the intro says to hold the pedal button, not Space', 'pedal button' in r['sub'] and 'Space' not in r['sub'], r['sub'])
             pg.dispatch_event('#pedal', 'pointerdown', {'pointerType': 'touch', 'isPrimary': True}); pg.wait_for_timeout(2500)

@@ -83,7 +83,7 @@ try:
             check("both cockpits expose the same eight stable scene IDs", catalogs == [IDS, IDS], catalogs)
             check("fresh Biofeedback starts on shared Misty pines", bio.evaluate("__app.S.biomeNext===6 && __app.S.sceneCatalog==='cycling-scenes@1'"))
             check("both scene controls expose all eight choices", endless.locator("#scene-tiles [data-b]").count() == 8 and bio.locator("#biome-row [data-b]").count() == 8)
-            bio.locator('[data-mode="ride"]').click()
+            bio.locator('button[data-mode="ride"]').click()
 
             for app, page in pages.items():
                 profiles[app] = []
@@ -193,7 +193,7 @@ try:
             check("Train haze and dawn render on the suspended cloud road", pixel["mean"] > 5 and pixel["max"]-pixel["min"] > 20)
             bio.screenshot(path=str(OUT / "snake-way-train.png"))
             bio.evaluate("__app.bio.stopReplay()")
-            bio.locator('[data-mode="ride"]').click()
+            bio.locator('button[data-mode="ride"]').click()
             bio.locator('[data-power="brainwaves"]').click()
             bio.locator("#demo-button").click()
             for index in (6, 7):

@@ -15,10 +15,11 @@
 
   const S = {
     mode: 'watch', rpm: 0, speed: 0, dist: 0, vis: 40, zoom: 0, grade: 0, gradeLoad: 0, surge: 0, roll: 0, tilt: 0.34,
-    map: { idle: 25, max: 95, maxZoom: 0.018, gamma: 1.6 }, dream: 0.55, wild: 0.35, seed: 0,
+    map: { idle: 25, max: 95, maxZoom: 0.018, gamma: 1.6 }, dream: 0.0, wild: 0.0, seed: 0,
     pedal: false, steady: null, auto: false, autoT: 0, biome: 6, biomeNext: 6, biomeT: 1, fromMix: null, sceneCatalog: SCENE_CATALOG, dusk: 0.74, duskHold: null,
-    drivePower: 'cadence', eegDrive: 0, eegScore: null, eegRatio: null, eegValid: false, eegSimulated: false, replayEEG: null, eegBusy: false, motionCalm: 1, effectiveWild: .35,
+    drivePower: 'cadence', eegDrive: 0, eegScore: null, eegRatio: null, eegValid: false, eegSimulated: false, replayEEG: null, eegBusy: false, motionCalm: 1, effectiveWild: 0,
     load: 0, clarity: 0, dawn: 0, holdT: 0, complete: false, replayRpm: null, ghost: null, ghostGap: null, orbitC: [0, 0.36], orbitA: 0, pulse: 0,
+    spaceLattice: false, tod: 0, look: 'clear', autoScene: true, nextSceneAt: 1609.34, stoppedTime: 4, demoRide: false,
   };
   const EEG_MAX_SPEED = 7;
   const MAX_SPEED = CadenceMotion.MAX_SPEED, M_PER_MI = 1609.34, AROUSAL_WILD = 0.5, DUSK_BIAS = 0.2, GRADE_LOAD_MAX = 0.045, CLARITY_TARGET = 0.6, SET_SECONDS = 60;
@@ -29,11 +30,23 @@
     const t = S.biomeT * S.biomeT * (3 - 2 * S.biomeT);
     return CyclingScene.mixScene(S.fromMix || currentBiome(S.biome), currentBiome(), t);
   }
-  const pathX = (z) => legacyScene() ? 14 * Math.sin(z * 0.0113 + 1 + S.seed) + 6.5 * Math.sin(z * 0.0271 + 2.2 + S.seed * 1.7) : CyclingScene.pathX(z, S.seed, sceneNow());
-  const roadY = (z) => legacyScene() ? 7 * Math.sin(z * 0.0071 + 0.4 + S.seed) + 3.4 * Math.sin(z * 0.0193 + 1.9 + S.seed * 2.3) + 1.1 * Math.sin(z * 0.0471 + 3.1) : CyclingScene.roadY(z, S.seed, sceneNow());
+  const pathX = (z, s) => legacyScene() ? 14 * Math.sin(z * 0.0113 + 1 + S.seed) + 6.5 * Math.sin(z * 0.0271 + 2.2 + S.seed * 1.7) : CyclingScene.pathX(z, S.seed, s || sceneNow());
+  const roadY = (z, s) => legacyScene() ? 7 * Math.sin(z * 0.0071 + 0.4 + S.seed) + 3.4 * Math.sin(z * 0.0193 + 1.9 + S.seed * 2.3) + 1.1 * Math.sin(z * 0.0471 + 3.1) : CyclingScene.roadY(z, S.seed, s || sceneNow());
   const gradeAt = (z) => (roadY(z + 3) - roadY(z - 3)) / 6;
   const gradeFactor = CadenceMotion.gradeFactor;
   const motion01 = (rpm) => CadenceMotion.motion01(rpm, S.map);
+  function camAt(z, roll, b) {
+    const s = b || sceneNow();
+    const cx = pathX(z, s), cy = roadY(z, s) + 1.65 + .95 * (s.snake || 0), look = 26;
+    let fx = pathX(z + look, s) - cx, fy = roadY(z + look, s) + 1.1 - cy, fz = look;
+    const fl = Math.hypot(fx, fy, fz); fx /= fl; fy /= fl; fz /= fl;
+    let rx = fz, ry = 0, rz = -fx;
+    const rl = Math.hypot(rx, rz); rx /= rl; rz /= rl;
+    let ux = -ry * fz + rz * fy, uy = rx * fz - rz * fx, uz = ry * fx - rx * fy;
+    if (uy < 0) { ux = -ux; uy = -uy; uz = -uz; }
+    const cr = Math.cos(roll), sr = Math.sin(roll);
+    return { cx, cy, fwd: [fx, fy, fz], right: [rx * cr + ux * sr, ry * cr + uy * sr, rz * cr + uz * sr], up: [ux * cr - rx * sr, uy * cr - ry * sr, uz * cr - rz * sr] };
+  }
 
   const bio = createBio();
   const eeg = createEEGDrive();
@@ -93,8 +106,8 @@
     </details>`;
 
   const routeSheet = `
-    <div class="field"><div class="row"><span>Scene</span><b id="scene-name">Misty pines</b></div><div class="row-actions" id="biome-row" role="group" aria-label="Scenery"></div><p class="note" id="scene-description"></p></div>
-    <label class="field" style="margin-top:12px">Time of day, in Watch and Ride<select id="tod"><option value="auto">Set by the mode</option><option value="0.18">Golden hour</option><option value="0.55">Dusk</option><option value="1">Night</option></select></label>
+    <div class="field"><div class="row"><span>Scene</span><b id="scene-name">Misty ridges</b></div><div class="row-actions" id="biome-row" role="group" aria-label="Scenery"></div><p class="note" id="scene-description"></p></div>
+    <label class="field" style="margin-top:12px">Time of day, in Watch and Ride<select id="tod"><option value="auto">Set by the mode</option><option value="0.18">Golden hour</option><option value="0.36">Sunset</option><option value="0.55">Dusk</option><option value="1">Night</option></select></label>
     <div class="row-actions"><button class="pill" id="new-route">New route</button><button class="pill" id="ride-sound">Ride sound: off</button></div>
     <div class="sig-title"><span>Route ahead</span><span id="grade-read">grade 0%</span></div>
     <canvas class="sig-canvas" id="elstrip" width="880" height="110" role="img" aria-label="Elevation of the procedural route ahead"></canvas>
@@ -117,6 +130,11 @@
       <label class="field"><div class="row"><span>Wildness, warp and color split</span><b id="wild-v"></b></div><input type="range" id="wild" min="0" max="100"></label>
     </div></details>
 
+    <details><summary>Rainbow orbit</summary><div class="controls-grid" style="padding:10px 0 0">
+      <label class="check"><input type="checkbox" id="space-lattice"> Space corridor frames on Rainbow orbit</label>
+      <p class="note" style="margin:0">Echoes Autonomic Console's Rest light frames along the floating track. Off by default to keep the road calm.</p>
+    </div></details>
+
     <details id="mapping"><summary>Cadence to motion</summary><div class="controls-grid" style="padding:10px 0 0">
       <label class="field"><div class="row"><span>Idle cadence, no motion below</span><b id="v-idle"></b></div><input type="range" id="m-idle" min="0" max="60"></label>
       <label class="field"><div class="row"><span>Top cadence, full speed above</span><b id="v-max"></b></div><input type="range" id="m-max" min="60" max="130"></label>
@@ -129,6 +147,7 @@
   const sessionSheet = `
     <div class="row-actions">
       <button class="pill primary" id="rec-toggle">Start recording</button>
+      <button class="pill" id="export-tcx">Export TCX</button>
       <button class="pill" id="replay-load">Replay a session file</button>
       <button class="pill" id="replay-stop" hidden>Stop replay</button>
       <button class="pill" id="snapshot">Save a picture</button>
@@ -181,8 +200,9 @@
       <tr><th>Heart rate</th><td>Cadence-powered Ride only. Heart rate above your baseline adds up to 4.5% of apparent grade and slows you, shown apart from the road's own grade. The zoom never changes. <span class="ep ep-inferred">Inferred</span></td></tr>
       <tr><th>Swing at pace</th><td>Train only. How far heart rate swings at the pacer's own frequency, over the last two breaths. It lifts the fog. Hold it for 60 seconds and dawn breaks. <span class="ep ep-proxy">Proxy</span></td></tr>
       <tr><th>Horizon</th><td>On the land scenes, the ridge on the horizon shows the last two minutes, newest in the middle. Heartbeats add a subtle brightness pulse; there are no traveling light bands across the road.</td></tr>
-      <tr><th>Road</th><td>Eight scenes share the same choices as Endless Cockpit, including the original Misty pines. Hills and grade are procedural and seeded. Cadence acceleration and coasting use the same motion rules in both apps. <span class="ep ep-proc">Procedural</span></td></tr>
+      <tr><th>Road</th><td>Eight scenes share the same choices as Endless Cockpit, including the original Misty ridges. Hills and grade are procedural and seeded. Cadence acceleration and coasting use the same motion rules in both apps. <span class="ep ep-proc">Procedural</span></td></tr>
     </tbody></table>
+    <p class="note">Keys: hold <b>Space</b> to pedal · <b>1-8</b> scenes · <b>R</b> / <b>B</b> next route · <b>T</b> time of day · <b>L</b> clarity · <b>Z</b> zen mode · <b>Middle click</b> random combo · <b>D</b> demo · <b>C</b> connect · <b>F</b> full screen · <b>H</b> hide controls.</p>
     <details id="is-not" open><summary>What this is, and is not</summary>
       <p><b>Not a medical device.</b> It diagnoses nothing and treats nothing, and it does not detect or predict any condition.</p>
       <p>Inferred arousal is a personal, reference-relative heuristic. It is not measured, and it is not a stress reading. A charged sky is not a verdict about you.</p>
@@ -206,12 +226,12 @@
     <p class="note"><a href="field-guide.html#biofeedback">Read the field guide</a> · <a href="__REPO_URL__" rel="noopener">Source</a></p>`;
 
   const hudHtml = `
-    <div class="hud-set" data-for="watch">
+    <div class="hud-set" data-for="watch" hidden>
       <div class="gauge"><span class="k">Heart rate</span><span class="v"><span id="w-hr">--</span><small>bpm</small></span></div>
       <div class="gauge"><span class="k">RMSSD</span><span class="v"><span id="w-rmssd">--</span><small>ms</small></span></div>
       <div class="gauge"><span class="k">Trend</span><span class="v word" id="w-trend">--</span></div>
     </div>
-    <div class="hud-set" data-for="ride" hidden>
+    <div class="hud-set" data-for="ride">
       <div class="gauge"><span class="k">Route grade <span class="ep ep-proc">Procedural</span></span><span class="v"><span id="g-grade">0.0</span><small>%</small></span></div>
       <div class="gauge"><span class="k">Speed</span><span class="v"><span id="g-speed">0.0</span><small>mph</small></span></div>
       <div class="gauge hero"><span class="k"><span id="g-power-label">Cadence</span> <span class="ep" id="ep-cad">Manual</span></span><span class="v" id="g-rpm">--</span></div>
@@ -231,7 +251,27 @@
       </div>
     </div>`;
 
+  const TOD = [
+    { v: null, label: 'Moving', title: 'A four-minute cycle from golden hour to night' },
+    { v: 0.18, label: 'Golden hour', short: 'Golden' }, { v: 0.36, label: 'Sunset' }, { v: 0.55, label: 'Dusk' }, { v: 1, label: 'Night' },
+  ];
+  const LOOKS = { clear: { label: 'Clear', dream: 0.0, wild: 0.0 }, dreamy: { label: 'Dreamy', dream: 0.62, wild: 0.25 }, wild: { label: 'Wild', dream: 0.86, wild: 1.0 } };
+  const sceneBar = `
+    <div class="scenebar chrome" id="scenebar">
+      <div class="scene-tiles" id="scene-tiles" role="group" aria-label="Scenery">
+        ${BIOMES.map((b, i) => `<button class="scene-tile" data-b="${i}" aria-pressed="${i === S.biomeNext}" title="${b.description}"><canvas width="336" height="196" aria-hidden="true" style="background:linear-gradient(${b.skyTop},${b.skyHz} 54%,${b.ground} 55%)"></canvas><span>${b.name}</span></button>`).join('')}
+      </div>
+      <p class="route-caption" id="route-caption">${BIOMES[S.biomeNext].description}</p>
+      <div class="scene-row">
+        <div class="seg" role="group" aria-label="Time of day">${TOD.map((t, i) => `<button data-tod="${i}" aria-pressed="${i === 0}"${t.title ? ` title="${t.title}"` : ''}${t.short ? ` aria-label="${t.label}"><span class="long">${t.label}</span><span class="short">${t.short}</span>` : `>${t.label}`}</button>`).join('')}</div>
+        <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'clear'}">${l.label}</button>`).join('')}</div>
+        <button class="seg-solo" id="auto-scene" aria-pressed="true" aria-label="Auto scenery: new scenery every mile" title="A new scene blends in after each mile you ride"><span class="long">New scenery every mile</span><span class="short">Auto scenery</span></button>
+        <button class="seg-solo" id="new-route">New route</button>
+      </div>
+    </div>`;
+
   const stage = `
+    ${sceneBar}
     <div class="reading" id="reading" hidden>
       <p class="eyebrow">Inferred arousal · personal</p>
       <div class="read-num" id="read-num">--</div>
@@ -248,15 +288,17 @@
 
   const shell = mountChrome({
     id: 'biofeedback-path-cockpit', name: 'Biofeedback Path Cockpit', brand,
-    modes: [{ id: 'watch', label: 'Watch' }, { id: 'ride', label: 'Ride' }, { id: 'train', label: 'Train' }], mode: 'watch', modeLabel: 'What your body changes',
+    modes: [{ id: 'ride', label: 'Ride' }, { id: 'train', label: 'Train' }], mode: 'watch', modeLabel: 'What your body changes',
     intro: {
       watch: { eyebrow: 'Watch · weather from your signals', title: 'The sky follows your signals.', subtitle: 'Inferred, never measured. Connect a heart-rate sensor, or run the demo.' },
-      ride: { eyebrow: 'Ride · cadence sets the speed', title: 'Your legs set the speed.', subtitle: 'Cadence is measured from a sensor. Grade-load is inferred from heart rate.' },
+      ride: { eyebrow: 'Ride · cadence sets the speed', title: 'Your legs set the speed.', subtitle: 'Cadence is measured from a sensor. When you stop, the sky watches your signals.' },
       train: { eyebrow: 'Train · a paced-breathing practice game', title: 'Breathe the fog away.', subtitle: 'Follow the ring. A sensor reads how your heart rate swings with it. Not therapy.' },
     },
     onMode: (m) => setMode(m),
     stage, hud: hudHtml,
-    beforeBadges: '<div class="ride-power chrome" id="ride-power" role="group" aria-label="Ride power" hidden><span>Ride power</span><button class="pill" data-power="cadence" aria-pressed="true">Cadence</button><button class="pill" data-power="brainwaves" aria-pressed="false">Brainwaves</button></div><button class="pill primary chrome" id="pedal" hidden>Hold to pedal</button>',
+    beforeBadges: `
+      <div class="ride-power chrome" id="ride-power" role="group" aria-label="Ride power"><span>Ride power</span><button class="pill" data-power="cadence" aria-pressed="true">Cadence</button><button class="pill" data-power="brainwaves" aria-pressed="false">Brainwaves</button></div>
+      <button class="pill primary chrome" id="pedal">Hold to pedal</button>`,
     badges: `
       <button class="source-badge" id="source-badge" data-source="ambient" title="Open the sensor settings"><span class="dot" aria-hidden="true"></span><span id="source-label">Ambient · no sensor connected</span></button>
       <button class="chip chrome" id="chip-hr" data-tone="idle"><span class="dot" aria-hidden="true"></span><span id="chip-hr-text">Heart rate · not connected</span></button>
@@ -265,26 +307,53 @@
     truth: '',
     sheets: [
       { id: 'connect', label: 'Connect', icon: 'connect', title: 'Bring your signals.', intro: 'Heart rate paints the weather and the grade. Cadence sets the speed. Either works directly in a compatible browser. Muse S brainwave control uses an optional private relay.', html: connectSheet },
-      { id: 'route', label: 'Route', icon: 'route', title: 'Choose the road.', intro: 'These change how it looks and how the game scores. They never change the readings.', html: routeSheet },
+      { id: 'route', label: 'Route', icon: 'route', title: 'Choose the road.', intro: 'Scenes, time of day and looks are on the main screen. These fine-tune how it looks and moves, and never change the readings.', html: routeSheet },
       { id: 'session', label: 'Session', icon: 'session', title: 'Keep what you rode.', intro: 'A session file holds cadence, heart rate, inferred values and any recorded EEG game control. EEG control is a derived proxy, not a measured mental state. Nothing leaves this computer unless you share the file.', html: sessionSheet },
       { id: 'signal', label: 'Signal', icon: 'signal', title: 'What the page reads.', wide: true, html: signalSheet },
       { id: 'about', label: 'About', icon: 'about', title: 'What drives what.', html: about },
     ],
     onOpenSheet: (name) => { if (name === 'signal') drawSignal(); if (name === 'route') { drawElStrip(); drawCurve(); } },
     toggleDemo,
-    onKey: (e, key) => { if (key === 'b') chooseBiome((selectedSceneIndex() + 1) % BIOMES.length); else if (key === 'w') shell.setMode('watch'); else if (key === 'r') shell.setMode('ride'); else if (key === 't') shell.setMode('train'); },
+    onKey: (e, key) => {
+      if (key >= '1' && key <= '8') {
+        const idx = +key - 1;
+        if (BIOMES[idx]) { chooseBiome(idx); shell.toast(`Scenery · ${BIOMES[idx].name}`); }
+      } else if (key === 'b' || key === 'r') {
+        nextBiome();
+      } else if (key === 't') {
+        nextTod();
+      } else if (key === 'l') {
+        nextLook();
+      }
+    },
   });
 
-  function toggleDemo() { if (bio.demoOn) bio.stopDemo(); else bio.startDemo(); renderStates(); }
+  function toggleDemo() {
+    if (bio.demoOn) {
+      bio.stopDemo();
+      S.demoRide = false;
+    } else {
+      S.demoRide = false;
+      bio.startDemo();
+    }
+    renderStates();
+  }
 
   /* ---- modes ---- */
   const TRUTH = {
-    watch: 'The weather is inferred from heart signals, never measured. Not a medical device. Nothing leaves this browser.',
-    ride: 'Speed follows cadence. Grade-load is inferred from heart rate, and is not a fitness measure. Not a medical device.',
+    watch: 'Inferred arousal is a personal heuristic, not a medical measurement.',
+    ride: 'Speed follows cadence. When stopped, the sky reflects heart signals. Grade-load is inferred from heart rate, and is not a fitness measure. Not a medical device.',
     train: 'A paced-breathing practice game, not therapy or treatment. Clarity is a heart-rate proxy. Not a medical device.',
   };
   function setMode(m) {
-    S.mode = m; bio.setMode(m);
+    S.mode = m;
+    if (m === 'ride') {
+      S.stoppedTime = 0;
+      if (bio.demoOn) S.demoRide = true;
+    } else {
+      S.demoRide = false;
+    }
+    bio.setMode(m);
     if (m !== 'ride') pedalOff();
     S.holdT = 0; S.dawn = 0; S.complete = false; S.clarity = 0;
     document.querySelectorAll('.hud-set').forEach((h) => { h.hidden = h.dataset.for !== m; });
@@ -481,7 +550,7 @@
 
   /* ---- Route sheet ---- */
   function selectedSceneIndex() {
-    return legacyScene() ? BIOMES.findIndex((b) => b.name === currentBiome().name) : S.biomeNext;
+    return legacyScene() ? BIOMES.findIndex((b) => b.name === currentBiome().name || (currentBiome().name === 'Misty pines' && b.id === 'misty-pines')) : S.biomeNext;
   }
   function chooseBiome(i) {
     if (legacyScene()) {
@@ -497,17 +566,93 @@
     S.fromMix = instant ? null : sceneNow();
     S.biome = instant ? i : S.biomeNext; S.biomeNext = i; S.biomeT = instant ? 1 : 0;
     bio.noteLane('biome', i);
-    document.querySelectorAll('#biome-row button').forEach((b, k) => { const on = k === selectedSceneIndex(); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    document.querySelectorAll('#biome-row button, .scene-tile').forEach((b) => {
+      const on = +b.dataset.b === selectedSceneIndex();
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
     document.body.style.setProperty('--accent', currentBiome().edge);
-    $('scene-name').textContent = currentBiome().name;
-    $('scene-description').textContent = currentBiome().description || 'Original scene from this recording.';
+    if ($('scene-name')) $('scene-name').textContent = currentBiome().name;
+    const desc = currentBiome().description || 'Original scene from this recording.';
+    if ($('scene-description')) $('scene-description').textContent = desc;
+    const cap = $('route-caption'); if (cap) cap.textContent = desc;
+    thumbAt = 0;
   }
-  $('biome-row').innerHTML = BIOMES.map((b, i) => `<button class="pill${i === S.biomeNext ? ' on' : ''}" data-b="${i}" aria-pressed="${i === S.biomeNext}" title="${b.description}">${b.name}</button>`).join('');
+  $('biome-row').innerHTML = BIOMES.map((b, i) => `<button class="pill${i === S.biomeNext ? ' on' : ''}" data-b="${i}" aria-pressed="${i === S.biomeNext}" title="${b.description}"><span class="scene-swatch" style="display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:linear-gradient(${b.skyTop},${b.ground})"></span>${b.name}</button>`).join('');
   $('biome-row').addEventListener('click', (e) => { const b = e.target.closest('[data-b]'); if (b) chooseBiome(+b.dataset.b); });
+  const scTiles = $('scene-tiles');
+  if (scTiles) scTiles.addEventListener('click', (e) => { const b = e.target.closest('[data-b]'); if (b) chooseBiome(+b.dataset.b); });
+  document.querySelectorAll('[data-tod]').forEach((b) => b.addEventListener('click', () => setTod(+b.dataset.tod)));
+  document.querySelectorAll('[data-look]').forEach((b) => b.addEventListener('click', () => setLook(b.dataset.look)));
+  const autoSceneBtn = $('auto-scene');
+  if (autoSceneBtn) autoSceneBtn.addEventListener('click', () => setAuto(!S.autoScene));
   $('scene-description').textContent = currentBiome().description;
-  $('tod').addEventListener('change', (e) => { S.duskHold = e.target.value === 'auto' ? null : +e.target.value; });
-  $('new-route').addEventListener('click', () => { S.seed = (Math.random() * 40) | 0; bio.noteLane('seed', S.seed); shell.toast('New route'); });
+  $('tod').addEventListener('change', (e) => { S.duskHold = e.target.value === 'auto' ? null : +e.target.value; thumbAt = 0; });
+  $('new-route').addEventListener('click', () => { S.seed = (Math.random() * 40) | 0; thumbAt = 0; bio.noteLane('seed', S.seed); shell.toast('New route'); });
+  const sl = $('space-lattice');
+  if (sl) {
+    sl.checked = !!S.spaceLattice;
+    sl.addEventListener('change', (e) => { S.spaceLattice = e.target.checked; });
+  }
   document.body.style.setProperty('--accent', currentBiome().edge);
+
+  function syncLookInputs() {
+    const dr = $('dream'), wr = $('wild');
+    if (dr) { dr.value = Math.round(S.dream * 100); shell.syncRange(dr); $('dream-v').textContent = `${dr.value}%`; }
+    if (wr) { wr.value = Math.round(S.wild * 100); shell.syncRange(wr); $('wild-v').textContent = `${wr.value}%`; }
+  }
+  function setLook(name) {
+    if (!LOOKS[name]) return;
+    S.look = name; S.dream = LOOKS[name].dream; S.wild = LOOKS[name].wild;
+    document.querySelectorAll('[data-look]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.look === name)));
+    syncLookInputs();
+  }
+  function setTod(i) {
+    S.tod = i; S.duskHold = TOD[i].v;
+    document.querySelectorAll('[data-tod]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.tod === i)));
+    if ($('tod')) $('tod').value = TOD[i].v == null ? 'auto' : String(TOD[i].v);
+    thumbAt = 0;
+  }
+  function setAuto(on) {
+    S.autoScene = on; S.nextSceneAt = S.dist + M_PER_MI;
+    const btn = $('auto-scene');
+    if (btn) btn.setAttribute('aria-pressed', String(on));
+  }
+  function nextBiome() {
+    const nextIdx = (selectedSceneIndex() + 1) % BIOMES.length;
+    chooseBiome(nextIdx);
+    shell.toast(`Scenery · ${BIOMES[nextIdx].name}`);
+  }
+  function nextTod() {
+    const nextIdx = ((S.tod || 0) + 1) % TOD.length;
+    setTod(nextIdx);
+    shell.toast(`Time of day · ${TOD[nextIdx].label}`);
+  }
+  function nextLook() {
+    const keys = Object.keys(LOOKS);
+    const curIdx = keys.indexOf(S.look || 'clear');
+    const nextKey = keys[(curIdx + 1) % keys.length];
+    setLook(nextKey);
+    shell.toast(`Look · ${LOOKS[nextKey].label}`);
+  }
+  function randomCombo() {
+    const randBiome = (Math.random() * BIOMES.length) | 0;
+    const randTod = (Math.random() * TOD.length) | 0;
+    const lookKeys = Object.keys(LOOKS);
+    const randLook = lookKeys[(Math.random() * lookKeys.length) | 0];
+    chooseBiome(randBiome);
+    setTod(randTod);
+    setLook(randLook);
+    shell.toast(`Random: ${BIOMES[randBiome].name} · ${TOD[randTod].label} · ${LOOKS[randLook].label}`);
+  }
+  const onMiddleClick = (e) => {
+    if (e.button === 1) {
+      e.preventDefault();
+      randomCombo();
+    }
+  };
+  window.addEventListener('auxclick', onMiddleClick);
+  window.addEventListener('pointerdown', onMiddleClick);
 
   const bind = (id, get, set, fmt, label) => {
     const r = $(id);
@@ -536,13 +681,22 @@
   const ATOMS = [[98, 130.81, 196, 246.94, 293.66, 392, 493.88], [110, 146.83, 220, 277.18, 329.63, 440, 554.37], [130.81, 164.81, 196, 261.63, 392, 523.25, 659.25], [123.47, 164.81, 246.94, 329.63, 493.94, 659.25, 987.77], [82.41, 110, 164.81, 220, 277.18, 329.63, 415.3]];
   const SCENE_ATOMS = [ATOMS[0], ATOMS[1], ATOMS[2], ATOMS[3], ATOMS[4], [130.81, 164.81, 196, 261.63, 329.63, 392, 523.25], ATOMS[1], [146.83, 196, 220, 293.66, 392, 440, 587.33]];
   let AC = null, sndOn = false, sndGain = null, nextGrain = 0;
+  let windGain = null, windFilter = null, noiseSrc = null;
   function grainTick() {
     if (!AC || !sndOn) return;
     const rate = Math.min(24, (S.rpm / 130) * 24);
     if (nextGrain < AC.currentTime) nextGrain = AC.currentTime + 0.02;
+    // Aerodynamic wind rush modulated by road speed
+    if (windGain && windFilter) {
+      const speedMph = (S.speed * 3600) / M_PER_MI;
+      const targetGain = clamp(speedMph / 28, 0, 1) * 0.22;
+      const targetFreq = 140 + clamp(speedMph / 30, 0, 1) * 460;
+      windGain.gain.setTargetAtTime(targetGain, AC.currentTime, 0.08);
+      windFilter.frequency.setTargetAtTime(targetFreq, AC.currentTime, 0.08);
+    }
     if (rate < 0.5) { nextGrain = AC.currentTime + 0.08; return; }
     const palette = legacyScene() ? ATOMS : SCENE_ATOMS;
-    const a = palette[S.biome], b = palette[S.biomeNext], atoms = a.map((v, i) => lerp(v, b[i], S.biomeT));
+    const a = palette[S.biome] || palette[0], b = palette[S.biomeNext] || palette[0], atoms = a.map((v, i) => lerp(v, b[i], S.biomeT));
     let budget = 0;
     while (nextGrain < AC.currentTime + 0.12 && budget < 8) {
       const t = nextGrain, o = AC.createOscillator(), g = AC.createGain();
@@ -554,9 +708,31 @@
       nextGrain += 1 / rate; budget++;
     }
   }
-  $('ride-sound').addEventListener('click', function () {
-    if (!AC) { AC = new (window.AudioContext || window.webkitAudioContext)(); sndGain = AC.createGain(); sndGain.gain.value = 0; sndGain.connect(AC.destination); setInterval(grainTick, 45); }
+  function ensureAudio() {
+    if (!AC) {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      sndGain = AC.createGain(); sndGain.gain.value = 0; sndGain.connect(AC.destination);
+      try {
+        const buf = AC.createBuffer(1, Math.round(AC.sampleRate * 2), AC.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+        noiseSrc = AC.createBufferSource();
+        noiseSrc.buffer = buf;
+        noiseSrc.loop = true;
+        windFilter = AC.createBiquadFilter();
+        windFilter.type = 'lowpass';
+        windFilter.frequency.value = 160;
+        windGain = AC.createGain();
+        windGain.gain.value = 0;
+        noiseSrc.connect(windFilter).connect(windGain).connect(sndGain);
+        noiseSrc.start();
+      } catch (e) {}
+      setInterval(grainTick, 45);
+    }
     if (AC.state === 'suspended') AC.resume();
+  }
+  $('ride-sound').addEventListener('click', function () {
+    ensureAudio();
     sndOn = !sndOn;
     this.textContent = `Ride sound: ${sndOn ? 'on' : 'off'}`; this.classList.toggle('on', sndOn);
     sndGain.gain.linearRampToValueAtTime(sndOn ? 0.5 : 0, AC.currentTime + 0.25);
@@ -612,6 +788,73 @@
       renderAnalysis(s);
     }
   });
+  const rideSamples = [];
+  let lastSampleT = 0;
+  function recordSample() {
+    const now = performance.now();
+    if (now - lastSampleT < 1000) return;
+    lastSampleT = now;
+    if (S.dist > 0 || S.rpm > 0.5 || S.speed > 0.1) {
+      rideSamples.push({
+        t: new Date().toISOString(),
+        dist: S.dist,
+        rpm: S.rpm,
+        speed: S.speed,
+        alt: roadY(S.vis),
+        hr: bio.now.hr != null ? bio.now.hr : null,
+      });
+      if (rideSamples.length > 7200) rideSamples.shift();
+    }
+  }
+  function exportTCX() {
+    if (!rideSamples.length) {
+      rideSamples.push({
+        t: new Date().toISOString(),
+        dist: S.dist,
+        rpm: S.rpm,
+        speed: S.speed,
+        alt: roadY(S.vis),
+        hr: bio.now.hr != null ? bio.now.hr : null,
+      });
+    }
+    const startTime = rideSamples[0].t;
+    const totalSecs = Math.max(1, Math.round((new Date(rideSamples[rideSamples.length - 1].t) - new Date(startTime)) / 1000));
+    const maxSpd = rideSamples.reduce((m, p) => Math.max(m, p.speed || 0), 0);
+    const totalDist = rideSamples[rideSamples.length - 1].dist;
+    const pointsXml = rideSamples.map((p) => `
+          <Trackpoint>
+            <Time>${p.t}</Time>
+            <DistanceMeters>${p.dist.toFixed(1)}</DistanceMeters>
+            <Cadence>${Math.round(p.rpm)}</Cadence>
+            <AltitudeMeters>${(p.alt || 0).toFixed(1)}</AltitudeMeters>
+            ${p.hr ? `<HeartRateBpm><Value>${Math.round(p.hr)}</Value></HeartRateBpm>` : ''}
+            <Extensions>
+              <TPX xmlns="http://www.garmin.com/xmlschemas/ActivityExtension/v2">
+                <Speed>${(p.speed || 0).toFixed(2)}</Speed>
+              </TPX>
+            </Extensions>
+          </Trackpoint>`).join('');
+    const tcx = `<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">
+  <Activities>
+    <Activity Sport="Biking">
+      <Id>${startTime}</Id>
+      <Lap StartTime="${startTime}">
+        <TotalTimeSeconds>${totalSecs}</TotalTimeSeconds>
+        <DistanceMeters>${totalDist.toFixed(1)}</DistanceMeters>
+        <MaximumSpeed>${maxSpd.toFixed(2)}</MaximumSpeed>
+        <Intensity>Active</Intensity>
+        <TriggerMethod>Manual</TriggerMethod>
+        <Track>${pointsXml}
+        </Track>
+      </Lap>
+    </Activity>
+  </Activities>
+</TrainingCenterDatabase>`;
+    shell.download(new Blob([tcx], { type: 'application/vnd.garmin.tcx+xml' }), `biofeedback-ride-${stamp()}.tcx`);
+    shell.toast('Exported TCX for Strava / Garmin');
+  }
+  $('export-tcx').addEventListener('click', exportTCX);
   function renderAnalysis(s) {
     const col = (name) => (s.lanes[name] || []).map((p) => p[1]).filter((v) => v != null);
     const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
@@ -847,9 +1090,9 @@
   function renderReading() {
     const n = bio.now, h = bio.hr, reading = $('reading');
     const hasSource = bio.demoOn || bio.replayOn || h.connected;
-    const show = S.mode === 'watch' && hasSource;
+    const isWatch = S.mode === 'watch' || (S.mode === 'ride' && S.stoppedTime >= 2.5 && !(bio.demoOn && S.demoRide));
+    const show = isWatch && hasSource;
     reading.hidden = !show;
-    if (!show) return;
     let tier, sub = '', cov = '', pct = null, fill = null;
     if (n.phase === 'ready' && n.idx != null) {
       tier = n.label; pct = clamp(n.idx, 0, 100);
@@ -898,18 +1141,23 @@
     set('t-hold', `${mmss(Math.min(SET_SECONDS, S.holdT))} of ${mmss(SET_SECONDS)}`);
     $('set-again').hidden = !S.complete;
     const br = bio.breath(), cue = $('breath-cue'), note = $('breath-note');
-    $('breath').hidden = S.mode !== 'train';
-    if (S.mode === 'train') {
+    const isWatch = S.mode === 'ride' && S.stoppedTime >= 2.5;
+    $('breath').hidden = !isWatch && S.mode !== 'train';
+    if (S.mode === 'train' || isWatch) {
       const c = br.paused ? 'Paused' : br.inhale ? 'Breathe in' : 'Breathe out';
       if (cue.textContent !== c) cue.textContent = c;
-      const hasSource = bio.demoOn || bio.replayOn || bio.hr.connected;
-      let msg = '';
-      if (S.complete) msg = 'Set complete. Dawn broke, and the path is clear.';
-      else if (!hasSource) msg = 'The pacer runs without a sensor. Clarity needs one.';
-      else if (n.hr == null) msg = 'Signal unclear. This stretch counts neither way.';
-      else if (n.swing == null) msg = 'Reading the first two breaths.';
-      else if (cl >= CLARITY_TARGET) msg = 'Holding. Stay with it.';
-      if (note.textContent !== msg) note.textContent = msg;
+      if (S.mode === 'train') {
+        const hasSource = bio.demoOn || bio.replayOn || bio.hr.connected;
+        let msg = '';
+        if (S.complete) msg = 'Set complete. Dawn broke, and the path is clear.';
+        else if (!hasSource) msg = 'The pacer runs without a sensor. Clarity needs one.';
+        else if (n.hr == null) msg = 'Signal unclear. This stretch counts neither way.';
+        else if (n.swing == null) msg = 'Reading the first two breaths.';
+        else if (cl >= CLARITY_TARGET) msg = 'Holding. Stay with it.';
+        if (note.textContent !== msg) note.textContent = msg;
+      } else {
+        if (note.textContent !== 'Cardiac recovery · follow the ring') note.textContent = 'Cardiac recovery · follow the ring';
+      }
     }
   }
 
@@ -939,6 +1187,7 @@
     for (const key of ['rpm', 'zoom', 'grade', 'gradeLoad', 'speed']) S[key] = q[key];
     S.dist += q.distanceDelta; S.vis += q.visualDelta;
     S.surge *= Math.exp(-H / 0.28);
+    recordSample();
   }
 
   /* ---- graphics ---- */
@@ -963,6 +1212,41 @@
     if (rings.length > 12) rings.shift();
   });
 
+  /* ---- scene tiles: each scene drawn small by the road's own shader, at the current time of day ---- */
+  const THUMB_FS = '#version 300 es\nprecision highp float;\nin vec2 vUv;\nout vec4 o;\n' + `
+uniform sampler2D uScene; uniform float uExposure;
+vec3 aces(vec3 x){ return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.); }
+void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1.-.45*smoothstep(.25,.95,dot(q,q)*2.1); o=vec4(pow(c,vec3(1./2.2)),1.); }`;
+  let pThumb = null, thumbHDR = null, thumbLDR = null, thumbPx = null, thumbAt = 0, thumbDusk = -1;
+  function drawThumbs(now) {
+    if (!G || !pScene) return;
+    const small = softwareRenderer || lastScale < .2, TW = small ? 144 : 336, TH = small ? 84 : 196;
+    if (!pThumb) pThumb = G.program(THUMB_FS);
+    if (!thumbHDR || thumbHDR.w !== TW) {
+      if (thumbHDR) { G.freeTarget(thumbHDR); G.freeTarget(thumbLDR); }
+      thumbHDR = G.target(TW, TH);
+      thumbLDR = G.target(TW, TH, { internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE }); thumbPx = new Uint8Array(TW * TH * 4);
+    }
+    const z = S.vis + 60, tiles = document.querySelectorAll('.scene-tile canvas');
+    if (!tiles.length) return;
+    gl.disable(gl.BLEND);
+    BIOMES.forEach((b, i) => {
+      const cam = camAt(z, 0, b);
+      G.into(thumbHDR); G.bindTex(0, tNoise); G.bindTex(1, tRidge);
+      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uTravelSpeed: 0, uLattice: S.spaceLattice ? 1.0 : 0.0 }, CyclingScene.landAt(b, b, 1, S.dusk)));
+      G.draw();
+      G.into(thumbLDR); G.bindTex(0, thumbHDR.tex);
+      G.use(pThumb, { uScene: 0, uExposure: 0.98 + S.dusk * 0.25 });
+      G.draw();
+      gl.readPixels(0, 0, TW, TH, gl.RGBA, gl.UNSIGNED_BYTE, thumbPx);
+      tiles[i].width = TW; tiles[i].height = TH;
+      const c = tiles[i].getContext('2d'), img = c.createImageData(TW, TH);
+      for (let y = 0; y < TH; y++) img.data.set(thumbPx.subarray((TH - 1 - y) * TW * 4, (TH - y) * TW * 4), y * TW * 4);
+      c.putImageData(img, 0, 0);
+    });
+    thumbAt = now; thumbDusk = S.dusk;
+  }
+
   function resize() {
     const dpr = Math.min(devicePixelRatio || 1, 2), W = Math.max(320, Math.min(3840, Math.round(cv.clientWidth * dpr))), Hh = Math.max(240, Math.min(2160, Math.round(cv.clientHeight * dpr)));
     if (cv.width !== W || cv.height !== Hh) { cv.width = W; cv.height = Hh; }
@@ -973,6 +1257,7 @@
     rw = w; rh = h;
     [scene, dreamA, dreamB].forEach((T) => T && G.freeTarget(T));
     scene = G.target(rw, rh); dreamA = G.target(rw, rh); dreamB = G.target(rw, rh);
+    if (thumbHDR) { G.freeTarget(thumbHDR); G.freeTarget(thumbLDR); thumbHDR = null; thumbLDR = null; }
     Post.resize(rw, rh, 5);
   }
 
@@ -1017,8 +1302,27 @@
       noteLanes(now);
       if (S.biomeT < 1) { S.biomeT = Math.min(1, S.biomeT + dtMs / 6000); if (S.biomeT === 1) S.fromMix = null; }
 
-      // Watch: the index paints the sky. Waiting, stale or held estimates remove it, and the sky goes back to ambient.
-      const loadT = S.mode === 'watch' && n.phase === 'ready' && n.idx != null ? clamp(n.idx / 100, 0, 1) : 0;
+      if (S.autoScene && !bio.replayOn && S.dist >= S.nextSceneAt) {
+        S.nextSceneAt = S.dist + M_PER_MI;
+        nextBiome();
+        const mi = Math.max(1, Math.round(S.dist / M_PER_MI));
+        shell.toast(`New scenery · ${BIOMES[S.biomeNext].name} (Mile ${mi})`);
+      }
+      if (frameIdx > 2 && !S.pedal && S.rpm < 5 && (!thumbAt || (now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
+
+      // When stopped on the bike for a few seconds, or before pedaling starts,
+      // the cockpit settles into Watch: the camera looks up into the sky, and the weather
+      // reflects your physiological signals. When you pedal or ride, it looks ahead down the road.
+      const stoppedNow = S.rpm < 5 && S.speed < 0.2 && !S.pedal && !brainRide() && !(bio.demoOn && S.demoRide);
+      if (stoppedNow) {
+        S.stoppedTime = (S.stoppedTime || 0) + dt;
+      } else {
+        S.stoppedTime = 0;
+      }
+      const isWatch = S.mode === 'watch' || (S.mode === 'ride' && S.stoppedTime >= 2.5 && !(bio.demoOn && S.demoRide));
+      if (S.mode === 'ride' || S.mode === 'watch') bio.mode = isWatch ? 'watch' : 'ride';
+
+      const loadT = isWatch && n.phase === 'ready' && n.idx != null ? clamp(n.idx / 100, 0, 1) : 0;
       S.load += (loadT - S.load) * (1 - Math.exp(-dt / 2.5));
       // Train: the swing at pace lifts the fog. A hold that is lost decays at half rate, and nothing here can fail.
       if (S.mode === 'train') {
@@ -1033,7 +1337,7 @@
         }
         S.clarity += ((c || 0) - S.clarity) * (1 - Math.exp(-dt / 1.6));
       } else { S.clarity *= Math.exp(-dt / 1.6); }
-      const train = S.mode === 'train', watch = S.mode === 'watch', ride = S.mode === 'ride';
+      const train = S.mode === 'train', ride = S.mode === 'ride';
 
       // Adapt the render size to the machine. The readings never depend on this.
       if (frameMs > 120) stalled++; else stalled = 0;
@@ -1055,26 +1359,32 @@
       const blendedScene = legacyScene() ? null : sceneNow();
       const routeUniforms = blendedScene ? CyclingScene.routeUniforms(blendedScene) : {};
       const cycle = RM.matches ? 0.3 : 0.5 - 0.5 * Math.cos((now / 1000 / 240 + 0.14) * Math.PI * 2);
-      const duskT = train ? lerp(0.94, 0.06, S.dawn) : watch ? (S.duskHold != null ? S.duskHold : 0.74) + S.load * DUSK_BIAS : (S.duskHold != null ? S.duskHold : cycle);
+      const duskT = train ? lerp(0.94, 0.06, S.dawn) : isWatch ? (S.duskHold != null ? S.duskHold : 0.74) + S.load * DUSK_BIAS : (S.duskHold != null ? S.duskHold : cycle);
       S.dusk += (clamp(duskT, 0, 1) - S.dusk) * Math.min(1, dtMs / 1400);
       const dusk = S.dusk, night = dusk * dusk;
       const haze = train ? (1 - S.dawn) * (1 - 0.55 * S.clarity) : 0;
-      const skyTop = mix3('skyTop').map((v, i) => lerp(v, [0.004, 0.006, 0.024][i], dusk * 0.94));
-      const skyHz = mix3('skyHz').map((v, i) => lerp(v, [0.1, 0.045, 0.11][i], dusk * 0.92));
-      const fogBase = mix3('fog').map((v) => v * (1 - dusk * 0.86));
-      const fogC = fogBase.map((v, i) => lerp(v, [0.17, 0.2, 0.28][i], haze * 0.8));
-      const sunC = mix3('sun').map((v, i) => lerp(v, [0.26, 0.29, 0.44][i], night * 0.96 * (train ? 0.5 : 1)));
-      const sunEl = train ? lerp(0.015, 0.2, S.dawn) : Math.max(0.035, mixN('sunEl') * (1 - dusk * 0.7));
+      const land = legacyScene() ? null : CyclingScene.landAt(S.fromMix || currentBiome(S.biome), currentBiome(), S.biomeT, dusk);
+      const skyTop = land ? land.uSkyTop : mix3('skyTop').map((v, i) => lerp(v, [0.004, 0.006, 0.024][i], dusk * 0.94));
+      const skyHz = land ? land.uSkyHz : mix3('skyHz').map((v, i) => lerp(v, [0.1, 0.045, 0.11][i], dusk * 0.92));
+      const fogBase = land ? land.uFog : mix3('fog').map((v) => v * (1 - dusk * 0.86));
+      const hrWarmth = n.hr ? clamp((n.hr - 120) / 50, 0, 1) : 0;
+      const fogC = fogBase.map((v, i) => lerp(v, [0.42, 0.22, 0.26][i], hrWarmth * 0.16)).map((v, i) => lerp(v, [0.17, 0.2, 0.28][i], haze * 0.8));
+      const sunC = land ? (train ? land.uSunC.map((v) => v * (night > 0.5 ? 0.5 : 1)) : land.uSunC) : mix3('sun').map((v, i) => lerp(v, [0.26, 0.29, 0.44][i], night * 0.96 * (train ? 0.5 : 1)));
+      const groundC = land ? land.uGround : mix3('ground');
+      const rockC = land ? land.uRock : mix3('rock');
+      const sunEl = train ? lerp(0.015, 0.2, S.dawn) : (land ? land.uSunDir[1] : Math.max(0.035, mixN('sunEl') * (1 - dusk * 0.7)));
 
-      // Camera on the road. Watch looks up into the sky, Ride looks down the road, and Train sits between.
+      // Camera on the road. When stopped in watch mode, camera tilts up to watch the sky.
+      // In active ride, it looks ahead down the road. In train, it sits between.
       const tall = cv.clientHeight > cv.clientWidth;
-      S.tilt += ((watch ? (tall ? 0.3 : 0.36) : train ? (tall ? -0.1 : 0.16) : tall ? -0.04 : 0.02) - S.tilt) * Math.min(1, dtMs / 1100);
+      const targetTilt = train ? (tall ? -0.1 : 0.16) : isWatch ? (tall ? 0.3 : 0.36) : (tall ? -0.04 : 0.02);
+      S.tilt += (targetTilt - S.tilt) * Math.min(1, dtMs / 1100);
       const z = S.vis, cx = pathX(z), cy = roadY(z) + 1.55 + (blendedScene ? .95 * blendedScene.snake : 0), look = 26;
       const tx = pathX(z + look), ty = roadY(z + look) + 1.0 + look * S.tilt;
       let fx = tx - cx, fy = ty - cy, fz = look;
       const fl = Math.hypot(fx, fy, fz); fx /= fl; fy /= fl; fz /= fl;
       S.motionCalm = brainRide() ? 1 - .85 * S.eegDrive : 1;
-      const curveRoll = RM.matches ? 0 : S.motionCalm * clamp((pathX(z + 12) - 2 * pathX(z + 6) + cx) * 0.012, -0.07, 0.07);
+      const curveRoll = RM.matches ? 0 : S.motionCalm * clamp((pathX(z + 12) - 2 * pathX(z + 6) + cx) * (0.016 + 0.012 * (brainRide() ? S.eegDrive : motion01(S.rpm))), -0.075, 0.075);
       S.roll += (curveRoll - S.roll) * Math.min(1, dtMs / 200);
       let rx = fz, rz = -fx;
       const rl = Math.hypot(rx, rz); rx /= rl; rz /= rl;
@@ -1083,11 +1393,12 @@
       const cr = Math.cos(S.roll), sr = Math.sin(S.roll);
       const right = [rx * cr + ux * sr, uy * sr, rz * cr + uz * sr];
       const up = [ux * cr - rx * sr, uy * cr, uz * cr - rz * sr];
-      const camX = cx, camY = cy + (RM.matches ? 0 : Math.sin(S.vis * 0.9) * 0.018 * (brainRide() ? S.motionCalm : motion01(S.rpm)));
+      const camX = cx, camY = cy + (RM.matches ? 0 : Math.sin(S.vis * 0.9) * 0.009 * (brainRide() ? S.motionCalm : motion01(S.rpm)));
       const fwd = [fx, fy, fz];
       const sunAz = train ? Math.atan2(tx - cx, look) : mixN('sunAz');
       const sd = (() => { const x = Math.sin(sunAz), z2 = Math.cos(sunAz), y = sunEl, l = Math.hypot(x, y, z2); return [x / l, y / l, z2 / l]; })();
-      const focal = 1.08, asp = rw / rh;
+      const speed01 = clamp(S.speed / 14, 0, 1);
+      const focal = RM.matches ? 1.08 : (1.08 - speed01 * 0.04), asp = rw / rh;
 
       for (let i = 0; i < 12; i++) {
         const r = rings[rings.length - 1 - i], o = i * 4;
@@ -1112,7 +1423,7 @@
       const m = brainRide() ? S.eegDrive : motion01(S.rpm);
       S.pulse *= Math.exp(-dt / 0.24);
       const br = bio.breath();
-      const nebulaAmt = smooth(0.26, 0.72, dusk) * (ride ? 0.42 : train ? 0.32 * (1 - S.dawn) : 1);
+      const nebulaAmt = smooth(0.26, 0.72, dusk) * (ride ? (S.look !== 'clear' ? 0.42 : 0) : train ? 0.32 * (1 - S.dawn) : 1);
 
       /* scene */
       gl.disable(gl.BLEND);
@@ -1131,40 +1442,47 @@
       }
       G.use(legacyScene() ? pLegacyScene : pScene, {
         ...routeUniforms,
+        uLattice: S.spaceLattice ? 1.0 : 0.0,
         uN: 0, uS: 1, uRes: [rw, rh], uT: now / 1000, uFocal: focal, uBeat: beatLen, uSeed: S.seed,
         uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd,
-        uSkyTop: skyTop, uSkyHz: skyHz, uSunC: sunC, uGround: mix3('ground'), uRock: mix3('rock'), uFog: fogC, uEdge: mix3('edge'), uSunDir: sd,
+        uSkyTop: skyTop, uSkyHz: skyHz, uSunC: sunC, uGround: groundC, uRock: rockC, uFog: fogC, uEdge: mix3('edge'), uSunDir: sd,
         uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: dusk, uFogK: mixN('fogK') * (1 + haze * 7),
-        uSpark: 0.12, uShimmer: 0.1, uAurora: S.load * S.load * 0.26, uTravelSpeed: S.speed,
+        uSpark: 0.12, uShimmer: 0.1, uAurora: S.look === 'clear' ? 0 : S.load * S.load * 0.26, uTravelSpeed: S.speed,
         uRing: ringData,
         uHaze: haze, uWeather: S.load, uWarm: smooth(0.16, 0.74, S.load), uBreath: br.ee, uBreathOn: train ? 1 : 0, uNebula: nebulaAmt, uGhost: ghostU,
       });
       G.draw();
 
       /* motes */
-      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
-      G.use(legacyScene() ? pLegacyMote : pMote, { ...routeUniforms, uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: asp, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpark: 0.12 + S.pulse * 0.1, uShimmer: 0.1, uSpeedN: m, uEdge: mix3('edge') });
-      gl.drawArrays(gl.POINTS, 0, 1500);
-      gl.disable(gl.BLEND);
+      if (S.look !== 'clear') {
+        gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+        G.use(legacyScene() ? pLegacyMote : pMote, { ...routeUniforms, uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: asp, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpark: 0.12, uShimmer: 0.1, uSpeedN: m, uEdge: mix3('edge') });
+        gl.drawArrays(gl.POINTS, 0, Math.round(650 + 850 * (land ? land.uMisty : 1)));
+        gl.disable(gl.BLEND);
+      }
 
       /* feedback */
-      const vpP = [pathX(z + 90) - camX, roadY(z + 90) + 1 - camY, 90];
+      const vpP = [pathX(z + 90) - camX, roadY(z + 90) + 1 - cy, 90];
       const cz = vpP[0] * fwd[0] + vpP[1] * fwd[1] + vpP[2] * fwd[2];
       const vp = [0.5 + ((vpP[0] * right[0] + vpP[1] * right[1] + vpP[2] * right[2]) * focal) / cz / asp / 2, 0.5 + ((vpP[0] * up[0] + vpP[1] * up[1] + vpP[2] * up[2]) * focal) / cz / 2];
       const fpsScale = dtMs / 16.67;
-      const zoomNow = RM.matches ? S.zoom * 0.4 : 1 - Math.pow(1 - (S.zoom + (brainRide() ? 0 : 0.0012)), fpsScale);
-      const wildEff = brainRide() ? (S.eegValid ? S.wild * S.motionCalm : 0) : train ? S.wild * (1 - S.clarity) : clamp(S.wild + S.load * AROUSAL_WILD, 0, 1);
+      const zoomNow = RM.matches ? S.zoom * 0.4 : 1 - Math.pow(1 - (S.zoom + (brainRide() || S.look === 'clear' ? 0 : 0.0012)), fpsScale);
+      const wildEff = brainRide() ? (S.eegValid ? (S.wild || 0.35) * S.motionCalm : 0) : (S.look === 'clear' ? 0 : (train ? S.wild * (1 - S.clarity) : clamp(S.wild + S.load * AROUSAL_WILD, 0, 1)));
       S.effectiveWild = wildEff;
       G.into(dreamB);
       G.bindTex(0, scene.tex); G.bindTex(1, dreamA.tex);
-      G.use(pDream, { uScene: 0, uPrev: 1, uVP: vp, uZoom: zoomNow, uDream: (RM.matches ? S.dream * 0.5 : S.dream) * (brainRide() ? 1 - .7 * S.eegDrive : 1), uWild: wildEff, uT: now / 1000 });
+      G.use(pDream, { uScene: 0, uPrev: 1, uVP: vp, uZoom: zoomNow, uDream: brainRide() ? (RM.matches ? (S.dream || 0.55) * 0.5 : (S.dream || 0.55)) * (1 - .7 * S.eegDrive) : (S.look === 'clear' ? 0 : ((RM.matches ? S.dream * 0.5 : S.dream) * (brainRide() ? 1 - .7 * S.eegDrive : 1))), uWild: wildEff, uT: now / 1000 });
       G.draw();
       const tmp = dreamA; dreamA = dreamB; dreamB = tmp;
 
       /* bloom and grade */
       const bloom = Post.bloom(dreamA.tex, 1.15);
       Post.finish(dreamA.tex, bloom, {
-        uBloomK: 0.55 + S.load * 0.18, uExposure: 0.98 + dusk * 0.25 + S.pulse * 0.012, uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000, uVig: 0.55, uSat: 1.06, rate: RM.matches ? 0.16 : 0.36,
+        uBloomK: S.look === 'clear' ? 0.22 : (0.22 + S.dream * 0.16 + S.load * 0.14),
+        uExposure: 0.98 + dusk * 0.25,
+        uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000,
+        uVig: S.look === 'clear' ? 0.25 : (0.25 + S.load * 0.15),
+        uSat: S.look === 'clear' ? 1.02 : (1.02 + wildEff * 0.22), rate: RM.matches ? 0.16 : 0.36, maxGain: 1,
       }, dt);
 
       /* the dotted orbit, over the finished picture */
@@ -1240,7 +1558,7 @@
   /* for the checks: read what is really on the canvas and in the engine */
   window.__app = {
     S, bio, eeg, setDrivePower, BioMath, BIOMES, pathX, roadY, gradeAt, gradeFactor, motion01, CLARITY_TARGET, recordLuma,
-    setBiome, chooseBiome, sceneNow, step, sessionStart, startReplay, restoreStart,
+    setBiome, chooseBiome, nextBiome, setTod, setLook, setAuto, drawThumbs, sceneNow, step, sessionStart, startReplay, restoreStart,
     get renderInfo() { return { softwareRenderer, width: rw, height: rh, pixelBudget: sceneBudget * lastScale }; },
     pixel() {
       const c = document.createElement('canvas'); c.width = 32; c.height = 18;

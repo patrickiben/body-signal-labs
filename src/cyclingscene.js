@@ -8,12 +8,12 @@
   const lerp = (a, b, t) => a + (b - a) * t;
   const BIOMES = [
     { id: 'golden-coast', name: 'Golden coast', description: 'Cliffside cycleway · open sea, rock stacks and white guardrails', skyTop: '#397ab1', skyHz: '#abd6eb', sun: '#ffe7be', ground: '#6c8247', rock: '#a58d70', fog: '#9bbbc9', edge: '#e6c985', amp: 45, ridge: .38, trees: 0, sea: 1, snow: 0, strata: 0, grid: 0, fogK: .0018, sunAz: -.65, sunEl: .55, coast: 1, forest: 0, meadow: 0, alpine: 0, canyon: 0, width: 2.25, turn: 1.25, rise: .4, winding: .8 },
-    { id: 'tropical-preserve', name: 'Tropical preserve', description: 'Tropical nature preserve · palms, flowering understory and a warm earth trail', skyTop: '#368ca8', skyHz: '#bee1cc', sun: '#ffedbc', ground: '#467642', rock: '#b99b6a', fog: '#a9c7ad', edge: '#e0b887', amp: 22, ridge: .22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0028, sunAz: -.5, sunEl: .52, coast: 0, forest: 1, meadow: 0, alpine: 0, canyon: 0, width: 1.65, turn: .75, rise: .3, winding: 1.15 },
+    { id: 'tropical-preserve', name: 'Tropical', description: 'Tropical nature preserve · palms, flowering understory and a warm earth trail', skyTop: '#368ca8', skyHz: '#bee1cc', sun: '#ffedbc', ground: '#467642', rock: '#b99b6a', fog: '#a9c7ad', edge: '#e0b887', amp: 22, ridge: .22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0028, sunAz: -.5, sunEl: .52, coast: 0, forest: 1, meadow: 0, alpine: 0, canyon: 0, width: 1.65, turn: .75, rise: .3, winding: 1.15 },
     { id: 'meadow-lanes', name: 'Meadow lanes', description: 'Country lane · rolling fields, split-rail fences and farmsteads', skyTop: '#5596c6', skyHz: '#d8e8d2', sun: '#fff0c6', ground: '#91a84e', rock: '#87965c', fog: '#cedbc0', edge: '#e4d59a', amp: 14, ridge: .1, trees: .2, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0016, sunAz: -.7, sunEl: .55, coast: 0, forest: 0, meadow: 1, alpine: 0, canyon: 0, width: 2, turn: .95, rise: .5, winding: .7 },
-    { id: 'new-england-autumn', name: 'New England Autumn', description: 'Lakeside road · blue water, gray bluffs and a red, orange and gold woodland', skyTop: '#4379a8', skyHz: '#d6dbd7', sun: '#ffe2b0', ground: '#887246', rock: '#85858a', fog: '#bec5c4', edge: '#e3be7f', amp: 64, ridge: .7, trees: .8, sea: 1, snow: 0, strata: 0, grid: 0, fogK: .0016, sunAz: -.65, sunEl: .5, coast: 0, forest: 0, meadow: 0, alpine: 1, canyon: 0, width: 2.1, turn: 1.4, rise: .7, winding: .65 },
+    { id: 'new-england-autumn', name: 'Autumn Lake', description: 'Lakeside road · blue water, gray bluffs and a red, orange and gold woodland', skyTop: '#4379a8', skyHz: '#d6dbd7', sun: '#ffe2b0', ground: '#887246', rock: '#85858a', fog: '#bec5c4', edge: '#e3be7f', amp: 64, ridge: .7, trees: .8, sea: 1, snow: 0, strata: 0, grid: 0, fogK: .0016, sunAz: -.65, sunEl: .5, coast: 0, forest: 0, meadow: 0, alpine: 1, canyon: 0, width: 2.1, turn: 1.4, rise: .7, winding: .65 },
     { id: 'red-canyon', name: 'Red canyon', description: 'Desert passage · sandstone walls, layered mesas and saguaro cacti', skyTop: '#5c9db7', skyHz: '#f5cba0', sun: '#ffe1b0', ground: '#c18a55', rock: '#c67246', fog: '#d8b18a', edge: '#ecc39a', amp: 72, ridge: .8, trees: 0, sea: 0, snow: 0, strata: 1, grid: 0, fogK: .0022, sunAz: -.9, sunEl: .5, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 1, width: 2.35, turn: .75, rise: .25, winding: 1.45 },
     { id: 'rainbow-orbit', name: 'Rainbow orbit', description: 'Rainbow skyway · a suspended ribbon through stars and a ringed planet', skyTop: '#171b42', skyHz: '#302449', sun: '#e0e8ff', ground: '#654a92', rock: '#6c80a8', fog: '#181b35', edge: '#aba9ff', amp: 0, ridge: 0, trees: 0, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0008, sunAz: -.4, sunEl: .6, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 1, width: 3.5, turn: 2.1, rise: 1.05, winding: .55 },
-    { id: 'misty-pines', name: 'Misty pines', description: 'Original Biofeedback mountain road · misty ridges, teal edges and drifting lights', skyTop: '#1f3a50', skyHz: '#a7c9c2', sun: '#ffe8c6', ground: '#1e3a2f', rock: '#39494a', fog: '#b0d3cc', edge: '#7ff0dd', amp: 64, ridge: 0.22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: 0.0062, sunAz: -0.3, sunEl: 0.16, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 0, misty: 1, width: 2.25, turn: 1, rise: 1, winding: 1 },
+    { id: 'misty-pines', name: 'Misty ridges', description: 'Original Biofeedback mountain road · misty ridges, teal edges and drifting lights', skyTop: '#1f3a50', skyHz: '#a7c9c2', sun: '#ffe8c6', ground: '#1e3a2f', rock: '#39494a', fog: '#b0d3cc', edge: '#7ff0dd', amp: 64, ridge: 0.22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: 0.0062, sunAz: -0.3, sunEl: 0.16, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 0, misty: 1, width: 2.25, turn: 1, rise: 1, winding: 1 },
     { id: 'snake-way', name: 'Snake Way', description: 'Serpentine cloud road · pale lilac scales and raised spines above a golden cloud sea', skyTop: '#785093', skyHz: '#e5a1b5', sun: '#ffe1a1', ground: '#b5bfdc', rock: '#a6a3d1', fog: '#e9bb83', edge: '#d0ddf0', amp: 0, ridge: 0, trees: 0, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0014, sunAz: -.6, sunEl: .3, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 0, misty: 0, snake: 1, width: 2.4, turn: 7, rise: .65, winding: .75 },
   ].map((b) => ({ orbit: 0, misty: 0, snake: 0, ...b, c: { skyTop: srgb(b.skyTop), skyHz: srgb(b.skyHz), sun: srgb(b.sun), ground: srgb(b.ground), rock: srgb(b.rock), fog: srgb(b.fog), edge: srgb(b.edge) } }));
 
@@ -51,18 +51,75 @@
     const t = tb * tb * (3 - 2 * tb);
     const mix3 = (k) => a.c[k].map((v, i) => lerp(v, b.c[k][i], t));
     const mixN = (k) => lerp(a[k], b[k], t);
-    // Night is a real night: the sky goes dark, the sun becomes a pale moon, and the road's lights carry the scene.
-    const night = dusk * dusk;
-    const sunEl = Math.max(0.035, mixN('sunEl') * (1 - dusk * 0.7)), sunAz = mixN('sunAz');
+    const d = Math.max(0, Math.min(1, Number.isFinite(dusk) ? dusk : 0));
+
+    // Golden hour (peaks around 0.18): radiant amber sun, warm apricot horizon, golden illuminated mist and ground.
+    // Sunset (peaks around 0.36): fiery vermilion sun at the horizon, blazing coral/flame horizon glow, rich warm rim light.
+    // Dusk (peaks around 0.55): twilight violet/indigo sky, deep crimson/magenta afterglow, cool shadows.
+    // Night (approaches 1.0): midnight dark sky, pale moonlit sun, glowing road edges and stars.
+    const gh = Math.exp(-Math.pow((d - 0.18) / 0.12, 2));
+    const ss = Math.exp(-Math.pow((d - 0.36) / 0.11, 2));
+    const dk = Math.exp(-Math.pow((d - 0.55) / 0.13, 2)) * (1 - Math.max(0, (d - 0.72) / 0.28));
+    const nt = Math.max(0, Math.min(1, (d - 0.62) / 0.38));
+
+    const sunElBase = mixN('sunEl');
+    const sunEl = Math.max(0.032, lerp(lerp(lerp(sunElBase, sunElBase * 0.42, gh), 0.046, ss), 0.038, Math.max(dk, nt)));
+    const sunAz = mixN('sunAz');
     const sx = Math.sin(sunAz), sz = Math.cos(sunAz), sl = Math.hypot(sx, sunEl, sz);
+
+    const baseTop = mix3('skyTop'), baseHz = mix3('skyHz'), baseSun = mix3('sun'), baseFog = mix3('fog');
+    const baseGround = mix3('ground'), baseRock = mix3('rock');
+
+    // Sky top: rich clear azure at golden hour, deep cobalt-violet at sunset, twilight indigo at dusk, pitch midnight at night
+    const skyTop = baseTop.map((v, i) => {
+      let c = lerp(v, [0.10, 0.28, 0.55][i], gh * 0.65);
+      c = lerp(c, [0.075, 0.13, 0.34][i], ss * 0.85);
+      c = lerp(c, [0.035, 0.045, 0.14][i], dk);
+      return lerp(c, [0.004, 0.006, 0.024][i], nt);
+    });
+
+    // Sky horizon: glowing apricot at golden hour, vivid flame/coral at sunset, rich magenta at dusk, deep dark at night
+    const skyHz = baseHz.map((v, i) => {
+      let c = lerp(v, [0.98, 0.64, 0.34][i], gh * 0.85);
+      c = lerp(c, [1.0, 0.37, 0.11][i], ss * 0.95);
+      c = lerp(c, [0.42, 0.14, 0.32][i], dk);
+      return lerp(c, [0.035, 0.025, 0.07][i], nt);
+    });
+
+    // Sun color: radiant gold at golden hour, fiery vermilion disk at sunset, twilight plum at dusk, silvery moon at night
+    const sunC = baseSun.map((v, i) => {
+      let c = lerp(v, [1.0, 0.74, 0.32][i], gh * 0.9);
+      c = lerp(c, [1.0, 0.38, 0.12][i], ss * 0.95);
+      c = lerp(c, [0.65, 0.28, 0.38][i], dk);
+      return lerp(c, [0.26, 0.29, 0.44][i], nt);
+    });
+
+    // Fog: golden-lit haze at golden hour, fiery copper glow at sunset, violet twilight mist at dusk, dark night mist
+    const fog = baseFog.map((v, i) => {
+      let c = lerp(v, [0.92, 0.68, 0.42][i], gh * 0.75);
+      c = lerp(c, [0.86, 0.38, 0.19][i], ss * 0.85);
+      c = lerp(c, [0.18, 0.12, 0.25][i], dk);
+      return lerp(c, [0.02, 0.025, 0.05][i], nt);
+    });
+
+    // Ground & Rock: warm golden illumination vs fiery sunset rim-light vs cool dusk shadows
+    const ground = baseGround.map((v, i) => {
+      let c = lerp(v, [v * 1.08 + 0.12, v * 0.95 + 0.06, v * 0.75][i], gh * 0.5);
+      c = lerp(c, [v * 1.14 + 0.14, v * 0.84 + 0.03, v * 0.58][i], ss * 0.65);
+      return lerp(c, v * 0.68, dk);
+    });
+    const rock = baseRock.map((v, i) => {
+      let c = lerp(v, [v * 1.08 + 0.12, v * 0.95 + 0.06, v * 0.75][i], gh * 0.5);
+      c = lerp(c, [v * 1.14 + 0.14, v * 0.84 + 0.03, v * 0.58][i], ss * 0.65);
+      return lerp(c, v * 0.68, dk);
+    });
+
     return {
-      uSkyTop: mix3('skyTop').map((v, i) => lerp(v, [0.004, 0.006, 0.024][i], dusk * 0.94)),
-      uSkyHz: mix3('skyHz').map((v, i) => lerp(v, [0.1, 0.045, 0.11][i], dusk * 0.92)),
-      uSunC: mix3('sun').map((v, i) => lerp(v, [0.26, 0.29, 0.44][i], night * 0.96)),
-      uGround: mix3('ground'), uRock: mix3('rock'), uFog: mix3('fog').map((v) => v * (1 - dusk * 0.86)), uEdge: mix3('edge'),
+      uSkyTop: skyTop, uSkyHz: skyHz, uSunC: sunC,
+      uGround: ground, uRock: rock, uFog: fog, uEdge: mix3('edge'),
       uSunDir: [sx / sl, sunEl / sl, sz / sl],
       uCoast: mixN('coast'), uForest: mixN('forest'), uMeadow: mixN('meadow'), uAlpine: mixN('alpine'), uCanyon: mixN('canyon'), uOrbit: mixN('orbit'), uMisty: mixN('misty'), uSnake: mixN('snake'), uWidth: mixN('width'), uRouteA: ['coast','forest','meadow','alpine'].map(mixN), uRouteB: mixN('canyon'), uRouteC: mixN('orbit'), uRouteD: mixN('misty'), uRouteE: mixN('snake'),
-      uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: dusk, uFogK: mixN('fogK'),
+      uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: d, uFogK: mixN('fogK'), uLattice: 0.0,
     };
   }
 
@@ -72,7 +129,7 @@ uniform vec3 uCam,uRight,uUp,uFwd;
 uniform sampler2D uN,uS;
 uniform vec3 uSkyTop,uSkyHz,uSunC,uGround,uRock,uFog,uEdge,uSunDir;
 uniform float uAmp,uRidge,uSea,uSnow,uStrata,uGrid,uTrees,uDusk,uFogK;
-uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uOrbit,uMisty,uSnake,uWidth,uTravelSpeed;
+uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uOrbit,uMisty,uSnake,uWidth,uTravelSpeed,uLattice;
 uniform float uShimmer,uAurora,uHaze,uWeather,uWarm,uBreath,uBreathOn,uNebula;
 uniform vec4 uGhost;
 uniform vec4 uRouteA; uniform float uRouteB,uRouteC,uRouteD,uRouteE;
@@ -399,7 +456,7 @@ float mistyMarch(vec3 ro,vec3 rd,out float last){
     if(h<.002*t||t>680.)break;
     last=t;t+=max(h*.62,.03+t*.011);
   }
-  if(t<680.&&last>0.){float a=last,b=t;for(int i=0;i<5;i++){float m=.5*(a+b);vec3 q=ro+rd*m;if(q.y-mistySurface(q.xz,false)>0.)a=m;else b=m;}t=.5*(a+b);}
+  if(t<680.&&last>0.){float a=last,b=t;for(int i=0;i<7;i++){float m=.5*(a+b);vec3 q=ro+rd*m;if(q.y-mistySurface(q.xz,false)>0.)a=m;else b=m;}t=.5*(a+b);}
   return t;
 }
 float mistySkyTrail=0.;
@@ -461,8 +518,9 @@ vec3 mistySky(vec3 rd,vec2 sv){
   float edge=smoothstep(0.,.0028,top-rd.y);
   vec3 ridge=mix(uFog*.42,uSkyTop*.6,.35)+uEdge*a*.5*smoothstep(top-.05,top,rd.y);
   c=mix(c,ridge,edge*smoothstep(-.03,.0,rd.y));
-  c+=uEdge*exp(-abs(rd.y-top)*110.)*a*1.9*smoothstep(-.02,.01,rd.y);
-  mistySkyTrail=exp(-abs(rd.y-top)*90.)*a*.8*smoothstep(-.02,.01,rd.y);
+  float ridgeD=abs(rd.y-top);
+  c+=uEdge*exp(-pow(ridgeD/.016,1.8))*a*1.35*smoothstep(-.02,.01,rd.y);
+  mistySkyTrail=exp(-pow(ridgeD/.022,1.8))*a*.4*smoothstep(-.02,.01,rd.y);
   return c;
 }
 vec4 mistyWorld(vec3 ro,vec3 rd,vec2 sv){
@@ -478,7 +536,7 @@ vec4 mistyWorld(vec3 ro,vec3 rd,vec2 sv){
     float e=.05+t*.0018;
     vec3 N=normalize(vec3(mistySurface(p.xz-vec2(e,0.),true)-mistySurface(p.xz+vec2(e,0.),true),2.*e,mistySurface(p.xz-vec2(0.,e),true)-mistySurface(p.xz+vec2(0.,e),true)));
     float px=pathX(p.z),d=abs(p.x-px),rel=p.y-roadY(p.z);
-    float dn=fbm4(p.xz*.075);
+    float dn=mix(fbm4(p.xz*.075),.5,smoothstep(50.,220.,t));
     vec3 alb=mix(uGround*.75,uGround*1.55,dn);
     float sl=1.-N.y;
     alb=mix(alb,uRock,smoothstep(.1,.42,sl+dn*.14-.07));
@@ -497,20 +555,25 @@ vec4 mistyWorld(vec3 ro,vec3 rd,vec2 sv){
       c+=uSunC*pow(max(dot(rf,uSunDir),0.),190.)*7.;
     }
     // the road
-    float rm=1.-smoothstep(2.,2.55,d);
+    float aaRoad=max(.18,t/(uRes.y*uFocal));
+    float rm=1.-smoothstep(2.25-aaRoad,2.25+aaRoad,d);
     if(!water){
       vec3 asphalt=mix(vec3(.022,.023,.03),uFog*.05,.4)+alb*.04;
       c=mix(c,asphalt*(uSunC*dif*1.2+amb),rm);
     }
     float em=0.;vec3 emC=vec3(0.);
     if(rm>0.){
-      float dash=step(fract(p.z/max(uBeat*.5,1.)),.5)*(1.-smoothstep(.05,.1,abs(p.x-px)));
-      emC+=uEdge*dash*.32*rm*smoothstep(2.,16.,t);
+      float dashL=max(uBeat*.5,1.);
+      float df=fract(p.z/dashL);
+      float dashAA=max(.02,t/(dashL*uRes.y*uFocal));
+      float dash=smoothstep(0.,dashAA,df)*(1.-smoothstep(.5-dashAA,.5,df))*(1.-smoothstep(.05,.1,abs(p.x-px)));
+      emC+=uEdge*dash*.045*rm*smoothstep(2.,16.,t);
     }
     if(uGhost.w>0.)emC+=mix(uEdge,vec3(1.),.45)*exp(-dot(p.xz-uGhost.xz,p.xz-uGhost.xz)/9.)*.75*uGhost.w;
-    float side=exp(-pow((d-2.25)/.09,2.));
-    float spark=pow(vn(vec2(p.z*.9,uT*1.3)),6.)*7.;
-    emC+=uEdge*side*(.3+uShimmer*spark*.9+uSpark*spark*1.2);
+    float aaSide=max(.02,t/(uRes.y*uFocal));
+    float side=foliageBand(d-2.25,.07,aaSide);
+    float spark=pow(vn(vec2(p.z*.3,uT*1.3)),2.5)*1.8*(1.-smoothstep(35.,140.,t));
+    emC+=uEdge*side*(.055+uSpark*spark*.03)*smoothstep(2.2,10.,t);
     float fog=1.-exp(-pow(t*uFogK,1.55));
     vec3 fogC=mix(uFog,uSunC,pow(max(dot(rd,uSunDir),0.),7.)*.55)*(1.-uDusk*.55);
     col=mix(c,fogC,fog)+emC*exp(-t*.0085);
@@ -568,7 +631,7 @@ float march(vec3 ro,vec3 rd,out float last){
     last=t;t+=max(.3,t*.045);
   }
   if(!found)return 1e4;
-  if(t<680.&&last>0.){float a=last,b=t;for(int i=0;i<5;i++){float m=.5*(a+b);vec3 q=ro+rd*m;if(q.y-surface(q.xz,false)>0.)a=m;else b=m;}t=.5*(a+b);}
+  if(t<680.&&last>0.){float a=last,b=t;for(int i=0;i<7;i++){float m=.5*(a+b);vec3 q=ro+rd*m;if(q.y-surface(q.xz,false)>0.)a=m;else b=m;}t=.5*(a+b);}
   return t;
 }
 float skyTrail=0.;
@@ -605,8 +668,9 @@ vec3 sky(vec3 rd,vec2 sv){
   float edge=smoothstep(0.,.0028,top-rd.y);
   vec3 ridge=mix(uFog*.42,uSkyTop*.6,.35)+uEdge*a*.5*smoothstep(top-.05,top,rd.y);
   c=mix(c,ridge,edge*smoothstep(-.03,.0,rd.y));
-  c+=uEdge*exp(-abs(rd.y-top)*110.)*a*1.9*smoothstep(-.02,.01,rd.y);
-  skyTrail=exp(-abs(rd.y-top)*90.)*a*.35*smoothstep(-.02,.01,rd.y);
+  float ridgeD=abs(rd.y-top);
+  c+=uEdge*exp(-pow(ridgeD/.016,1.8))*a*1.35*smoothstep(-.02,.01,rd.y);
+  skyTrail=exp(-pow(ridgeD/.022,1.8))*a*.22*smoothstep(-.02,.01,rd.y);
   return c;
 }
 // A sky-fixed star field and original ringed planet. No animated sparkle or
@@ -653,6 +717,15 @@ vec3 orbitSky(vec3 rd){
   float md=length(rd-moonDir),maa=2./uRes.y;
   float moon=1.-smoothstep(.052-maa,.052+maa,md);
   c=mix(c,vec3(.12,.18,.27)*(.6+.4*smoothstep(-.052,.052,rd.x-moonDir.x)),moon);
+  // Gravitational lens Einstein ring from Autonomic Console's Rest mode
+  if(rd.z>0.){
+    vec2 lensTh=vec2(rd.x+.06,rd.y-.11);
+    float lensR=length(lensTh);
+    float einstein=exp(-pow((lensR-.22)/.018,2.));
+    float darkCore=smoothstep(.13,.24,lensR);
+    vec3 lensC=mix(vec3(.26,.56,1.),vec3(.88,.52,.96),smoothstep(.18,.26,lensR));
+    c=c*darkCore+lensC*(einstein*.85+exp(-lensR*lensR*28.)*.5);
+  }
   return c;
 }
 vec3 orbitRainbow(float x){
@@ -699,7 +772,23 @@ vec3 orbitWorld(vec3 ro,vec3 rd){
     c+=vec3(.055,.09,.15)*exp(-pow((d-uWidth+.14)/.12,2.));
     c=mix(c,space,smoothstep(370.,680.,t));
   }
-  if(rd.z>.02){
+  if(rd.z>.02 && uLattice>.001){
+    // Rest lattice perspective corridor frames: rectangular light strands echoing Autonomic Console's Rest mode
+    for(int k=8;k>=0;k--){
+      float z=(floor(ro.z/45.)+float(k)+1.)*45.;
+      float ot=(z-ro.z)/rd.z;
+      if(ot>t||ot>380.||ot<.3)continue;
+      vec3 p=ro+rd*ot;vec2 q=vec2(p.x-pathX(z),p.y-(roadY(z)+.8));
+      float aa=max(.004,ot/(uRes.y*uFocal));
+      vec2 boxW=vec2(uWidth*1.32,2.4);
+      vec2 dBox=abs(q)-boxW;
+      float frameEdge=max(dBox.x,dBox.y);
+      float strand=foliageBand(abs(frameEdge),.035,aa);
+      float cornerNode=foliageBand(length(max(dBox,0.)),.07,aa);
+      vec3 strandColor=mix(vec3(.22,.55,1.),vec3(.68,.42,.95),fract(z*.008));
+      float fade=smoothstep(360.,200.,ot)*smoothstep(.3,2.,ot);
+      c+=strandColor*(strand*.8+cornerNode*1.4)*fade*(1.-uDusk*.25);
+    }
     // Sparse orbital gantries repeat every 140 m, with open centers and a low
     // blue-metal frame. Their fixed positions give depth without a flashing pattern.
     for(int k=4;k>=0;k--){
@@ -842,7 +931,7 @@ void main(){
     float e=.05+t*.0018;
     vec3 N=normalize(vec3(surface(p.xz-vec2(e,0.),true)-surface(p.xz+vec2(e,0.),true),2.*e,surface(p.xz-vec2(0.,e),true)-surface(p.xz+vec2(0.,e),true)));
     float px=pathX(p.z),d=abs(p.x-px),rel=p.y-roadY(p.z);
-    float dn=fbm4(p.xz*.075);
+    float dn=mix(fbm4(p.xz*.075),.5,smoothstep(50.,220.,t));
     vec3 alb=mix(uGround*.75,uGround*1.55,dn);
     float sl=1.-N.y;
     alb=mix(alb,uRock,smoothstep(.1,.42,sl+dn*.14-.07));
@@ -858,7 +947,7 @@ void main(){
       vec3 exposed=uRock*(.78+.24*fbm2(p.xz*.19+rel*.08));
       alb=mix(alb,mix(exposed,leaves,woods),uAlpine*smoothstep(4.,7.,d));
     }
-    if(uMeadow>0.) { float field=step(.48,fract(p.x*.024+sin(p.z*.012)*.2)); alb=mix(alb,mix(vec3(.19,.28,.055),vec3(.34,.39,.08),field),uMeadow*.65*smoothstep(4.,9.,d)); }
+    if(uMeadow>0.) { float fieldAA=max(.02,t*.0008); float field=smoothstep(.48-fieldAA,.48+fieldAA,fract(p.x*.024+sin(p.z*.012)*.2)); alb=mix(alb,mix(vec3(.19,.28,.055),vec3(.34,.39,.08),field),uMeadow*.65*smoothstep(4.,9.,d)); }
     if(uStrata>0.)alb*=mix(1.,.74+.3*sin(rel*.85+dn*3.5),uStrata);
     if(uGrid>0.){vec2 g=abs(fract(p.xz*.12)-.5);float gl=smoothstep(.47,.5,max(g.x,g.y));alb+=uEdge*gl*.32*uGrid*exp(-t*.012);}
     float dif=clamp(dot(N,uSunDir),0.,1.);
@@ -874,7 +963,8 @@ void main(){
       c+=uSunC*pow(max(dot(rf,uSunDir),0.),190.)*7.;
     }
     // the road
-    float rm=1.-smoothstep(uWidth-.12,uWidth+.12,d);
+    float aaRoad=max(.12,t/(uRes.y*uFocal));
+    float rm=1.-smoothstep(uWidth-aaRoad,uWidth+aaRoad,d);
     if(!water){
       vec3 asphalt=mix(vec3(.07,.075,.07),vec3(.31,.25,.16),uCanyon*.35)*( .88+.18*dn);
       asphalt=mix(asphalt,vec3(.44,.32,.17)*(.9+.14*dn),uForest);
@@ -882,12 +972,16 @@ void main(){
     }
     float em=0.;vec3 emC=vec3(0.);
     if(rm>0.){
-      float dash=step(fract(p.z/max(uBeat*.5,1.)),.5)*(1.-smoothstep(.05,.1,abs(p.x-px)));
+      float dashL=max(uBeat*.5,1.);
+      float df=fract(p.z/dashL);
+      float dashAA=max(.02,t/(dashL*uRes.y*uFocal));
+      float dash=smoothstep(0.,dashAA,df)*(1.-smoothstep(.5-dashAA,.5,df))*(1.-smoothstep(.05,.1,abs(p.x-px)));
       emC+=uEdge*dash*.045*rm*smoothstep(2.,16.,t)*(1.-uForest);
     }
-    float side=exp(-pow((d-uWidth)/.045,2.));
-    float spark=pow(vn(vec2(p.z*.9,uT*1.3)),6.)*7.;
-    emC+=uEdge*side*(.055+uSpark*spark*.2);
+    float aaSide=max(.02,t/(uRes.y*uFocal));
+    float side=foliageBand(d-uWidth,.055,aaSide);
+    float spark=pow(vn(vec2(p.z*.3,uT*1.3)),2.5)*1.8*(1.-smoothstep(35.,140.,t));
+    emC+=uEdge*side*(.055+uSpark*spark*.03)*smoothstep(2.2,10.,t);
     float fog=1.-exp(-pow(t*uFogK,1.55));
     vec3 fogC=mix(uFog,uSunC,pow(max(dot(rd,uSunDir),0.),7.)*.55)*(1.-uDusk*.55);
     col=mix(c,fogC,fog)+emC*exp(-t*.0085);
@@ -1003,6 +1097,8 @@ void main(){
         float cactus=max(stem,max(arm,join))*uCanyon;
         if(cactus>silhouette){silhouette=cactus;obj=vec3(.11,.22,.12)*(.7+.3*cos(dx*7.)+.15*dx);}
         if(silhouette>.001){
+          float distFade=smoothstep(300.,220.,ot);
+          silhouette*=distFade;
           float fog=1.-exp(-pow(ot*uFogK,1.55));
           vec3 lit=obj*(uSunC*.8+uFog*.65)*(1.-uDusk*.5);
           col=mix(col,mix(lit,uFog*(1.-uDusk*.3),fog),clamp(silhouette,0.,1.));
@@ -1017,16 +1113,22 @@ void main(){
           if(y<0.||y>11.)continue;
           foliageAA=worldAA;
           vec4 fall=autumnTree(vec2(hit.x-x,y),h);
+          float distFade=smoothstep(300.,220.,ot);
           float fog=1.-exp(-pow(ot*uFogK,1.55));
           vec3 lit=fall.rgb*(uSunC*.8+uFog*.65)*(1.-uDusk*.5);
-          col=mix(col,mix(lit,uFog*(1.-uDusk*.3),fog),fall.a*uAlpine);
+          col=mix(col,mix(lit,uFog*(1.-uDusk*.3),fog),fall.a*uAlpine*distFade);
         }
       }
       // Fence and guardrail posts frame the route; they remain outside the riding surface.
       float railX=abs(hit.x-pathX(z)), railY=hit.y-roadY(z);
-      float post=step(abs(railX-(uWidth+.65)),.09)*step(0.,railY)*step(railY,.95);
+      float postAA=max(.004,ot/(uRes.y*uFocal));
+      float post=smoothstep(.09+postAA,.09-postAA,abs(railX-(uWidth+.65)))*smoothstep(-postAA,postAA,railY)*smoothstep(.95+postAA,.95-postAA,railY);
       float railWeight=uCoast+uMeadow+uAlpine;
-      if(post*railWeight>.01){vec3 c=mix(vec3(.65,.65,.53),vec3(.26,.18,.09),uMeadow)*(uSunC*.7+uFog*.5);col=mix(col,mix(c,uFog,1.-exp(-ot*uFogK)),post*railWeight);}
+      if(post*railWeight>.01){
+        float distFade=smoothstep(300.,220.,ot);
+        vec3 c=mix(vec3(.65,.65,.53),vec3(.26,.18,.09),uMeadow)*(uSunC*.7+uFog*.5);
+        col=mix(col,mix(c,uFog,1.-exp(-ot*uFogK)),post*railWeight*distFade);
+      }
     }
     // The rails are continuous 3D capsules, with curved segments and true perspective.
     float railWeight=uCoast+uMeadow+uAlpine;
@@ -1042,10 +1144,12 @@ void main(){
           float aa=bb-br*br,ab=bb*rr-bo*br,ac=bb*dot(oa,oa)-bo*bo-.004*bb;
           float disc=ab*ab-aa*ac;
           if(disc<0.||aa<.001)continue;
-          float rt=(-ab-sqrt(disc))/aa, y=bo+rt*br;
+          float rt=(-ab-sqrt(max(0.,disc)))/aa, y=bo+rt*br;
           if(rt<.1||rt>t||y<0.||y>bb)continue;
+          float railAA=max(.004,rt/(uRes.y*uFocal));
+          float edgeAlpha=smoothstep(0.,aa*railAA*4.,disc)*smoothstep(300.,220.,rt);
           vec3 c=mix(vec3(.65,.65,.53),vec3(.26,.18,.09),uMeadow)*(uSunC*.7+uFog*.5);
-          col=mix(col,mix(c,uFog,1.-exp(-rt*uFogK)),railWeight);
+          col=mix(col,mix(c,uFog,1.-exp(-rt*uFogK)),railWeight*edgeAlpha);
         }
       }
     }
@@ -1102,18 +1206,23 @@ uniform sampler2D uScene,uPrev; uniform vec2 uVP; uniform float uZoom,uDream,uWi
 void main(){
   vec2 c=vUv-uVP; float r=length(c);
   float z=1.-uZoom*(1.+r*.55);
-  float a=uWild*.0034*sin(r*7.-uT*.7);
+  // Organic spiral wave vortex for Wild mode
+  float ang=atan(c.y,max(abs(c.x),1e-5))*sign(c.x);
+  float a=uWild*(.04*sin(r*6.-uT*1.2)+.02*sin(ang*3.+uT*.8)*smoothstep(.04,.4,r));
   float ca=cos(a),sa=sin(a);
   vec2 uv=uVP+mat2(ca,-sa,sa,ca)*c*z;
-  float sh=uWild*.0026*(.4+r);
+  // Supercharged chromatic prism dispersion scaling toward screen periphery
+  float sh=uWild*.015*(.25+r*1.5);
   vec4 pm=texture(uPrev,uv);
   vec3 prev=vec3(texture(uPrev,uv+c*sh).r,pm.g,texture(uPrev,uv-c*sh).b);
   vec4 sc=texture(uScene,vUv);
-  // Motion blur from the zoomed last frame, then long trails from emitters only.
-  float k=uDream*.58*smoothstep(0.,.14,r+uDream*.1);
-  vec3 m=mix(sc.rgb,prev*.985,k);
-  m=max(m,prev*pm.a*(.42+uDream*.46));
-  o=vec4(min(m,vec3(30.)),max(sc.a,pm.a*(.8+uDream*.16)));
+  // Motion blur trails from the zoomed previous frame
+  float k=(uDream*.58+uWild*.16)*smoothstep(0.,.14,r+uDream*.1);
+  vec3 m=mix(sc.rgb,prev*(.985+uWild*.008),min(k,0.94));
+  float dreamAlpha=(.42+uDream*.46+uWild*.1)*smoothstep(0.,.05,uDream+uWild);
+  m=max(m,prev*pm.a*dreamAlpha);
+  float trailA=pm.a*(.8+uDream*.16)*smoothstep(0.,.05,uDream+uWild);
+  o=vec4(min(m,vec3(30.)),max(sc.a,trailA));
 }`;
 
   // The dotted orbit, drawn crisp over the finished picture. It marks the reference in Watch and the breath in Train.

@@ -114,7 +114,7 @@ try:
             check("launcher page boots without network or pairing", not requests and not engine.commands)
             config = page.evaluate("window.__BODY_EEG_RELAY__")
             check("actual injected config matches this synthetic relay session", config["session"] == server.relay_hub.session and config["simulated"] is True)
-            page.locator('[data-mode="ride"]').click()
+            page.locator('button[data-mode="ride"]').click()
             page.locator('[data-power="brainwaves"]').click()
             page.wait_for_timeout(200)
             check("selecting Brainwaves alone makes no relay request", not requests and not engine.commands)

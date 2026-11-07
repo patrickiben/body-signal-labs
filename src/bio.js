@@ -7,7 +7,7 @@
   const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
   const median = (a) => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
   const HUME = { service: '0000fff0-0000-1000-8000-00805f9b34fb', write: '0000fff6-0000-1000-8000-00805f9b34fb', notify: '0000fff7-0000-1000-8000-00805f9b34fb', renewMs: 20000 };
-  const FRESH_MS = 5000, QUIET_MS = 8000, CRANK_STOP_MS = 2500, RR_WINDOW_MS = 32000, PEDALING_RPM = 15, INHALE_SHARE = 0.4;
+  const FRESH_MS = 5000, QUIET_MS = 8000, CRANK_STOP_MS = 2000, RR_WINDOW_MS = 32000, PEDALING_RPM = 15, INHALE_SHARE = 0.4;
   const SCENE_CATALOG = 'cycling-scenes@1', LEGACY_SCENE_CATALOG = 'biofeedback-pathscene@1';
 
   /* ---- pure functions, so known answers can test them ---- */

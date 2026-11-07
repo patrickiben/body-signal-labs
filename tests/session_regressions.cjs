@@ -196,7 +196,7 @@ const section = (from, to) => page.slice(page.indexOf(from), page.indexOf(to, pa
   const ui = { console, Blob, Event: class {}, $: get, S, bio: uiBio, document: { querySelectorAll: () => [], body: { style: { setProperty() {} } } },
     cv: { captureStream() { const track = { count: 0, stop() { this.count++; } }; const stream = { track, getTracks: () => [track] }; streams.push(stream); return stream; } },
     MediaRecorder: Recorder, window: { MediaRecorder: Recorder }, shell: { download(blob) { downloads.push(blob); }, toast(message) { toasts.push(message); }, syncRange() {}, setMode(m) { S.mode = m; S.holdT = 0; S.dawn = 0; } },
-    BIOMES: ['Golden coast', 'Tropical preserve', 'Meadow lanes', 'New England Autumn', 'Red canyon', 'Rainbow orbit', 'Misty pines', 'Snake Way'].map(name => ({ edge: '#fff', name })), SET_SECONDS: 60, M_PER_MI: 1609.34,
+    BIOMES: ['Golden coast', 'Tropical', 'Meadow lanes', 'Autumn Lake', 'Red canyon', 'Rainbow orbit', 'Misty ridges', 'Snake Way'].map(name => ({ edge: '#fff', name })), SET_SECONDS: 60, M_PER_MI: 1609.34,
     PathScene: { BIOMES: ['Golden coast', 'Misty pines', 'Neon forest', 'High alpine', 'Red canyon'].map(name => ({ edge: '#fff', name })) }, SCENE_CATALOG: SHARED_SCENES,
     mmss: String, performance: { now: () => clock }, renderAnalysis() {}, stopGhost() {}, motion01: (rpm) => rpm / 100, MAX_SPEED: 18 };
   vm.createContext(ui);

@@ -15,8 +15,9 @@
   /* ---- the same road in JS and GLSL, so the camera, the grade readout and the picture agree ---- */
   const S = {
     rpm: 0, demo: false, demoT: 0, bleT: -1e12, bt: 'idle', btName: '', speed: 0, dist: 0, vis: 40, zoom: 0, grade: 0, gradeLoad: 0, roll: 0,
-    map: { idle: 25, max: 95, maxZoom: 0.018, gamma: 1.6 }, dream: 0.15, wild: 0.1, seed: 0,
+    map: { idle: 25, max: 95, maxZoom: 0.018, gamma: 1.6 }, dream: 0.0, wild: 0.0, seed: 0,
     pedal: false, steady: null, ble: null, bleName: '', biome: 0, biomeNext: 0, biomeT: 1, dusk: 0.3, ambient: 2.2, motionVersion: CadenceMotion.VERSION,
+    spaceLattice: false,
   };
   const M_PER_MI = 1609.34;
   const pathX = (z, b) => CyclingScene.pathX(z, S.seed, b || sceneNow());
@@ -44,6 +45,11 @@
       <label class="field"><div class="row"><span>Wildness, warp and color split</span><b id="wild-v"></b></div><input type="range" id="wild" min="0" max="100"></label>
     </div></details>
 
+    <details><summary>Rainbow orbit</summary><div class="controls-grid" style="padding:10px 0 0">
+      <label class="check"><input type="checkbox" id="space-lattice"> Space corridor frames on Rainbow orbit</label>
+      <p class="note" style="margin:0">Echoes Autonomic Console's Rest light frames along the floating track. Off by default to keep the road calm.</p>
+    </div></details>
+
     <details id="mapping"><summary>Cadence to motion</summary><div class="controls-grid" style="padding:10px 0 0">
       <label class="field"><div class="row"><span>Idle cadence, no motion below</span><b id="v-idle"></b></div><input type="range" id="m-idle" min="0" max="60"></label>
       <label class="field"><div class="row"><span>Top cadence, full speed above</span><b id="v-max"></b></div><input type="range" id="m-max" min="60" max="130"></label>
@@ -55,9 +61,9 @@
 
   const TOD = [
     { v: null, label: 'Moving', title: 'A four-minute cycle from golden hour to night' },
-    { v: 0.18, label: 'Golden hour', short: 'Golden' }, { v: 0.55, label: 'Dusk' }, { v: 1, label: 'Night' },
+    { v: 0.18, label: 'Golden hour', short: 'Golden' }, { v: 0.36, label: 'Sunset' }, { v: 0.55, label: 'Dusk' }, { v: 1, label: 'Night' },
   ];
-  const LOOKS = { clear: { label: 'Clear', dream: 0.15, wild: 0.1 }, dreamy: { label: 'Dreamy', dream: 0.55, wild: 0.35 }, wild: { label: 'Wild', dream: 0.78, wild: 0.85 } };
+  const LOOKS = { clear: { label: 'Clear', dream: 0.0, wild: 0.0 }, dreamy: { label: 'Dreamy', dream: 0.62, wild: 0.25 }, wild: { label: 'Wild', dream: 0.86, wild: 1.0 } };
   const sceneBar = `
     <div class="scenebar chrome" id="scenebar">
       <div class="scene-tiles" id="scene-tiles" role="group" aria-label="Scenery">
@@ -108,15 +114,16 @@
       <tr><th>Scenery</th><td>Eight shared routes, with clear road surfaces and no traveling light bars.</td></tr>
       <tr><th>Grade</th><td>The procedural road's slope changes your speed by up to 40%, never the zoom curve.</td></tr>
       <tr><th>Distance</th><td>Counts only the speed your cadence makes, never the slow drift at rest.</td></tr>
-      <tr><th>Scenery</th><td>Eight shared routes: Golden coast, Tropical preserve, Meadow lanes, New England Autumn, Red canyon, Rainbow orbit, Misty pines and Snake Way. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
+      <tr><th>Scenery</th><td>Eight shared routes: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges and Snake Way. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
       <tr><th>Time of day</th><td>A four-minute cycle from golden hour to night, or held where you choose.</td></tr>
       <tr><th>Look</th><td>Clear, Dreamy and Wild set how much of the last frame stays and how much it warps. The sliders under Scenery fine-tune both.</td></tr>
     </tbody></table>
-    <p class="note">Keys: hold <b>Space</b> to pedal · <b>D</b> demo · <b>C</b> connect · <b>B</b> next scene · <b>T</b> time of day · <b>F</b> full screen · <b>H</b> hide controls.</p>`;
+    <p class="note">Keys: hold <b>Space</b> to pedal · <b>1-8</b> scenes · <b>R</b> / <b>B</b> next route · <b>T</b> time of day · <b>L</b> clarity · <b>Z</b> zen mode · <b>Middle click</b> random combo · <b>D</b> demo · <b>C</b> connect · <b>F</b> full screen · <b>H</b> hide controls.</p>`;
 
   const sessionHtml = `
     <div class="row-actions">
       <button class="pill primary" id="rec-toggle">Start recording</button>
+      <button class="pill" id="export-tcx">Export TCX</button>
       <button class="pill" id="replay-load">Replay a ride file</button>
       <button class="pill" id="replay-stop" hidden>Stop replay</button>
       <button class="pill" id="snapshot">Save a picture</button>
@@ -180,8 +187,43 @@
     ],
     onOpenSheet: (name) => { if (name === 'route') { drawElStrip(); drawCurve(); } },
     toggleDemo,
-    onKey: (e, key) => { if (key === 'b') nextBiome(); else if (key === 't') setTod((S.tod + 1) % TOD.length); },
+    onKey: (e, key) => {
+      if (key >= '1' && key <= '8') {
+        const idx = +key - 1;
+        if (BIOMES[idx]) { setBiome(idx); shell.toast(`Scenery · ${BIOMES[idx].name}`); }
+      } else if (key === 'b' || key === 'r') {
+        nextBiome();
+      } else if (key === 't') {
+        const nextIdx = (S.tod + 1) % TOD.length;
+        setTod(nextIdx);
+        shell.toast(`Time of day · ${TOD[nextIdx].label}`);
+      } else if (key === 'l') {
+        const keys = Object.keys(LOOKS);
+        const curIdx = keys.indexOf(S.look || 'clear');
+        const nextKey = keys[(curIdx + 1) % keys.length];
+        setLook(nextKey);
+        shell.toast(`Look · ${LOOKS[nextKey].label}`);
+      }
+    },
   });
+  function randomCombo() {
+    const randBiome = (Math.random() * BIOMES.length) | 0;
+    const randTod = (Math.random() * TOD.length) | 0;
+    const lookKeys = Object.keys(LOOKS);
+    const randLook = lookKeys[(Math.random() * lookKeys.length) | 0];
+    setBiome(randBiome);
+    setTod(randTod);
+    setLook(randLook);
+    shell.toast(`Random: ${BIOMES[randBiome].name} · ${TOD[randTod].label} · ${LOOKS[randLook].label}`);
+  }
+  const onMiddleClick = (e) => {
+    if (e.button === 1) {
+      e.preventDefault();
+      randomCombo();
+    }
+  };
+  window.addEventListener('auxclick', onMiddleClick);
+  window.addEventListener('pointerdown', onMiddleClick);
   ['source-badge', 'chip-sensor'].forEach((id) => $(id).addEventListener('click', () => shell.openSheet('connect')));
 
   /* ---- what the page says about its source, in the same words everywhere ---- */
@@ -312,6 +354,11 @@
   bind('dream', () => S.dream * 100, (v) => { S.dream = v / 100; }, (v) => `${Math.round(v)}%`, 'dream-v');
   bind('wild', () => S.wild * 100, (v) => { S.wild = v / 100; }, (v) => `${Math.round(v)}%`, 'wild-v');
   ['dream', 'wild'].forEach((id) => $(id).addEventListener('input', () => { S.look = null; pressOnly('[data-look]', () => false); save(); }));
+  const spaceLatCheck = $('space-lattice');
+  if (spaceLatCheck) {
+    spaceLatCheck.checked = !!S.spaceLattice;
+    spaceLatCheck.addEventListener('change', (e) => { S.spaceLattice = e.target.checked; save(); });
+  }
   // A visit picks up where the last one left off.
   (() => {
     let v = null;
@@ -376,6 +423,70 @@
       $('rec-status').textContent = `Saved ${Math.round(s.durationMs / 1000)} s of riding.`;
     }
   });
+  const rideSamples = [];
+  let lastSampleT = 0;
+  function recordSample() {
+    const now = performance.now();
+    if (now - lastSampleT < 1000) return;
+    lastSampleT = now;
+    if (S.dist > 0 || S.rpm > 0.5) {
+      rideSamples.push({
+        t: new Date().toISOString(),
+        dist: S.dist,
+        rpm: S.rpm,
+        speed: S.speed,
+        alt: roadY(S.vis),
+      });
+      if (rideSamples.length > 7200) rideSamples.shift();
+    }
+  }
+  function exportTCX() {
+    if (!rideSamples.length) {
+      rideSamples.push({
+        t: new Date().toISOString(),
+        dist: S.dist,
+        rpm: S.rpm,
+        speed: S.speed,
+        alt: roadY(S.vis),
+      });
+    }
+    const startTime = rideSamples[0].t;
+    const totalSecs = Math.max(1, Math.round((new Date(rideSamples[rideSamples.length - 1].t) - new Date(startTime)) / 1000));
+    const maxSpd = rideSamples.reduce((m, p) => Math.max(m, p.speed || 0), 0);
+    const totalDist = rideSamples[rideSamples.length - 1].dist;
+    const pointsXml = rideSamples.map((p) => `
+          <Trackpoint>
+            <Time>${p.t}</Time>
+            <DistanceMeters>${p.dist.toFixed(1)}</DistanceMeters>
+            <Cadence>${Math.round(p.rpm)}</Cadence>
+            <AltitudeMeters>${(p.alt || 0).toFixed(1)}</AltitudeMeters>
+            <Extensions>
+              <TPX xmlns="http://www.garmin.com/xmlschemas/ActivityExtension/v2">
+                <Speed>${(p.speed || 0).toFixed(2)}</Speed>
+              </TPX>
+            </Extensions>
+          </Trackpoint>`).join('');
+    const tcx = `<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">
+  <Activities>
+    <Activity Sport="Biking">
+      <Id>${startTime}</Id>
+      <Lap StartTime="${startTime}">
+        <TotalTimeSeconds>${totalSecs}</TotalTimeSeconds>
+        <DistanceMeters>${totalDist.toFixed(1)}</DistanceMeters>
+        <MaximumSpeed>${maxSpd.toFixed(2)}</MaximumSpeed>
+        <Intensity>Active</Intensity>
+        <TriggerMethod>Manual</TriggerMethod>
+        <Track>${pointsXml}
+        </Track>
+      </Lap>
+    </Activity>
+  </Activities>
+</TrainingCenterDatabase>`;
+    shell.download(new Blob([tcx], { type: 'application/vnd.garmin.tcx+xml' }), `endless-cockpit-${stamp()}.tcx`);
+    shell.toast('Exported TCX for Strava / Garmin');
+  }
+  $('export-tcx').addEventListener('click', exportTCX);
   $('replay-load').addEventListener('click', () => $('replay-file').click());
   $('replay-stop').addEventListener('click', () => ride.stopReplay());
   $('replay-file').addEventListener('change', async (e) => {
@@ -417,6 +528,15 @@
     if (flags & 0x0002) off += 2;
     if (flags & 0x0004 && S.bt !== 'lost') { const cad = dv.getUint16(off, true) * 0.5; if (cad >= 0 && cad < 250) { S.ble = cad; S.bleT = performance.now(); S.bt = 'live'; } }
   }
+  let ftmsControl = null;
+  function sendFtmsIncline() {
+    if (!ftmsControl || S.bt !== 'live') return;
+    try {
+      const gradeVal = Math.max(-100, Math.min(150, Math.round(S.grade * 1000)));
+      const buf = new Uint8Array([0x11, gradeVal & 0xff, (gradeVal >> 8) & 0xff]);
+      ftmsControl.writeValue(buf).catch(() => {});
+    } catch (e) {}
+  }
   $('ble-connect').addEventListener('click', async () => {
     if (!navigator.bluetooth) { S.bt = 'unsupported'; return; }
     try {
@@ -425,28 +545,61 @@
       S.btName = dev.name || 'Cadence sensor';
       const gatt = await dev.gatt.connect();
       let svc, ch, kind;
-      try { svc = await gatt.getPrimaryService('cycling_speed_and_cadence'); ch = await svc.getCharacteristic('csc_measurement'); kind = 'csc'; } catch (e) { svc = await gatt.getPrimaryService('fitness_machine'); ch = await svc.getCharacteristic('indoor_bike_data'); kind = 'ftms'; }
+      try {
+        svc = await gatt.getPrimaryService('cycling_speed_and_cadence');
+        ch = await svc.getCharacteristic('csc_measurement');
+        kind = 'csc';
+      } catch (e) {
+        svc = await gatt.getPrimaryService('fitness_machine');
+        ch = await svc.getCharacteristic('indoor_bike_data');
+        kind = 'ftms';
+        try {
+          ftmsControl = await svc.getCharacteristic('fitness_machine_control_point');
+          await ftmsControl.writeValue(new Uint8Array([0x00]));
+        } catch (e) { ftmsControl = null; }
+      }
       await ch.startNotifications();
       ch.addEventListener('characteristicvaluechanged', kind === 'csc' ? onCSC : onFTMS);
       S.ble = 0; S.bleT = -1e12; S.bt = 'connected';     // no reading yet: a zero time would look fresh for the page's first 3 s
-      dev.addEventListener('gattserverdisconnected', () => { S.ble = null; S.bt = 'lost'; });
+      dev.addEventListener('gattserverdisconnected', () => { S.ble = null; S.bt = 'lost'; ftmsControl = null; });
     } catch (err) {
-      S.ble = null;
+      S.ble = null; ftmsControl = null;
       if (err.name === 'NotFoundError') S.bt = 'no-choice';
       else { S.bt = 'failed'; S.btWhy = `The sensor did not connect: ${err.message}`; }
     }
   });
   if (!navigator.bluetooth) S.bt = 'unsupported';
 
-  /* ---- ride sound: cadence-driven atoms, ported from the first version, off by default ---- */
-  const ATOMS = [[98, 130.81, 196, 246.94, 293.66, 392, 493.88], [110, 146.83, 220, 277.18, 329.63, 440, 554.37], [130.81, 164.81, 196, 261.63, 392, 523.25, 659.25], [123.47, 164.81, 246.94, 329.63, 493.94, 659.25, 987.77], [82.41, 110, 164.81, 220, 277.18, 329.63, 415.3], [146.83, 196, 246.94, 293.66, 392, 493.88, 587.33]];
+  /* ---- ride sound: cadence-driven atoms and aerodynamic speed wind rush ---- */
+  const ATOMS = [
+    [98, 130.81, 196, 246.94, 293.66, 392, 493.88],       // 0: Golden coast (G major)
+    [110, 146.83, 220, 277.18, 329.63, 440, 554.37],      // 1: Tropical (A major)
+    [130.81, 164.81, 196, 261.63, 392, 523.25, 659.25],   // 2: Meadow lanes (C major)
+    [123.47, 164.81, 246.94, 329.63, 493.94, 659.25, 987.77], // 3: Autumn Lake (B minor)
+    [82.41, 110, 164.81, 220, 277.18, 329.63, 415.3],     // 4: Red canyon (E minor)
+    [146.83, 196, 246.94, 293.66, 392, 493.88, 587.33],   // 5: Rainbow orbit (D major)
+    [110, 146.83, 196, 220, 293.66, 329.63, 440],        // 6: Misty ridges (A dorian)
+    [146.83, 196, 220, 293.66, 392, 440, 587.33],        // 7: Snake Way (D mixolydian)
+  ];
   let AC = null, sndOn = false, sndGain = null, sndDest = null, nextGrain = 0;
+  let windGain = null, windFilter = null, noiseSrc = null;
   const rideSoundStream = () => (sndOn && sndDest ? sndDest.stream : null);
-  function curAtoms() { const a = ATOMS[S.biome], b = ATOMS[S.biomeNext], t = S.biomeT; return a.map((v, i) => lerp(v, b[i], t)); }
+  function curAtoms() {
+    const a = ATOMS[S.biome] || ATOMS[0], b = ATOMS[S.biomeNext] || ATOMS[0], t = S.biomeT;
+    return a.map((v, i) => lerp(v, b[i], t));
+  }
   function grainTick() {
     if (!AC || !sndOn) return;
     const rate = Math.min(24, (S.rpm / 130) * 24);
     if (nextGrain < AC.currentTime) nextGrain = AC.currentTime + 0.02;
+    // Aerodynamic wind rush modulated by road speed
+    if (windGain && windFilter) {
+      const speedMph = (S.speed * 3600) / M_PER_MI;
+      const targetGain = clamp(speedMph / 28, 0, 1) * 0.22;
+      const targetFreq = 140 + clamp(speedMph / 30, 0, 1) * 460;
+      windGain.gain.setTargetAtTime(targetGain, AC.currentTime, 0.08);
+      windFilter.frequency.setTargetAtTime(targetFreq, AC.currentTime, 0.08);
+    }
     if (rate < 0.5) { nextGrain = AC.currentTime + 0.08; return; }
     const atoms = curAtoms();
     let budget = 0;
@@ -460,9 +613,32 @@
       nextGrain += 1 / rate; budget++;
     }
   }
-  $('ride-sound').addEventListener('click', function () {
-    if (!AC) { AC = new (window.AudioContext || window.webkitAudioContext)(); sndGain = AC.createGain(); sndGain.gain.value = 0; sndGain.connect(AC.destination); sndDest = AC.createMediaStreamDestination(); sndGain.connect(sndDest); setInterval(grainTick, 45); }
+  function ensureAudio() {
+    if (!AC) {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      sndGain = AC.createGain(); sndGain.gain.value = 0; sndGain.connect(AC.destination);
+      sndDest = AC.createMediaStreamDestination(); sndGain.connect(sndDest);
+      try {
+        const buf = AC.createBuffer(1, Math.round(AC.sampleRate * 2), AC.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+        noiseSrc = AC.createBufferSource();
+        noiseSrc.buffer = buf;
+        noiseSrc.loop = true;
+        windFilter = AC.createBiquadFilter();
+        windFilter.type = 'lowpass';
+        windFilter.frequency.value = 160;
+        windGain = AC.createGain();
+        windGain.gain.value = 0;
+        noiseSrc.connect(windFilter).connect(windGain).connect(sndGain);
+        noiseSrc.start();
+      } catch (e) {}
+      setInterval(grainTick, 45);
+    }
     if (AC.state === 'suspended') AC.resume();
+  }
+  $('ride-sound').addEventListener('click', function () {
+    ensureAudio();
     sndOn = !sndOn;
     this.textContent = `Ride sound: ${sndOn ? 'on' : 'off'}`; this.classList.toggle('on', sndOn);
     sndGain.gain.linearRampToValueAtTime(sndOn ? 0.5 : 0, AC.currentTime + 0.25);
@@ -561,7 +737,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
     BIOMES.forEach((b, i) => {
       const cam = camAt(z, 0, b);
       G.into(thumbHDR); G.bindTex(0, tNoise); G.bindTex(1, tSpec);
-      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uTravelSpeed: 0 }, landAt(b, b, 1, S.dusk)));
+      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uTravelSpeed: 0, uLattice: S.spaceLattice ? 1.0 : 0.0 }, landAt(b, b, 1, S.dusk)));
       G.draw();
       G.into(thumbLDR); G.bindTex(0, thumbHDR.tex);
       G.use(pThumb, { uScene: 0, uExposure: 0.98 + S.dusk * 0.25 });
@@ -609,9 +785,10 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       if (S.autoScene && !ride.replayOn && S.dist >= S.nextSceneAt) {
         S.nextSceneAt = S.dist + M_PER_MI;
         nextBiome();
-        shell.toast(`New scenery · ${BIOMES[S.biomeNext].name}`);
+        const mi = Math.max(1, Math.round(S.dist / M_PER_MI));
+        shell.toast(`New scenery · ${BIOMES[S.biomeNext].name} (Mile ${mi})`);
       }
-      if (frameIdx > 2 && (!thumbAt || (now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
+      if (frameIdx > 2 && !S.pedal && S.rpm < 5 && (!thumbAt || (now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
       S.dusk = S.duskHold != null ? S.dusk + (S.duskHold - S.dusk) * Math.min(1, dtMs / 900) : RM.matches ? S.dusk : 0.5 - 0.5 * Math.cos((now / 1000 / 240 + 0.14) * Math.PI * 2);
 
       // React to sustained stalls before waiting 90 expensive frames. This also
@@ -633,11 +810,12 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       /* uniforms */
       const land = landAt(S.fromMix || BIOMES[S.biome], BIOMES[S.biomeNext], S.biomeT, S.dusk);
       const z = S.vis;
-      const curveRoll = RM.matches ? 0 : clamp((pathX(z + 12) - 2 * pathX(z + 6) + pathX(z)) * 0.012, -0.07, 0.07);
+      const curveRoll = RM.matches ? 0 : clamp((pathX(z + 12) - 2 * pathX(z + 6) + pathX(z)) * (0.016 + 0.012 * motion01(S.rpm)), -0.075, 0.075);
       S.roll += (curveRoll - S.roll) * Math.min(1, dtMs / 200);
       const cam = camAt(z, S.roll), right = cam.right, up = cam.up, fwd = cam.fwd;
-      const camX = cam.cx, camY = cam.cy + (RM.matches ? 0 : Math.sin(S.vis * 0.9) * 0.018 * motion01(S.rpm));
-      const focal = 1.08;
+      const camX = cam.cx, camY = cam.cy + (RM.matches ? 0 : Math.sin(S.vis * 0.9) * 0.009 * motion01(S.rpm));
+      const speed01 = clamp(S.speed / 14, 0, 1);
+      const focal = RM.matches ? 1.08 : (1.08 - speed01 * 0.04);
 
       for (let i = 0; i < BANDS; i++) {
         // A far range that drifts past as you ride: stated value noise, not a measurement.
@@ -660,7 +838,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
         uN: 0, uS: 1, uRes: [rw, rh], uT: now / 1000, uFocal: focal, uBeat: beatLen, uSeed: S.seed,
         uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd,
         uSpark: 0.12 * motion01(S.rpm), uTravelSpeed: S.speed,
-      }, land));
+      }, land, { uLattice: S.spaceLattice ? 1.0 : 0.0 }));
       G.draw();
 
       /* motes */
@@ -671,11 +849,11 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
 
       /* feedback */
       const asp = rw / rh;
-      const vpP = [pathX(z + 90) - camX, roadY(z + 90) + 1 - camY, 90];
+      const vpP = [pathX(z + 90) - camX, roadY(z + 90) + 1 - cam.cy, 90];
       const cz = vpP[0] * fwd[0] + vpP[1] * fwd[1] + vpP[2] * fwd[2];
       const vp = [0.5 + ((vpP[0] * right[0] + vpP[1] * right[1] + vpP[2] * right[2]) * focal) / cz / asp / 2, 0.5 + ((vpP[0] * up[0] + vpP[1] * up[1] + vpP[2] * up[2]) * focal) / cz / 2];
       const fpsScale = dtMs / 16.67;
-      const zoomNow = RM.matches ? S.zoom * 0.4 : 1 - Math.pow(1 - (S.zoom + 0.0012), fpsScale);
+      const zoomNow = RM.matches ? S.zoom * 0.4 : 1 - Math.pow(1 - (S.zoom + (S.look === 'clear' ? 0 : 0.0012)), fpsScale);
       G.into(dreamB);
       G.bindTex(0, scene.tex); G.bindTex(1, dreamA.tex);
       G.use(pDream, { uScene: 0, uPrev: 1, uVP: vp, uZoom: zoomNow, uDream: RM.matches ? S.dream * 0.5 : S.dream, uWild: S.wild, uT: now / 1000 });
@@ -685,8 +863,9 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       /* bloom and grade */
       const bloom = Post.bloom(dreamA.tex, 1.15);
       Post.finish(dreamA.tex, bloom, {
-        uBloomK: 0.25, uExposure: 0.98 + S.dusk * 0.25,
-        uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000, uVig: 0.25, uSat: 1.02, rate: RM.matches ? 0.16 : 0.36, maxGain: 1,
+        uBloomK: 0.22 + S.dream * 0.16, uExposure: 0.98 + S.dusk * 0.25,
+        uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000, uVig: 0.25,
+        uSat: 1.02 + S.wild * 0.22, rate: RM.matches ? 0.16 : 0.36, maxGain: 1,
       }, dtMs / 1000);
 
       if (lumaRec) lumaRec(now);

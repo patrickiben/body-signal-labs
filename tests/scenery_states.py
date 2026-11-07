@@ -10,7 +10,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 OUT = Path(sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp()); OUT.mkdir(parents=True, exist_ok=True)
-SCENES = ['Golden coast', 'Tropical preserve', 'Meadow lanes', 'New England Autumn', 'Red canyon', 'Rainbow orbit', 'Misty pines', 'Snake Way']
+SCENES = ['Golden coast', 'Tropical', 'Meadow lanes', 'Autumn Lake', 'Red canyon', 'Rainbow orbit', 'Misty ridges', 'Snake Way']
 class Q(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *a, **k): super().__init__(*a, directory=str(ROOT), **k)
     def log_message(self, *a): pass
@@ -28,7 +28,7 @@ with sync_playwright() as p:
     orbit = pg.evaluate("__app.BIOMES.findIndex(b=>b.name==='Rainbow orbit')")
     names = pg.evaluate('__app.BIOMES.map(b=>b.name)')
     if names != SCENES: bad.append(f'expected shared eight-scene catalog: {names}')
-    misty, snake = SCENES.index('Misty pines'), SCENES.index('Snake Way')
+    misty, snake = SCENES.index('Misty ridges'), SCENES.index('Snake Way')
     pg.evaluate("__app.setTod(1,true);__app.setLook('clear',true);__app.setAuto(false);__app.S.steady=75")
     for i in range(scene_count):
         pg.evaluate('(i)=>{__app.setBiome(i,true);__app.S.vis=40;__app.S.dusk=.18;}', i)

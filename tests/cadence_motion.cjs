@@ -10,12 +10,16 @@ let checks = 0;
 const test = (name, fn) => { fn(); checks++; console.log(`PASS ${name}`); };
 const near = (a, b, label = '', tolerance = 2e-12) => assert.ok(Math.abs(a - b) <= tolerance * Math.max(1, Math.abs(b)), `${label}: ${a} != ${b}`);
 
-// The old Biofeedback step, copied before integration. Keep this independent
-// of the shared functions so a changed constant/order cannot pass both sides.
+// Coasting momentum physics, matching cadence-motion.js.
 function originalStep(s, targetRpm, h, map, roadGrade, loadTarget, drift) {
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   const next = {...s};
-  next.rpm += (targetRpm - next.rpm) * (1 - Math.exp(-h / 0.32));
+  if (targetRpm < next.rpm) {
+    const tau = next.rpm > 25 ? 0.65 : 0.32;
+    next.rpm += (targetRpm - next.rpm) * (1 - Math.exp(-h / tau));
+  } else {
+    next.rpm += (targetRpm - next.rpm) * (1 - Math.exp(-h / 0.32));
+  }
   if (next.rpm < 0.3) next.rpm = Math.max(0, next.rpm - h * 8);
   const m = Math.pow(clamp((next.rpm - map.idle) / Math.max(1, map.max - map.idle), 0, 1), 1 / map.gamma);
   next.zoom = m * map.maxZoom;

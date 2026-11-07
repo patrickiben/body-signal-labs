@@ -15,7 +15,7 @@ with sync_playwright() as p:
         pg = browser.new_page(); errors = []; pg.on('pageerror', lambda e: errors.append(str(e)))
         pg.goto(f'http://127.0.0.1:{server.server_port}/{page}.html')
         pg.wait_for_function('window.__app')
-        if page.startswith('biofeedback'): pg.locator('[data-mode="ride"]').click()
+        if page.startswith('biofeedback'): pg.locator('button[data-mode="ride"]').click()
         pg.locator('body').click(position={'x': 5, 'y': 250})
         pg.keyboard.down('Space'); assert pg.evaluate('__app.S.pedal')
         pg.evaluate("window.dispatchEvent(new Event('blur'))")
@@ -29,7 +29,7 @@ with sync_playwright() as p:
         pg.evaluate("delete document.hidden")
         if page.startswith('biofeedback'):
             pg.keyboard.down('Space'); assert pg.evaluate('__app.S.pedal')
-            pg.locator('[data-mode="watch"]').click()
+            pg.locator('[data-mode="train"]').click()
             assert not pg.evaluate('__app.S.pedal')
             pg.keyboard.up('Space')
         assert not errors, errors

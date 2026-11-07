@@ -37,6 +37,15 @@ a { color: var(--accent); }
 body.quiet .chrome { opacity: 0; }
 body.quiet .chrome:focus-within { opacity: 1; }
 body.quiet .chip { display: none; }
+body.zen .header, body.zen .scenebar, body.zen .dock, body.zen .intro, body.zen .chip, body.zen .suite-bar {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.5s ease;
+}
+body.zen #hud {
+  opacity: 0.95;
+  transition: opacity 0.5s ease;
+}
 
 .header { position: absolute; left: max(42px, env(safe-area-inset-left)); right: max(42px, env(safe-area-inset-right)); top: max(28px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 .brand { display: flex; align-items: center; gap: 12px; font-size: 16px; letter-spacing: -0.35px; color: var(--ink); text-shadow: 0 1px 14px rgba(0, 0, 0, 0.6); text-decoration: none; }

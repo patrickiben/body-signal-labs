@@ -68,15 +68,27 @@ body:not(.playing) .breath-note { color: var(--ink); }
   .read-tier { font-size: 14px; }
   .family { gap: 0; }
   .family a { padding: 6px 6px; }
+  .dock-wrap { gap: 6px; bottom: max(10px, calc(env(safe-area-inset-bottom) + 4px)); }
 }
 @media (max-width: 480px) {
   .brand { font-size: 14px; gap: 9px; }
   .brand span, .top-action { white-space: nowrap; }
-  .hud-set[data-for="ride"] .gauge.hero { order: -1; flex-basis: 100%; }
-  .hud-set[data-for="ride"] { gap: 6px 12px; }
+  .dock-wrap { gap: 5px; bottom: max(6px, env(safe-area-inset-bottom)); }
+  .hud-set[data-for="ride"] { gap: 4px 6px; }
   .hud-set[data-for="ride"] .gauge { min-width: 0; }
-  .hud-set[data-for="ride"] .gauge:not(.hero) .k { flex-direction: column; gap: 3px; letter-spacing: 1.2px; }
-  .hud-set[data-for="ride"] .gauge .ep { font-size: 7px; }
+  .hud-set[data-for="ride"] .gauge .k { flex-direction: column; gap: 2px; letter-spacing: 0.8px; font-size: 7.5px; }
+  .hud-set[data-for="ride"] .gauge .ep { font-size: 6.5px; padding: 1px 3px; }
+  .hud-set[data-for="ride"] .gauge .v { font-size: 15px; }
+  .hud-set[data-for="ride"] .gauge.hero .v { font-size: 24px; }
+  .badges { gap: 4px; }
+  .source-badge, .chip { padding: 4px 8px; font-size: 10px; }
+  .ride-power { gap: 5px; }
+  .ride-power > span { font-size: 9px; }
+  .ride-power button { min-height: 26px; padding: 4px 10px; font-size: 11px; }
+  #pedal { min-height: 32px; padding: 6px 16px; font-size: 12px; }
+}
+@media (max-height: 820px) and (max-width: 860px) {
+  .truth { display: none; }
 }
 @media (max-height: 760px) {
   .reading { top: 9%; }
@@ -97,4 +109,87 @@ body:not(.playing) .breath-note { color: var(--ink); }
 @media(max-height:450px) and (min-width:520px) { .ride-power { gap:5px; } .ride-power button { min-height:26px; padding:4px 10px; } }
 @media (max-height: 520px) and (min-width: 520px) and (max-width: 900px) {
   .header .brand span { max-width: calc(50vw - 160px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* Mode switch in Biofeedback Path Cockpit: sleek segmented header control */
+.mode-switch { position: absolute; top: max(20px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; padding: 3px; border: 1px solid var(--line); border-radius: 24px; background: var(--glass); backdrop-filter: blur(12px); z-index: 25; }
+.mode-switch button { padding: 6px 20px; min-height: 32px; border-radius: 20px; font-size: 12px; }
+
+body[data-app="biofeedback-path-cockpit"] .intro { top: 37%; }
+
+/* Scenery on the main screen */
+.scenebar { position: absolute; top: max(82px, calc(env(safe-area-inset-top) + 60px)); left: 50%; transform: translateX(-50%); width: min(900px, calc(100% - 24px)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.scene-tiles { display: flex; gap: 10px; justify-content: center; max-width: 100%; padding: 3px; }
+.scene-tile { flex: none; position: relative; display: block; padding: 0; border-radius: 13px; transition: transform 0.25s; }
+.scene-tile canvas { display: block; width: 100px; height: 60px; border-radius: 13px; border: 1px solid var(--line); box-shadow: 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
+.scene-tile::after { content: ""; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 58%; border-radius: 0 0 12px 12px; background: linear-gradient(transparent, rgba(6, 8, 18, 0.78)); pointer-events: none; }
+.scene-tile span { position: absolute; left: 9px; right: 6px; bottom: 6px; z-index: 1; text-align: left; font-size: 11px; letter-spacing: 0.2px; color: rgba(238, 237, 251, 0.82); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (hover: hover) { .scene-tile:hover { transform: translateY(-2px); } }
+.scene-tile[aria-pressed="true"] canvas { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 22px color-mix(in srgb, var(--accent) 35%, transparent), 0 10px 30px var(--shadow); }
+.scene-tile[aria-pressed="true"] span { color: #fff; font-weight: 500; }
+.scene-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; max-width: 100%; }
+.seg { display: flex; padding: 3px; border: 1px solid var(--line); border-radius: 22px; background: var(--glass); backdrop-filter: blur(12px); }
+.seg button, .seg-solo { padding: 7px 13px; min-height: 32px; border-radius: 18px; font-size: 12px; color: var(--muted); white-space: nowrap; transition: background 0.3s, color 0.3s; }
+.seg button:hover, .seg-solo:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.seg-solo { border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(12px); }
+.seg-solo[aria-pressed]::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--faint); vertical-align: 1px; }
+.seg-solo[aria-pressed="true"] { color: var(--ink); }
+.seg-solo[aria-pressed="true"]::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+.scene-row .short { display: none; }
+.route-caption { margin: 0; color: var(--ink); font-size: 11px; line-height: 1.4; text-align: center; text-shadow: 0 1px 5px #101820; padding: 4px 12px; border-radius: 12px; background: rgba(12,22,25,.62); backdrop-filter: blur(8px); }
+
+@media (max-width: 860px) {
+  .mode-switch { top: max(14px, env(safe-area-inset-top)); }
+  .mode-switch button { padding: 4px 14px; min-height: 28px; font-size: 11px; }
+  .scenebar { top: max(56px, calc(env(safe-area-inset-top) + 46px)); width: 100%; gap: 8px; padding: 0 12px; }
+  .scene-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 660px; padding: 0; }
+  .scene-tile { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
+  .scene-tile canvas { width: 100%; height: auto; aspect-ratio: 336 / 196; border-radius: 10px; box-shadow: none; }
+  .scene-tile[aria-pressed="true"] canvas { box-shadow: 0 0 0 1px var(--accent); }
+  .scene-tile::after { display: none; }
+  .scene-tile span { position: static; width: 100%; font-size: 9.5px; line-height: 1.25; text-align: center; white-space: normal; color: rgba(238, 237, 251, 0.82); text-shadow: 0 1px 3px rgba(4, 6, 16, 0.9), 0 1px 10px rgba(4, 6, 16, 0.95); }
+  .scene-tile[aria-pressed="true"] span { color: var(--ink); }
+  .scene-row { gap: 6px; width: 100%; }
+  .seg, .seg-solo { flex: none; }
+  .seg button, .seg-solo { padding: 6px 10px; min-height: 32px; font-size: 11px; }
+  .scene-row .long { display: none; }
+  .scene-row .short { display: inline; }
+  .scene-row > .seg:first-child { order: 1; }
+  #new-route { order: 2; }
+  .scene-row > .seg:nth-child(2) { order: 3; }
+  #auto-scene { order: 4; }
+  body[data-app="biofeedback-path-cockpit"] .intro .eyebrow { display: none; }
+  body[data-app="biofeedback-path-cockpit"] .intro { top: 46%; }
+  .route-caption { max-width: 95%; font-size: 10px; padding: 3px 9px; }
+}
+
+@media (max-width: 860px) and (max-height: 900px) {
+  body[data-app="biofeedback-path-cockpit"] .intro { display: none; }
+}
+
+@media (max-width: 480px) {
+  .scenebar { gap: 6px; }
+  .scenebar .route-caption { display: none; }
+  .scene-tile canvas { aspect-ratio: 2; }
+  .scene-row { gap: 4px; }
+  .seg button, .seg-solo { padding: 4px 7px; min-height: 28px; font-size: 10px; }
+}
+
+@media (max-height: 520px) {
+  .mode-switch { top: max(8px, env(safe-area-inset-top)); }
+  .mode-switch button { padding: 3px 10px; min-height: 24px; font-size: 10px; }
+  .scenebar { top: max(44px, calc(env(safe-area-inset-top) + 36px)); gap: 6px; }
+  .scene-tiles { display: flex; justify-content: center; width: auto; max-width: none; gap: 6px; }
+  .scene-tile { display: block; position: relative; }
+  .scene-tile canvas { width: clamp(46px, calc((100vw - 78px) / 8), 96px); height: auto; aspect-ratio: 96 / 52; border-radius: 9px; }
+  .scene-tile::after { display: block; border-radius: 0 0 8px 8px; }
+  .scene-tile span { position: absolute; left: 7px; right: 4px; bottom: 4px; width: auto; font-size: 9px; text-align: left; white-space: nowrap; color: rgba(238, 237, 251, 0.85); }
+  .seg button, .seg-solo { padding: 5px 10px; min-height: 30px; font-size: 11px; }
+  .route-caption { display: none; }
+}
+@media (min-width: 480px) and (max-height: 360px) {
+  .scene-row { gap: 4px; }
+  .seg { padding: 2px; }
 }

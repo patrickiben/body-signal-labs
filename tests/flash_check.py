@@ -93,7 +93,7 @@ with sync_playwright() as p:
                 # under sustained illumination. Test the dense canopy at both ends.
                 for look in ('wild', 'clear'):
                     pg.evaluate(f"__app.setLook('{look}')")
-                    for tod, label in ((1, 'golden'), (3, 'night')):
+                    for tod, label in ((1, 'golden'), (4, 'night')):
                         pg.evaluate(f'__app.setBiome(1,true); __app.S.vis=240; __app.setTod({tod},true)')
                         pg.wait_for_function(f'Math.abs(__app.S.dusk-({0.18 if tod == 1 else 1}))<.015', timeout=20000)
                         capture(f'tropical {look} held {label}')
@@ -102,13 +102,13 @@ with sync_playwright() as p:
                 # cadence; the time-flip case above already exercises both light
                 # states continuously, without multiplying every setting pair.
                 orbit = scene_names.index('Rainbow orbit')
-                for look, tod, label in (('clear', 1, 'golden'), ('wild', 3, 'night')):
+                for look, tod, label in (('clear', 1, 'golden'), ('wild', 4, 'night')):
                     pg.evaluate(f"__app.setLook('{look}');__app.setBiome({orbit},true);__app.S.vis=240;__app.S.steady=130;__app.setTod({tod},true)")
                     pg.wait_for_function(f'Math.abs(__app.S.dusk-({0.18 if tod == 1 else 1}))<.015 && __app.S.rpm>125', timeout=20000)
                     capture(f'Rainbow orbit {look} held {label}')
                 # New dense autumn foliage and Snake Way's raised edges also need
                 # steady-light coverage at the shared, faster cadence mapping.
-                for name in ('New England Autumn', 'Snake Way'):
+                for name in ('Autumn Lake', 'Snake Way'):
                     biome = scene_names.index(name)
                     pg.evaluate(f"__app.setLook('clear');__app.setBiome({biome},true);__app.S.vis=240;__app.S.steady=130;__app.setTod(1,true)")
                     pg.wait_for_function('Math.abs(__app.S.dusk-.18)<.015 && __app.S.rpm>125', timeout=20000)

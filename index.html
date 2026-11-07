@@ -48,6 +48,15 @@ a { color: var(--accent); }
 body.quiet .chrome { opacity: 0; }
 body.quiet .chrome:focus-within { opacity: 1; }
 body.quiet .chip { display: none; }
+body.zen .header, body.zen .scenebar, body.zen .dock, body.zen .intro, body.zen .chip, body.zen .suite-bar {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.5s ease;
+}
+body.zen #hud {
+  opacity: 0.95;
+  transition: opacity 0.5s ease;
+}
 
 .header { position: absolute; left: max(42px, env(safe-area-inset-left)); right: max(42px, env(safe-area-inset-right)); top: max(28px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 .brand { display: flex; align-items: center; gap: 12px; font-size: 16px; letter-spacing: -0.35px; color: var(--ink); text-shadow: 0 1px 14px rgba(0, 0, 0, 0.6); text-decoration: none; }
@@ -317,8 +326,8 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
         <div class="body"><h2>Autonomic Telemetry</h2><p>A galaxy whose extent, brightness and warmth follow a personal, experimental estimate of arousal, inferred from heart rate and pulse variability, with EEG shown as context. Work keeps watch, and Rest adds paced breathing. Live signals come through a small bridge on a Mac.</p><span class="go">Open Autonomic Telemetry →</span></div>
       </a>
       <a class="app-card" href="endless-cockpit.html" id="card-endless">
-        <img src="docs/new-england-autumn.jpg" alt="New England Autumn: a lakeside road below red, orange and gold woodland, with eight scenery choices" width="1440" height="900">
-        <div class="body"><h2>Endless Cockpit</h2><p>Eight scenes, from coast and tropical trails to New England Autumn, Misty pines, a rainbow skyway and Snake Way above golden clouds. Different terrain and route profiles, with the same cadence response as Biofeedback.</p><span class="go">Open Endless Cockpit →</span></div>
+        <img src="docs/new-england-autumn.jpg" alt="Autumn Lake: a lakeside road below red, orange and gold woodland, with eight scenery choices" width="1440" height="900">
+        <div class="body"><h2>Endless Cockpit</h2><p>Eight scenes, from coast and tropical trails to Autumn Lake, Misty ridges, a rainbow skyway and Snake Way above golden clouds. Different terrain and route profiles, with the same cadence response as Biofeedback.</p><span class="go">Open Endless Cockpit →</span></div>
       </a>
       <a class="app-card" href="biofeedback-path-cockpit.html" id="card-biofeedback">
         <img src="docs/biofeedback-brainwaves.jpg" alt="Brainwaves ride with an EEG control readout and an explicit synthetic demo label" width="1440" height="900">

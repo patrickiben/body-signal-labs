@@ -38,8 +38,16 @@
   function smoothRpm(rpm, targetRpm, dt = STEP) {
     const h = seconds(dt);
     let next = cadence(rpm);
-    next += (cadence(targetRpm) - next) * (1 - Math.exp(-h / 0.32));
-    // Preserve Biofeedback's finite stop instead of an endless tiny tail.
+    const tgt = cadence(targetRpm);
+    if (tgt < next) {
+      // Coasting with momentum when letting off pedal or reducing cadence
+      const tau = next > 25 ? 0.65 : 0.32;
+      next += (tgt - next) * (1 - Math.exp(-h / tau));
+    } else {
+      // Responsive acceleration
+      next += (tgt - next) * (1 - Math.exp(-h / 0.32));
+    }
+    // Finite stop instead of an endless tiny tail.
     if (next < 0.3) next = Math.max(0, next - h * 8);
     return next;
   }
