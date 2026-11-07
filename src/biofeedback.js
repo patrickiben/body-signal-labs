@@ -1289,7 +1289,7 @@
   const minScale = (softwareRenderer ? 20000 : 60000) / sceneBudget;
   const maxScale = softwareRenderer ? 1 : 1.9;
   let gl, Post, pScene, pLegacyScene, pLegacyMote, pDream, pMote, pOrbit, tNoise, tRidge;
-  let scene, dreamA, dreamB, rw = 0, rh = 0, frameIdx = 0, lastScale = 1, wantSnap = null, fps = 0, fpsN = 0, fpsT = performance.now();
+  let scene, dreamA, dreamB, rw = 0, rh = 0, frameIdx = 0, lastScale = softwareRenderer ? 0.5 : 1, wantSnap = null, fps = 0, fpsN = 0, fpsT = performance.now();
   const ridge = new Uint8Array(64), ridgeF = new Float32Array(64);
   const ringData = new Float32Array(12 * 4), rings = [];
   bio.on('beat', () => {
@@ -1306,7 +1306,7 @@ vec3 aces(vec3 x){ return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.); }
 void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1.-.45*smoothstep(.25,.95,dot(q,q)*2.1); o=vec4(pow(c,vec3(1./2.2)),1.); }`;
   function drawThumbs(now) {
     if (!G || !pScene) return;
-    const small = softwareRenderer || lastScale < .2, TW = small ? 144 : 336, TH = small ? 84 : 196;
+    const small = softwareRenderer || lastScale < .2, TW = softwareRenderer ? 64 : small ? 144 : 336, TH = softwareRenderer ? 36 : small ? 84 : 196;
     if (!pThumb) pThumb = G.program(THUMB_FS);
     if (!thumbHDR || thumbHDR.w !== TW) {
       if (thumbHDR) { G.freeTarget(thumbHDR); G.freeTarget(thumbLDR); }

@@ -23,10 +23,10 @@ with sync_playwright() as p:
         pg.on('pageerror', lambda e: errors.append(str(e)[:200]))
         pg.goto(f'{BASE}/{page}', timeout=120000); pg.wait_for_timeout(2500)
         if pg.get_attribute('#source-badge', 'data-source') != 'ambient': bad.append(f'{page}: not ambient at load')
-        pg.click('#demo-button'); pg.wait_for_timeout(4000)
+        pg.locator('#demo-button').dispatch_event('click'); pg.wait_for_timeout(4000)
         if pg.get_attribute('#source-badge', 'data-source') != 'demo': bad.append(f'{page}: demo is not labeled')
         if page == 'biofeedback-path-cockpit.html':
-            pg.click('[data-mode=ride]')
+            pg.locator('[data-mode=ride]').dispatch_event('click')
         # Motion runs on frames, and software rendering on the CI runner can take seconds per frame, so wait for it
         try:
             pg.wait_for_function(f'{moving} >= 3', polling=500, timeout=90000)

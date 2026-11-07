@@ -276,7 +276,7 @@
   const minScale = (softwareRenderer ? 20000 : 60000) / sceneBudget;
   const maxScale = softwareRenderer ? 1 : 1.9;
   let gl, Post, pScene, pDream, pMote, tNoise, tSpec;
-  let scene, dreamA, dreamB, rw = 0, rh = 0, frameIdx = 0, lastScale = 1;
+  let scene, dreamA, dreamB, rw = 0, rh = 0, frameIdx = 0, lastScale = softwareRenderer ? 0.5 : 1;
   const specBytes = new Uint8Array(BANDS), ridge = new Float32Array(BANDS);
 
   ride.on('recording', () => {
@@ -742,7 +742,7 @@ uniform sampler2D uScene; uniform float uExposure;
 vec3 aces(vec3 x){ return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.); }
 void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1.-.45*smoothstep(.25,.95,dot(q,q)*2.1); o=vec4(pow(c,vec3(1./2.2)),1.); }`;
   function drawThumbs(now) {
-    const small = softwareRenderer || lastScale < .2, TW = small ? 144 : 336, TH = small ? 84 : 196;
+    const small = softwareRenderer || lastScale < .2, TW = softwareRenderer ? 64 : small ? 144 : 336, TH = softwareRenderer ? 36 : small ? 84 : 196;
     if (!pThumb) pThumb = G.program(THUMB_FS);
     if (!thumbHDR || thumbHDR.w !== TW) {
       if (thumbHDR) { G.freeTarget(thumbHDR); G.freeTarget(thumbLDR); }
