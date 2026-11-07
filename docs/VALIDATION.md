@@ -6,7 +6,7 @@ A browser test cannot pair a real Bluetooth device, and a page that opens Chrome
 
 ## Shared scenery and cadence motion, 2026-11-04
 
-Both cockpits now offer eight scenes, including the preserved Misty pines mountain road, New England Autumn in the former Alpine lake slot, and Snake Way above golden clouds. The shared renderer has no traveling road-light bands. Both apps use Biofeedback's existing cadence motion equations; EEG propulsion remains separate.
+Both cockpits now offer eight scenes, including the preserved Misty ridges mountain road, Autumn Lake in the former Alpine lake slot, and Snake Way above golden clouds. The shared renderer has no traveling road-light bands. Both apps use Biofeedback's existing cadence motion equations; EEG propulsion remains separate.
 
 - `tests/cadence_motion.cjs`: **12/12** checks against the preserved Biofeedback equations, including 432 input-priority combinations, a 100-second variable-cadence/grade trajectory and identical fixed-step results across six rendering frame rates.
 - `tests/session_regressions.cjs`: **35/35** checks, including explicit scene catalogs, legacy imports, rejection of incompatible scene-set imports during recording, and missing-baseline recording/replay. Legacy Biofeedback files keep their original renderer. Older Endless files retain their six numeric IDs and former speed scale; scene 3 follows the requested Autumn replacement.

@@ -17,7 +17,7 @@ This pass covers Endless Cockpit and Biofeedback Path Cockpit, including their s
 
 ## Shared scenes and motion
 
-The cockpits now use one renderer and route catalog for eight scenes: Golden coast, Tropical preserve, Meadow lanes, New England Autumn, Red canyon, Rainbow orbit, Misty pines and Snake Way. New England Autumn replaces the Alpine lake choice with a lakeside road, colorful woodland and rocky bluffs. Misty pines retains the original Biofeedback environment, now also available in Endless. Snake Way adds a scaled road with raised spines above golden clouds. Watch and Train retain their weather and breathing/fog controls and their existing signal calculations.
+The cockpits now use one renderer and route catalog for eight scenes: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges and Snake Way. Autumn Lake replaces the Alpine lake choice with a lakeside road, colorful woodland and rocky bluffs. Misty ridges retains the original Biofeedback environment, now also available in Endless. Snake Way adds a scaled road with raised spines above golden clouds. Watch and Train retain their weather and breathing/fog controls and their existing signal calculations.
 
 The shared cadence module preserves Biofeedback's 18 m/s nominal speed, 0.32-second response, braking, curve, grade multiplier and input priority. Endless no longer uses the separate faster Bluetooth response or adds cadence/Space light bars and velocity surges. Its speed, distance and visual travel now follow the same cadence equations as Biofeedback; heart-rate grade-load remains specific to Biofeedback. EEG drive keeps its separate control and 7 m/s maximum.
 

@@ -8,7 +8,7 @@
 
 ## Cadence
 
-Both cockpits read the standard Bluetooth Cycling Speed and Cadence profile, or a smart trainer's Fitness Machine indoor bike data, through Web Bluetooth. They need no other software. Some sensors send nothing until the crank turns.
+Both cockpits read the standard Bluetooth Cycling Speed and Cadence profile (0x1816), or a smart trainer's Fitness Machine Service (FTMS, 0x1826) indoor bike data, through Web Bluetooth. When connected to an FTMS smart trainer, the cockpits request control and transmit real-time target inclination commands (`0x11` Set Target Inclination in 0.1% increments) matching the procedural road grade. They need no other software. Some sensors send nothing until the crank turns.
 
 ## Heart rate
 

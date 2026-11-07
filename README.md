@@ -10,11 +10,22 @@ Immersive scenes that follow signals from your body, in the browser. Each page r
 
 ![Endless Cockpit on the Autumn Lake lakeside road](docs/new-england-autumn.jpg)
 
-**Endless Cockpit** takes you through eight scenes shared with Biofeedback Path Cockpit: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges and Snake Way. Ride beside the sea, through autumn woodland or misty mountain ridges, along a rainbow skyway, or over golden clouds on a winding serpent road. The routes have different terrain, objects, widths, bends and elevation profiles. Your cadence sets the speed, from a Bluetooth sensor or smart trainer, the pedal button, or a steady setting. Both cockpits use the same cadence acceleration, braking and grade response. Clear is the default look; Dreamy and Wild add visual feedback. New scenery every mile changes the landscape as you ride. These are procedural places, not GPS routes.
+**Endless Cockpit** takes you through eight scenes shared with Biofeedback Path Cockpit: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges and Snake Way. Ride beside the sea, through autumn woodland or misty mountain ridges, along a rainbow skyway, or over golden clouds on a winding serpent road. The routes feature distinct procedural terrain, vegetation, widths, bends and elevation profiles. Your cadence sets the speed, from a Bluetooth sensor, FTMS smart trainer, the pedal button, or a steady setting. Both cockpits feature natural kinetic momentum when releasing the pedal, and five times of day: Moving, Golden hour, Sunset, Dusk, and Night. Clear is the default look; Dreamy and Wild add rich visual feedback. New scenery every mile blends in fresh landscapes as you ride. Complete sessions export as standard TCX activity files for Strava and Garmin.
 
-![Biofeedback Path Cockpit during its labeled synthetic EEG demo](docs/biofeedback-brainwaves.jpg)
+![Biofeedback Path Cockpit with unified scene controls, brainwaves power, and cardiac recovery pacing](docs/biofeedback-brainwaves.jpg)
 
-**Biofeedback Path Cockpit** combines the shared scenery with body-driven weather and fog controls. Watch uses the inferred index to change the sky; Ride uses cadence and can add heart-rate grade-load; Train turns paced heart-rate variation into a fog-clearing game. Its original Misty ridges environment remains available. In Ride, optional **Brainwaves** drive uses Muse S EEG to set speed and smoothness without cadence or a heart sensor. It runs through the local Mac bridge, with personal calibration and visible signal quality; the EEG balance is an experimental game control, not a measurement of mental clarity. The inferred index is Autonomic Telemetry's own model.
+**Biofeedback Path Cockpit** brings the full eight-scene catalog and on-screen scenebar together with body-driven weather, fog controls, and smart trainer FTMS incline sync. **Watch mode** engages automatically whenever the bike stops moving for 2.5 seconds, tilting the camera skyward to guide cardiac recovery pacing (6 breaths/min) and returning forward as soon as you pedal; resting state also reflects Autonomic Telemetry's inferred arousal index. **Ride mode** uses cadence with natural momentum, optional heart-rate grade-load, and Bluetooth FTMS smart trainer resistance. Or power Ride with **Brainwaves** using Muse S EEG through the local Mac bridge, with personal calibration and visible signal quality without cadence or a heart sensor. **Train mode** turns paced heart-rate variability into a fog-clearing coherence game.
+
+### Controls & Shortcuts
+
+Both cockpits support quick keyboard navigation and gestures:
+- **`1`–`8`**: Instantly switch between the 8 scenes.
+- **`T`**: Cycle through Times of Day (Moving, Golden hour, Sunset, Dusk, Night).
+- **`L`**: Cycle Looks (Clear, Dreamy, Wild).
+- **`A`**: Toggle Auto-Scenery (new scene every mile).
+- **`N`**: Generate a new procedural route seed.
+- **`Z` / `Escape`**: Toggle Zen / Cinema Mode (hides controls, keeps floating glass telemetry).
+- **Scroll-wheel click (middle click)**: Instantly rolls a random biome, time of day, and look combination.
 
 ## What the pages tell you
 

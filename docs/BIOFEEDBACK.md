@@ -6,7 +6,7 @@ Cadence is **measured** when a sensor reports it. Everything about your state is
 
 ## Shared scenery
 
-The Route sheet offers the same eight environments as Endless Cockpit: Golden coast, Tropical preserve, Meadow lanes, New England Autumn, Red canyon, Rainbow orbit, Misty pines and Snake Way. New England Autumn replaces the alpine-lake choice with lakeside woodland, red/orange/gold foliage, evergreens and rocky bluffs. Snake Way is a pale, scaled serpent road with raised spines above golden clouds. Misty pines keeps the original Biofeedback mountain road, mist, teal edges and drifting lights.
+The Route sheet offers the same eight environments as Endless Cockpit: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges and Snake Way. Autumn Lake replaces the alpine-lake choice with lakeside woodland, red/orange/gold foliage, evergreens and rocky bluffs. Snake Way is a pale, scaled serpent road with raised spines above golden clouds. Misty ridges keeps the original Biofeedback mountain road, mist, teal edges and drifting lights.
 
 The shared renderer and route functions live in `src/cyclingscene.js`. Watch's inferred weather and Train's breathing/fog controls retain their existing signal calculations. Scene choice does not change which measurements or inference rules those modes use. These are stylized procedural environments, not recorded places.
 
@@ -28,7 +28,7 @@ Web Bluetooth, read directly by the page:
 
 - **Heart Rate service (0x180D, 0x2A37).** Rate, plus beat intervals in 1/1024 s if the sensor sends them, and the skin-contact flag.
 - **Hume Band.** The same two commands as Autonomic Telemetry's `bridge/hume.py` (service `fff0`, write `fff6`, notify `fff7`), renewed every 20 seconds. Rate only. A reply of zero is warm-up, not 0 bpm. This direct path has not been run against a real band.
-- **Cycling Speed and Cadence (0x2A5B)** and **Fitness Machine indoor bike data (0x2AD2)**. A crank that stops sends the same event time again, so cadence reads zero after 2.5 seconds with no new crank event.
+- **Cycling Speed and Cadence (0x2A5B)** and **Fitness Machine indoor bike data (0x2AD2)**. Smart trainers also support FTMS control point (`0x2AD9`), syncing real-time procedural road grade to trainer resistance in 0.1% slope increments. A crank that stops sends the same event time again, so cadence reads zero after 2 seconds with no new crank event.
 
 Each sensor's state is one of: not connected, waiting for you to choose, connecting, **permission denied** (the browser refused), **no sensor found** (nothing chosen, or Bluetooth off), **connected with no reading** (silence, warm-up, no skin contact, or a speed-only sensor), live, disconnected, or could not connect. A browser without Web Bluetooth, a plain http page and the desktop app's window each say so before any click.
 
@@ -68,7 +68,7 @@ A stated script, sent as real packet bytes through the same parsers: a rest that
 
 ## Sessions and the Ghost Deck
 
-A session file holds cadence ten times a second, distance twice a second, and heart rate, RMSSD, SDNN, the index, the swing, clarity, the hold and dawn once a second, with the mode, scene and route seed. It is your own record, not a medical record, and nothing leaves the computer unless you share it. Replay plays back what was computed, without re-running the model. New files include the starting route, cadence mapping and baseline/settings. Their distance begins at zero when recording starts. The Ghost Deck restores that start and races the recorded distance as a light on the road, with the gap in meters. Older files are rebased to zero and label their starting position as approximate. A ride saved by the older page also replays and races, marked synthetic.
+A session file holds cadence ten times a second, distance twice a second, and heart rate, RMSSD, SDNN, the index, the swing, clarity, the hold and dawn once a second, with the mode, scene and route seed. It is your own record, not a medical record, and nothing leaves the computer unless you share it. Completed rides can also be exported directly as standard Training Center XML (`.tcx`) files containing timestamped speed, cadence, elevation and heart-rate tracks compatible with Strava, Garmin Connect, and Apple Health. Replay plays back what was computed, without re-running the model. New files include the starting route, cadence mapping and baseline/settings. Their distance begins at zero when recording starts. The Ghost Deck restores that start and races the recorded distance as a light on the road, with the gap in meters. Older files are rebased to zero and label their starting position as approximate. A ride saved by the older page also replays and races, marked synthetic.
 
 New files identify the eight-scene catalog as `cycling-scenes@1`. Files saved before that marker use the original five-scene Biofeedback catalog and `PathScene` renderer, preserving their numeric scene meanings. Re-recording one of those replays retains its original catalog. Recorded EEG game-control values and synthetic labels remain separate from cadence.
 
