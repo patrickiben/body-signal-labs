@@ -83,8 +83,8 @@ const section = (from, to) => page.slice(page.indexOf(from), page.indexOf(to, pa
     assert.deepEqual(normalized.lanes.biome, [[0, 1], [500, 2]]);
     assert.equal(JSON.stringify(legacy), before); assert.equal(reader.readSession(normalized), normalized);
   });
-  test('tagged Biofeedback accepts all eight shared scenes including Misty6 and Snake7', () => {
-    for (let biome = 0; biome < 8; biome++) {
+  test('tagged Biofeedback accepts all nine shared scenes including Misty6, Snake7 and Tron8', () => {
+    for (let biome = 0; biome < 9; biome++) {
       const s = { ...bioSession({ biome: [[0, biome]] }), sceneCatalog: SHARED_SCENES, start: initialRoute(biome) };
       assert.equal(reader.readSession(s), s);
     }
@@ -94,8 +94,8 @@ const section = (from, to) => page.slice(page.indexOf(from), page.indexOf(to, pa
       { ...bioSession(), sceneCatalog: 'cycling-scenes@2' },
       { ...bioSession(), sceneCatalog: {} },
       { ...bioSession({ biome: [[0, 5]] }), sceneCatalog: LEGACY_SCENES },
-      { ...bioSession({ biome: [[0, 8]] }), sceneCatalog: SHARED_SCENES },
-      { ...bioSession(), sceneCatalog: SHARED_SCENES, start: initialRoute(8) },
+      { ...bioSession({ biome: [[0, 9]] }), sceneCatalog: SHARED_SCENES },
+      { ...bioSession(), sceneCatalog: SHARED_SCENES, start: initialRoute(9) },
     ]) {
       assert.throws(() => reader.startReplay(s), /Invalid session/);
       assert.equal(reader.demoOn, true); assert.equal(reader.replayOn, false);
@@ -162,16 +162,16 @@ const section = (from, to) => page.slice(page.indexOf(from), page.indexOf(to, pa
       assert.equal(ride.readSession(normalized), normalized);
     }
   });
-  test('shared Endless Misty and Snake routes accept only the declared motion version', () => {
-    for (const biome of [6, 7]) {
+  test('shared Endless Misty, Snake and Tron routes accept only the declared motion version', () => {
+    for (const biome of [6, 7, 8]) {
       const s = { ...rideSession({ biome: [[0, biome]], routeStart: [[0, { biome, motionVersion: 'biofeedback-cadence@1' }]] }), sceneCatalog: SHARED_SCENES };
       assert.equal(ride.readSession(s), s);
     }
     for (const s of [
       rideSession({ biome: [[0, 6]] }),
       { ...rideSession(), sceneCatalog: LEGACY_SCENES },
-      { ...rideSession({ biome: [[0, 8]] }), sceneCatalog: SHARED_SCENES },
-      { ...rideSession({ routeStart: [[0, { biome: 8 }]] }), sceneCatalog: SHARED_SCENES },
+      { ...rideSession({ biome: [[0, 9]] }), sceneCatalog: SHARED_SCENES },
+      { ...rideSession({ routeStart: [[0, { biome: 9 }]] }), sceneCatalog: SHARED_SCENES },
       rideSession({ routeStart: [[0, { motionVersion: 'future' }]] }),
       rideSession({ routeStart: [[0, { motionVersion: null }]] }),
     ]) assert.throws(() => ride.readSession(s), /Invalid ride/);
@@ -196,7 +196,7 @@ const section = (from, to) => page.slice(page.indexOf(from), page.indexOf(to, pa
   const ui = { console, Blob, Event: class {}, $: get, S, bio: uiBio, document: { querySelectorAll: () => [], body: { style: { setProperty() {} } } },
     cv: { captureStream() { const track = { count: 0, stop() { this.count++; } }; const stream = { track, getTracks: () => [track] }; streams.push(stream); return stream; } },
     MediaRecorder: Recorder, window: { MediaRecorder: Recorder }, shell: { download(blob) { downloads.push(blob); }, toast(message) { toasts.push(message); }, syncRange() {}, setMode(m) { S.mode = m; S.holdT = 0; S.dawn = 0; } },
-    BIOMES: ['Golden coast', 'Tropical', 'Meadow lanes', 'Autumn Lake', 'Red canyon', 'Rainbow orbit', 'Misty ridges', 'Snake Way'].map(name => ({ edge: '#fff', name })), SET_SECONDS: 60, M_PER_MI: 1609.34,
+    BIOMES: ['Golden coast', 'Tropical', 'Meadow lanes', 'Autumn Lake', 'Red canyon', 'Rainbow orbit', 'Misty ridges', 'Snake Way', 'Tron grid'].map(name => ({ edge: '#fff', name })), SET_SECONDS: 60, M_PER_MI: 1609.34,
     PathScene: { BIOMES: ['Golden coast', 'Misty pines', 'Neon forest', 'High alpine', 'Red canyon'].map(name => ({ edge: '#fff', name })) }, SCENE_CATALOG: SHARED_SCENES,
     mmss: String, performance: { now: () => clock }, renderAnalysis() {}, stopGhost() {}, motion01: (rpm) => rpm / 100, MAX_SPEED: 18 };
   vm.createContext(ui);

@@ -10,7 +10,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 OUT = Path(sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp()); OUT.mkdir(parents=True, exist_ok=True)
-SCENES = ['Golden coast', 'Tropical', 'Meadow lanes', 'Autumn Lake', 'Red canyon', 'Rainbow orbit', 'Misty ridges', 'Snake Way']
+SCENES = ['Golden coast', 'Tropical', 'Meadow lanes', 'Autumn Lake', 'Red canyon', 'Rainbow orbit', 'Misty ridges', 'Snake Way', 'Tron grid']
 class Q(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *a, **k): super().__init__(*a, directory=str(ROOT), **k)
     def log_message(self, *a): pass

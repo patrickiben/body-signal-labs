@@ -118,14 +118,14 @@
     <p class="sheet-intro">Everything you see here is a stated rule. There is no model and no server.</p>
     <table class="maptable"><tbody>
       <tr><th>Cadence</th><td>Sets the speed, and the zoom of the picture each frame, through the curve under Route.</td></tr>
-      <tr><th>Scenery</th><td>Eight shared routes, with clear road surfaces and no traveling light bars.</td></tr>
+      <tr><th>Scenery</th><td>Nine shared routes, with clear road surfaces and no traveling light bars.</td></tr>
       <tr><th>Grade</th><td>The procedural road's slope changes your speed by up to 40%, never the zoom curve.</td></tr>
       <tr><th>Distance</th><td>Counts only the speed your cadence makes, never the slow drift at rest.</td></tr>
-      <tr><th>Scenery</th><td>Eight shared routes: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges and Snake Way. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
+      <tr><th>Scenery</th><td>Nine shared routes: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges, Snake Way and Tron grid. With New scenery every mile on, the next one blends in after each mile you ride, counted only while your cadence moves the road.</td></tr>
       <tr><th>Time of day</th><td>A four-minute cycle from golden hour to night, or held where you choose.</td></tr>
       <tr><th>Look</th><td>Clear, Dreamy and Wild set how much of the last frame stays and how much it warps. The sliders under Scenery fine-tune both.</td></tr>
     </tbody></table>
-    <p class="note">Keys: hold <b>Space</b> to pedal · <b>1-8</b> scenes · <b>R</b> / <b>B</b> next route · <b>T</b> time of day · <b>L</b> clarity · <b>Z</b> zen mode · <b>Middle click</b> random combo · <b>D</b> demo · <b>C</b> connect · <b>F</b> full screen · <b>H</b> hide controls.</p>`;
+    <p class="note">Keys: hold <b>Space</b> to pedal · <b>1-9</b> scenes · <b>R</b> / <b>B</b> next route · <b>T</b> time of day · <b>L</b> clarity · <b>Z</b> zen mode · <b>Middle click</b> random combo · <b>D</b> demo · <b>C</b> connect · <b>F</b> full screen · <b>H</b> hide controls.</p>`;
 
   const sessionHtml = `
     <div class="row-actions">
@@ -195,7 +195,7 @@
     onOpenSheet: (name) => { if (name === 'route') { drawElStrip(); drawCurve(); } },
     toggleDemo,
     onKey: (e, key) => {
-      if (key >= '1' && key <= '8') {
+      if (key >= '1' && key <= '9') {
         const idx = +key - 1;
         if (BIOMES[idx]) { setBiome(idx); shell.toast(`Scenery · ${BIOMES[idx].name}`); }
       } else if (key === 'b' || key === 'r') {
@@ -320,11 +320,13 @@
     $('route-caption').textContent = BIOMES[i].description;
     save();
   }
+  let pThumb = null, thumbHDR = null, thumbLDR = null, thumbPx = null, thumbAt = 0, thumbDusk = -1;
   function nextBiome() { setBiome((S.biomeNext + 1) % BIOMES.length); }
   function setTod(i, quiet) {
     S.tod = i; S.duskHold = TOD[i].v;
     pressOnly('[data-tod]', (b) => +b.dataset.tod === i);
     ride.noteLane('tod', i);
+    thumbAt = 0;
     if (!quiet) shell.toast(`Time of day · ${TOD[i].label}`);
     save();
   }
@@ -588,6 +590,7 @@
     [146.83, 196, 246.94, 293.66, 392, 493.88, 587.33],   // 5: Rainbow orbit (D major)
     [110, 146.83, 196, 220, 293.66, 329.63, 440],        // 6: Misty ridges (A dorian)
     [146.83, 196, 220, 293.66, 392, 440, 587.33],        // 7: Snake Way (D mixolydian)
+    [110, 130.81, 164.81, 196, 220, 261.63, 329.63],     // 8: Tron grid (A minor 7th synth arpeggio)
   ];
   let AC = null, sndOn = false, sndGain = null, sndDest = null, nextGrain = 0;
   let windGain = null, windFilter = null, noiseSrc = null;
@@ -738,7 +741,6 @@
 uniform sampler2D uScene; uniform float uExposure;
 vec3 aces(vec3 x){ return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.); }
 void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1.-.45*smoothstep(.25,.95,dot(q,q)*2.1); o=vec4(pow(c,vec3(1./2.2)),1.); }`;
-  let pThumb = null, thumbHDR = null, thumbLDR = null, thumbPx = null, thumbAt = 0, thumbDusk = -1;
   function drawThumbs(now) {
     const small = softwareRenderer || lastScale < .2, TW = small ? 144 : 336, TH = small ? 84 : 196;
     if (!pThumb) pThumb = G.program(THUMB_FS);
@@ -747,15 +749,15 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       thumbHDR = G.target(TW, TH);
       thumbLDR = G.target(TW, TH, { internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE }); thumbPx = new Uint8Array(TW * TH * 4);
     }
-    const z = S.vis + 60, tiles = document.querySelectorAll('.scene-tile canvas');
+    const z = S.vis + 60, td = S.duskHold != null ? S.duskHold : S.dusk, tiles = document.querySelectorAll('.scene-tile canvas');
     gl.disable(gl.BLEND);
     BIOMES.forEach((b, i) => {
       const cam = camAt(z, 0, b);
       G.into(thumbHDR); G.bindTex(0, tNoise); G.bindTex(1, tSpec);
-      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uTravelSpeed: 0, uLattice: S.spaceLattice ? 1.0 : 0.0 }, landAt(b, b, 1, S.dusk)));
+      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uTravelSpeed: 0, uLattice: S.spaceLattice ? 1.0 : 0.0 }, landAt(b, b, 1, td)));
       G.draw();
       G.into(thumbLDR); G.bindTex(0, thumbHDR.tex);
-      G.use(pThumb, { uScene: 0, uExposure: 0.98 + S.dusk * 0.25 });
+      G.use(pThumb, { uScene: 0, uExposure: 0.98 + td * 0.25 });
       G.draw();
       gl.readPixels(0, 0, TW, TH, gl.RGBA, gl.UNSIGNED_BYTE, thumbPx);
       tiles[i].width = TW; tiles[i].height = TH;
@@ -763,7 +765,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       for (let y = 0; y < TH; y++) img.data.set(thumbPx.subarray((TH - 1 - y) * TW * 4, (TH - y) * TW * 4), y * TW * 4);     // GL rows run bottom up
       c.putImageData(img, 0, 0);
     });
-    thumbAt = now; thumbDusk = S.dusk;
+    thumbAt = now; thumbDusk = td; last = performance.now();
   }
 
   /* ---- frame ---- */
@@ -777,6 +779,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
     rw = w; rh = h;
     [scene, dreamA, dreamB].forEach((T) => T && G.freeTarget(T));
     scene = G.target(rw, rh); dreamA = G.target(rw, rh); dreamB = G.target(rw, rh);
+    if (thumbHDR) { G.freeTarget(thumbHDR); G.freeTarget(thumbLDR); thumbHDR = null; thumbLDR = null; }
     Post.resize(rw, rh, 5);
   }
 
@@ -803,7 +806,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
         const mi = Math.max(1, Math.round(S.dist / M_PER_MI));
         shell.toast(`New scenery · ${BIOMES[S.biomeNext].name} (Mile ${mi})`);
       }
-      if (frameIdx > 2 && !S.pedal && S.rpm < 5 && (!thumbAt || (now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
+      if (frameIdx > 2 && (!thumbAt || (!S.pedal && S.rpm < 5 && now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
       S.dusk = S.duskHold != null ? S.dusk + (S.duskHold - S.dusk) * Math.min(1, dtMs / 900) : RM.matches ? S.dusk : 0.5 - 0.5 * Math.cos((now / 1000 / 240 + 0.14) * Math.PI * 2);
 
       // React to sustained stalls before waiting 90 expensive frames. This also
@@ -858,7 +861,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
 
       /* motes */
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
-      G.use(pMote, { uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: rw / rh, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpeedN: motion01(S.rpm), uSpark: .12 * land.uMisty, uShimmer: .1 * land.uMisty, uEdge: land.uEdge, uRouteA: land.uRouteA, uRouteB: land.uRouteB, uRouteC: land.uRouteC, uRouteD: land.uRouteD, uRouteE: land.uRouteE });
+      G.use(pMote, { uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd, uFocal: focal, uAsp: rw / rh, uZ: z, uPx: rh * 0.09, uSeed: S.seed, uSpeedN: motion01(S.rpm), uSpark: .12 * land.uMisty, uShimmer: .1 * land.uMisty, uEdge: land.uEdge, uRouteA: land.uRouteA, uRouteB: land.uRouteB, uRouteC: land.uRouteC, uRouteD: land.uRouteD, uRouteE: land.uRouteE, uRouteF: land.uRouteF });
       if(S.look !== 'clear' || land.uMisty > .001) gl.drawArrays(gl.POINTS, 0, Math.round(650 + 850 * land.uMisty));
       gl.disable(gl.BLEND);
 

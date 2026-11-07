@@ -106,9 +106,9 @@ with sync_playwright() as p:
                     pg.evaluate(f"__app.setLook('{look}');__app.setBiome({orbit},true);__app.S.vis=240;__app.S.steady=130;__app.setTod({tod},true)")
                     pg.wait_for_function(f'Math.abs(__app.S.dusk-({0.18 if tod == 1 else 1}))<.015 && __app.S.rpm>125', timeout=20000)
                     capture(f'Rainbow orbit {look} held {label}')
-                # New dense autumn foliage and Snake Way's raised edges also need
+                # New dense autumn foliage, Snake Way's raised edges, and Tron grid's neon light walls also need
                 # steady-light coverage at the shared, faster cadence mapping.
-                for name in ('Autumn Lake', 'Snake Way'):
+                for name in ('Autumn Lake', 'Snake Way', 'Tron grid'):
                     biome = scene_names.index(name)
                     pg.evaluate(f"__app.setLook('clear');__app.setBiome({biome},true);__app.S.vis=240;__app.S.steady=130;__app.setTod(1,true)")
                     pg.wait_for_function('Math.abs(__app.S.dusk-.18)<.015 && __app.S.rpm>125', timeout=20000)

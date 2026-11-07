@@ -48,7 +48,7 @@ with sync_playwright() as p:
         if info['softwareRenderer'] and info['width'] * info['height'] > 82000:
             bad.append(f'{page}: software rendering exceeds its responsive scenery budget: {info}')
         scenes = pg.evaluate('__app.BIOMES.map(b=>b.name)')
-        if scenes != ['Golden coast', 'Tropical', 'Meadow lanes', 'Autumn Lake', 'Red canyon', 'Rainbow orbit', 'Misty ridges', 'Snake Way']:
+        if scenes != ['Golden coast', 'Tropical', 'Meadow lanes', 'Autumn Lake', 'Red canyon', 'Rainbow orbit', 'Misty ridges', 'Snake Way', 'Tron grid']:
             bad.append(f'{page}: shared scenery choices differ: {scenes}')
         if pg.evaluate("typeof createKit !== 'undefined' || typeof mountShell !== 'undefined'"): bad.append(f'{page}: a drum engine is on the page')
         if len(pg.query_selector_all('nav.family a')) != 4: bad.append(f'{page}: the suite bar is missing')

@@ -200,9 +200,9 @@
       <tr><th>Heart rate</th><td>Cadence-powered Ride only. Heart rate above your baseline adds up to 4.5% of apparent grade and slows you, shown apart from the road's own grade. The zoom never changes. <span class="ep ep-inferred">Inferred</span></td></tr>
       <tr><th>Swing at pace</th><td>Train only. How far heart rate swings at the pacer's own frequency, over the last two breaths. It lifts the fog. Hold it for 60 seconds and dawn breaks. <span class="ep ep-proxy">Proxy</span></td></tr>
       <tr><th>Horizon</th><td>On the land scenes, the ridge on the horizon shows the last two minutes, newest in the middle. Heartbeats add a subtle brightness pulse; there are no traveling light bands across the road.</td></tr>
-      <tr><th>Road</th><td>Eight scenes share the same choices as Endless Cockpit, including the original Misty ridges. Hills and grade are procedural and seeded. Cadence acceleration and coasting use the same motion rules in both apps. <span class="ep ep-proc">Procedural</span></td></tr>
+      <tr><th>Road</th><td>Nine scenes share the same choices as Endless Cockpit, including the original Misty ridges and Tron grid. Hills and grade are procedural and seeded. Cadence acceleration and coasting use the same motion rules in both apps. <span class="ep ep-proc">Procedural</span></td></tr>
     </tbody></table>
-    <p class="note">Keys: hold <b>Space</b> to pedal · <b>1-8</b> scenes · <b>R</b> / <b>B</b> next route · <b>T</b> time of day · <b>L</b> clarity · <b>Z</b> zen mode · <b>Middle click</b> random combo · <b>D</b> demo · <b>C</b> connect · <b>F</b> full screen · <b>H</b> hide controls.</p>
+    <p class="note">Keys: hold <b>Space</b> to pedal · <b>1-9</b> scenes · <b>R</b> / <b>B</b> next route · <b>T</b> time of day · <b>L</b> clarity · <b>Z</b> zen mode · <b>Middle click</b> random combo · <b>D</b> demo · <b>C</b> connect · <b>F</b> full screen · <b>H</b> hide controls.</p>
     <details id="is-not" open><summary>What this is, and is not</summary>
       <p><b>Not a medical device.</b> It diagnoses nothing and treats nothing, and it does not detect or predict any condition.</p>
       <p>Inferred arousal is a personal, reference-relative heuristic. It is not measured, and it is not a stress reading. A charged sky is not a verdict about you.</p>
@@ -325,7 +325,7 @@
     onOpenSheet: (name) => { if (name === 'signal') drawSignal(); if (name === 'route') { drawElStrip(); drawCurve(); } },
     toggleDemo,
     onKey: (e, key) => {
-      if (key >= '1' && key <= '8') {
+      if (key >= '1' && key <= '9') {
         const idx = +key - 1;
         if (BIOMES[idx]) { chooseBiome(idx); shell.toast(`Scenery · ${BIOMES[idx].name}`); }
       } else if (key === 'b' || key === 'r') {
@@ -617,6 +617,7 @@
     document.querySelectorAll('[data-look]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.look === name)));
     syncLookInputs();
   }
+  let pThumb = null, thumbHDR = null, thumbLDR = null, thumbPx = null, thumbAt = 0, thumbDusk = -1;
   function setTod(i) {
     S.tod = i; S.duskHold = TOD[i].v;
     document.querySelectorAll('[data-tod]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.tod === i)));
@@ -690,7 +691,7 @@
 
   /* ---- ride sound: cadence-driven atoms, the same as Endless Cockpit, off by default ---- */
   const ATOMS = [[98, 130.81, 196, 246.94, 293.66, 392, 493.88], [110, 146.83, 220, 277.18, 329.63, 440, 554.37], [130.81, 164.81, 196, 261.63, 392, 523.25, 659.25], [123.47, 164.81, 246.94, 329.63, 493.94, 659.25, 987.77], [82.41, 110, 164.81, 220, 277.18, 329.63, 415.3]];
-  const SCENE_ATOMS = [ATOMS[0], ATOMS[1], ATOMS[2], ATOMS[3], ATOMS[4], [130.81, 164.81, 196, 261.63, 329.63, 392, 523.25], ATOMS[1], [146.83, 196, 220, 293.66, 392, 440, 587.33]];
+  const SCENE_ATOMS = [ATOMS[0], ATOMS[1], ATOMS[2], ATOMS[3], ATOMS[4], [130.81, 164.81, 196, 261.63, 329.63, 392, 523.25], ATOMS[1], [146.83, 196, 220, 293.66, 392, 440, 587.33], [110, 130.81, 164.81, 196, 220, 261.63, 329.63]];
   let AC = null, sndOn = false, sndGain = null, nextGrain = 0;
   let windGain = null, windFilter = null, noiseSrc = null;
   function grainTick() {
@@ -1230,7 +1231,6 @@
 uniform sampler2D uScene; uniform float uExposure;
 vec3 aces(vec3 x){ return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.); }
 void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1.-.45*smoothstep(.25,.95,dot(q,q)*2.1); o=vec4(pow(c,vec3(1./2.2)),1.); }`;
-  let pThumb = null, thumbHDR = null, thumbLDR = null, thumbPx = null, thumbAt = 0, thumbDusk = -1;
   function drawThumbs(now) {
     if (!G || !pScene) return;
     const small = softwareRenderer || lastScale < .2, TW = small ? 144 : 336, TH = small ? 84 : 196;
@@ -1240,16 +1240,16 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       thumbHDR = G.target(TW, TH);
       thumbLDR = G.target(TW, TH, { internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE }); thumbPx = new Uint8Array(TW * TH * 4);
     }
-    const z = S.vis + 60, tiles = document.querySelectorAll('.scene-tile canvas');
+    const z = S.vis + 60, td = S.duskHold != null ? S.duskHold : S.dusk, tiles = document.querySelectorAll('.scene-tile canvas');
     if (!tiles.length) return;
     gl.disable(gl.BLEND);
     BIOMES.forEach((b, i) => {
       const cam = camAt(z, 0, b);
       G.into(thumbHDR); G.bindTex(0, tNoise); G.bindTex(1, tRidge);
-      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uTravelSpeed: 0, uLattice: S.spaceLattice ? 1.0 : 0.0 }, CyclingScene.landAt(b, b, 1, S.dusk)));
+      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uTravelSpeed: 0, uLattice: S.spaceLattice ? 1.0 : 0.0 }, CyclingScene.landAt(b, b, 1, td)));
       G.draw();
       G.into(thumbLDR); G.bindTex(0, thumbHDR.tex);
-      G.use(pThumb, { uScene: 0, uExposure: 0.98 + S.dusk * 0.25 });
+      G.use(pThumb, { uScene: 0, uExposure: 0.98 + td * 0.25 });
       G.draw();
       gl.readPixels(0, 0, TW, TH, gl.RGBA, gl.UNSIGNED_BYTE, thumbPx);
       tiles[i].width = TW; tiles[i].height = TH;
@@ -1257,7 +1257,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       for (let y = 0; y < TH; y++) img.data.set(thumbPx.subarray((TH - 1 - y) * TW * 4, (TH - y) * TW * 4), y * TW * 4);
       c.putImageData(img, 0, 0);
     });
-    thumbAt = now; thumbDusk = S.dusk;
+    thumbAt = now; thumbDusk = td; last = performance.now();
   }
 
   function resize() {
@@ -1321,7 +1321,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
         const mi = Math.max(1, Math.round(S.dist / M_PER_MI));
         shell.toast(`New scenery · ${BIOMES[S.biomeNext].name} (Mile ${mi})`);
       }
-      if (frameIdx > 2 && !S.pedal && S.rpm < 5 && (!thumbAt || (now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
+      if (frameIdx > 2 && (!thumbAt || (!S.pedal && S.rpm < 5 && now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
 
       // When stopped on the bike for a few seconds, or before pedaling starts,
       // the cockpit settles into Watch: the camera looks up into the sky, and the weather

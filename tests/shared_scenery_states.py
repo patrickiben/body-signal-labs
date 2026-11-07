@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = Path(sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp(prefix="shared-scenes-"))
 OUT.mkdir(parents=True, exist_ok=True)
 SHARED, LEGACY = "cycling-scenes@1", "biofeedback-pathscene@1"
-IDS = ["golden-coast", "tropical-preserve", "meadow-lanes", "new-england-autumn", "red-canyon", "rainbow-orbit", "misty-pines", "snake-way"]
+IDS = ["golden-coast", "tropical-preserve", "meadow-lanes", "new-england-autumn", "red-canyon", "rainbow-orbit", "misty-pines", "snake-way", "tron-grid"]
 checks, errors, profiles, physics = [], [], {}, []
 
 
@@ -80,14 +80,14 @@ try:
                 pages[app] = page
             endless, bio = pages.values()
             catalogs = [pg.evaluate("__app.BIOMES.map(b=>b.id)") for pg in pages.values()]
-            check("both cockpits expose the same eight stable scene IDs", catalogs == [IDS, IDS], catalogs)
+            check("both cockpits expose the same nine stable scene IDs", catalogs == [IDS, IDS], catalogs)
             check("fresh Biofeedback starts on shared Misty pines", bio.evaluate("__app.S.biomeNext===6 && __app.S.sceneCatalog==='cycling-scenes@1'"))
-            check("both scene controls expose all eight choices", endless.locator("#scene-tiles [data-b]").count() == 8 and bio.locator("#biome-row [data-b]").count() == 8)
+            check("both scene controls expose all nine choices", endless.locator("#scene-tiles [data-b]").count() == 9 and bio.locator("#biome-row [data-b]").count() == 9)
             bio.locator('button[data-mode="ride"]').click()
 
             for app, page in pages.items():
                 profiles[app] = []
-                for index in range(8):
+                for index in range(9):
                     settled_scene(page, index)
                     page.wait_for_timeout(220)
                     profile = page.evaluate("""() => ({id:__app.BIOMES[__app.S.biomeNext].id,

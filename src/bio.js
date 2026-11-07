@@ -157,7 +157,7 @@
     const optional = new Set(['hr', 'rmssd', 'sdnn', 'idx', 'swing', 'baseHr']);
     const mode = (v) => ['watch', 'ride', 'train'].includes(v);
     const drivePower = (v) => ['cadence', 'brainwaves'].includes(v);
-    const biome = (v) => Number.isInteger(v) && v >= 0 && v < (sceneCatalog === SCENE_CATALOG ? 8 : 5);
+    const biome = (v) => Number.isInteger(v) && v >= 0 && v < (sceneCatalog === SCENE_CATALOG ? 9 : 5);
     const map = (v) => object(v) && Object.entries({ idle: [0, 60], max: [60, 130], maxZoom: [.004, .04], gamma: [.6, 3.2] }).every(([k, lim]) => finite(v[k], ...lim));
     if (raw.start != null) {
       const s = raw.start;

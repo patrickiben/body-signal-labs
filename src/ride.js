@@ -42,7 +42,7 @@
       if (raw.synthetic != null && typeof raw.synthetic !== 'boolean') fail('source label');
       // Appending Misty at 6 and Snake Way at 7 preserves existing Endless IDs.
       // Require a catalog tag for new IDs so old files cannot gain a new meaning.
-      const biome = (v) => Number.isInteger(v) && v >= 0 && v < (raw.sceneCatalog === SCENE_CATALOG ? 8 : 6);
+      const biome = (v) => Number.isInteger(v) && v >= 0 && v < (raw.sceneCatalog === SCENE_CATALOG ? 9 : 6);
       const tod = (v) => Number.isInteger(v) && v >= 0 && v < (raw.sceneCatalog === SCENE_CATALOG ? 5 : 4);
       for (const [name, lane] of Object.entries(raw.lanes)) {
         if (!Array.isArray(lane)) fail(`${name} lane`);

@@ -390,10 +390,10 @@ body:not(.playing) .breath-note { color: var(--ink); }
 body[data-app="biofeedback-path-cockpit"] .intro { top: 37%; }
 
 /* Scenery on the main screen */
-.scenebar { position: absolute; top: max(82px, calc(env(safe-area-inset-top) + 60px)); left: 50%; transform: translateX(-50%); width: min(900px, calc(100% - 24px)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.scene-tiles { display: flex; gap: 10px; justify-content: center; max-width: 100%; padding: 3px; }
+.scenebar { position: absolute; top: max(82px, calc(env(safe-area-inset-top) + 60px)); left: 50%; transform: translateX(-50%); width: min(980px, calc(100% - 24px)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.scene-tiles { display: flex; gap: 8px; justify-content: center; max-width: 100%; padding: 3px; }
 .scene-tile { flex: none; position: relative; display: block; padding: 0; border-radius: 13px; transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
-.scene-tile canvas { display: block; width: 100px; height: 60px; border-radius: 13px; border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
+.scene-tile canvas { display: block; width: clamp(76px, calc((100vw - 110px) / 9), 94px); height: 56px; border-radius: 13px; border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 10px 30px var(--shadow); transition: border-color 0.25s, box-shadow 0.25s; }
 .scene-tile::after { content: ""; position: absolute; left: 1px; right: 1px; bottom: 1px; height: 62%; border-radius: 0 0 12px 12px; background: linear-gradient(180deg, transparent 0%, rgba(5, 8, 18, 0.38) 45%, rgba(5, 8, 18, 0.86) 100%); pointer-events: none; }
 .scene-tile span { position: absolute; left: 9px; right: 6px; bottom: 6px; z-index: 1; text-align: left; font-size: 11px; letter-spacing: 0.2px; color: rgba(238, 237, 251, 0.86); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (hover: hover) { .scene-tile:hover { transform: translateY(-2.5px) scale(1.02); } }
@@ -417,7 +417,7 @@ body[data-app="biofeedback-path-cockpit"] .intro { top: 37%; }
   .mode-switch { top: max(14px, env(safe-area-inset-top)); }
   .mode-switch button { padding: 4px 14px; min-height: 28px; font-size: 11px; }
   .scenebar { top: max(56px, calc(env(safe-area-inset-top) + 46px)); width: 100%; gap: 8px; padding: 0 12px; }
-  .scene-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 660px; padding: 0; }
+  .scene-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 680px; padding: 0; }
   .scene-tile { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
   .scene-tile canvas { width: 100%; height: auto; aspect-ratio: 336 / 196; border-radius: 10px; box-shadow: none; }
   .scene-tile[aria-pressed="true"] canvas { box-shadow: 0 0 0 1px var(--accent); }
@@ -456,7 +456,7 @@ body[data-app="biofeedback-path-cockpit"] .intro { top: 37%; }
   .scenebar { top: max(44px, calc(env(safe-area-inset-top) + 36px)); gap: 6px; }
   .scene-tiles { display: flex; justify-content: center; width: auto; max-width: none; gap: 6px; }
   .scene-tile { display: block; position: relative; }
-  .scene-tile canvas { width: clamp(46px, calc((100vw - 78px) / 8), 96px); height: auto; aspect-ratio: 96 / 52; border-radius: 9px; }
+  .scene-tile canvas { width: clamp(42px, calc((100vw - 84px) / 9), 88px); height: auto; aspect-ratio: 96 / 52; border-radius: 9px; }
   .scene-tile::after { display: block; border-radius: 0 0 8px 8px; }
   .scene-tile span { position: absolute; left: 7px; right: 4px; bottom: 4px; width: auto; font-size: 9px; text-align: left; white-space: nowrap; color: rgba(238, 237, 251, 0.85); }
   .seg button, .seg-solo { padding: 5px 10px; min-height: 30px; font-size: 11px; }
@@ -2542,7 +2542,7 @@ void main(){
     const optional = new Set(['hr', 'rmssd', 'sdnn', 'idx', 'swing', 'baseHr']);
     const mode = (v) => ['watch', 'ride', 'train'].includes(v);
     const drivePower = (v) => ['cadence', 'brainwaves'].includes(v);
-    const biome = (v) => Number.isInteger(v) && v >= 0 && v < (sceneCatalog === SCENE_CATALOG ? 8 : 5);
+    const biome = (v) => Number.isInteger(v) && v >= 0 && v < (sceneCatalog === SCENE_CATALOG ? 9 : 5);
     const map = (v) => object(v) && Object.entries({ idle: [0, 60], max: [60, 130], maxZoom: [.004, .04], gamma: [.6, 3.2] }).every(([k, lim]) => finite(v[k], ...lim));
     if (raw.start != null) {
       const s = raw.start;
@@ -3641,10 +3641,11 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     { id: 'rainbow-orbit', name: 'Rainbow orbit', description: 'Rainbow skyway · a suspended ribbon through stars and a ringed planet', skyTop: '#171b42', skyHz: '#302449', sun: '#e0e8ff', ground: '#654a92', rock: '#6c80a8', fog: '#181b35', edge: '#aba9ff', amp: 0, ridge: 0, trees: 0, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0008, sunAz: -.4, sunEl: .6, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 1, width: 3.5, turn: 2.1, rise: 1.05, winding: .55 },
     { id: 'misty-pines', name: 'Misty ridges', description: 'Original Biofeedback mountain road · misty ridges, teal edges and drifting lights', skyTop: '#1f3a50', skyHz: '#a7c9c2', sun: '#ffe8c6', ground: '#1e3a2f', rock: '#39494a', fog: '#b0d3cc', edge: '#7ff0dd', amp: 64, ridge: 0.22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: 0.0062, sunAz: -0.3, sunEl: 0.16, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 0, misty: 1, width: 2.25, turn: 1, rise: 1, winding: 1 },
     { id: 'snake-way', name: 'Snake Way', description: 'Serpentine cloud road · pale lilac scales and raised spines above a golden cloud sea', skyTop: '#785093', skyHz: '#e5a1b5', sun: '#ffe1a1', ground: '#b5bfdc', rock: '#a6a3d1', fog: '#e9bb83', edge: '#d0ddf0', amp: 0, ridge: 0, trees: 0, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0014, sunAz: -.6, sunEl: .3, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 0, misty: 0, snake: 1, width: 2.4, turn: 7, rise: .65, winding: .75 },
-  ].map((b) => ({ orbit: 0, misty: 0, snake: 0, ...b, c: { skyTop: srgb(b.skyTop), skyHz: srgb(b.skyHz), sun: srgb(b.sun), ground: srgb(b.ground), rock: srgb(b.rock), fog: srgb(b.fog), edge: srgb(b.edge) } }));
+    { id: 'tron-grid', name: 'Tron grid', description: 'Lightcycle grid · obsidian highway, neon cyan & orange light walls, recognizer arches and wireframe peaks', skyTop: '#040a18', skyHz: '#0b2844', sun: '#7cf3ff', ground: '#061526', rock: '#0d2e4c', fog: '#082138', edge: '#33f0ff', amp: 52, ridge: .85, trees: 0, sea: 0, snow: 0, strata: 0, grid: 1, fogK: .0016, sunAz: 0, sunEl: .22, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 0, misty: 0, snake: 0, tron: 1, width: 2.65, turn: 1.65, rise: .35, winding: .9 },
+  ].map((b) => ({ orbit: 0, misty: 0, snake: 0, tron: 0, ...b, c: { skyTop: srgb(b.skyTop), skyHz: srgb(b.skyHz), sun: srgb(b.sun), ground: srgb(b.ground), rock: srgb(b.rock), fog: srgb(b.fog), edge: srgb(b.edge) } }));
 
-  const WORLD_KEYS = ['coast', 'forest', 'meadow', 'alpine', 'canyon', 'orbit', 'misty', 'snake'];
-  const NUMS = ['amp', 'ridge', 'trees', 'sea', 'snow', 'strata', 'grid', 'fogK', 'sunAz', 'sunEl', 'coast', 'forest', 'meadow', 'alpine', 'canyon', 'orbit', 'misty', 'snake', 'width', 'turn', 'rise', 'winding'];
+  const WORLD_KEYS = ['coast', 'forest', 'meadow', 'alpine', 'canyon', 'orbit', 'misty', 'snake', 'tron'];
+  const NUMS = ['amp', 'ridge', 'trees', 'sea', 'snow', 'strata', 'grid', 'fogK', 'sunAz', 'sunEl', 'coast', 'forest', 'meadow', 'alpine', 'canyon', 'orbit', 'misty', 'snake', 'tron', 'width', 'turn', 'rise', 'winding'];
   const routeWeights = (scene = BIOMES[0]) => WORLD_KEYS.map((k, i) => Array.isArray(scene) ? scene[i] || 0 : scene[k] || 0);
   function mixScene(a, b, t) {
     const m = { c: {} };
@@ -3667,8 +3668,8 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   const gradeAt = (z, seed = 0, scene = BIOMES[0]) => (roadY(z + 3, seed, scene) - roadY(z - 3, seed, scene)) / 6;
   function routeUniforms(scene) {
     const w = routeWeights(scene);
-    return { uRouteA: w.slice(0, 4), uRouteB: w[4], uRouteC: w[5], uRouteD: w[6], uRouteE: w[7],
-      uCoast: w[0], uForest: w[1], uMeadow: w[2], uAlpine: w[3], uCanyon: w[4], uOrbit: w[5], uMisty: w[6], uSnake: w[7],
+    return { uRouteA: w.slice(0, 4), uRouteB: w[4], uRouteC: w[5], uRouteD: w[6], uRouteE: w[7], uRouteF: w[8],
+      uCoast: w[0], uForest: w[1], uMeadow: w[2], uAlpine: w[3], uCanyon: w[4], uOrbit: w[5], uMisty: w[6], uSnake: w[7], uTron: w[8],
       uWidth: Array.isArray(scene) ? BIOMES.reduce((v, b, i) => v + b.width * w[i], 0) : scene.width };
 
   }
@@ -3687,6 +3688,9 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     const ss = Math.exp(-Math.pow((d - 0.36) / 0.11, 2));
     const dk = Math.exp(-Math.pow((d - 0.55) / 0.13, 2)) * (1 - Math.max(0, (d - 0.72) / 0.28));
     const nt = Math.max(0, Math.min(1, (d - 0.62) / 0.38));
+    const tr = mixN('tron');
+    const ghSky = gh * (1 - tr * 0.88);
+    const ssSky = ss * (1 - tr * 0.88);
 
     const sunElBase = mixN('sunEl');
     const sunEl = Math.max(0.032, lerp(lerp(lerp(sunElBase, sunElBase * 0.42, gh), 0.046, ss), 0.038, Math.max(dk, nt)));
@@ -3698,17 +3702,17 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
 
     // Sky top: rich clear azure at golden hour, deep cobalt-violet at sunset, twilight indigo at dusk, pitch midnight at night
     const skyTop = baseTop.map((v, i) => {
-      let c = lerp(v, [0.10, 0.28, 0.55][i], gh * 0.65);
-      c = lerp(c, [0.075, 0.13, 0.34][i], ss * 0.85);
-      c = lerp(c, [0.035, 0.045, 0.14][i], dk);
+      let c = lerp(v, [0.10, 0.28, 0.55][i], ghSky * 0.65);
+      c = lerp(c, [0.075, 0.13, 0.34][i], ssSky * 0.85);
+      c = lerp(c, [0.035, 0.045, 0.14][i], dk * (1 - tr * 0.75));
       return lerp(c, [0.004, 0.006, 0.024][i], nt);
     });
 
     // Sky horizon: glowing apricot at golden hour, vivid flame/coral at sunset, rich magenta at dusk, deep dark at night
     const skyHz = baseHz.map((v, i) => {
-      let c = lerp(v, [0.98, 0.64, 0.34][i], gh * 0.85);
-      c = lerp(c, [1.0, 0.37, 0.11][i], ss * 0.95);
-      c = lerp(c, [0.42, 0.14, 0.32][i], dk);
+      let c = lerp(v, [0.98, 0.64, 0.34][i], ghSky * 0.85);
+      c = lerp(c, [1.0, 0.37, 0.11][i], ssSky * 0.95);
+      c = lerp(c, [0.42, 0.14, 0.32][i], dk * (1 - tr * 0.75));
       return lerp(c, [0.035, 0.025, 0.07][i], nt);
     });
 
@@ -3722,21 +3726,21 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
 
     // Fog: golden-lit haze at golden hour, fiery copper glow at sunset, violet twilight mist at dusk, dark night mist
     const fog = baseFog.map((v, i) => {
-      let c = lerp(v, [0.92, 0.68, 0.42][i], gh * 0.75);
-      c = lerp(c, [0.86, 0.38, 0.19][i], ss * 0.85);
-      c = lerp(c, [0.18, 0.12, 0.25][i], dk);
+      let c = lerp(v, [0.92, 0.68, 0.42][i], ghSky * 0.75);
+      c = lerp(c, [0.86, 0.38, 0.19][i], ssSky * 0.85);
+      c = lerp(c, [0.18, 0.12, 0.25][i], dk * (1 - tr * 0.75));
       return lerp(c, [0.02, 0.025, 0.05][i], nt);
     });
 
     // Ground & Rock: warm golden illumination vs fiery sunset rim-light vs cool dusk shadows
     const ground = baseGround.map((v, i) => {
-      let c = lerp(v, [v * 1.08 + 0.12, v * 0.95 + 0.06, v * 0.75][i], gh * 0.5);
-      c = lerp(c, [v * 1.14 + 0.14, v * 0.84 + 0.03, v * 0.58][i], ss * 0.65);
+      let c = lerp(v, [v * 1.08 + 0.12, v * 0.95 + 0.06, v * 0.75][i], ghSky * 0.5);
+      c = lerp(c, [v * 1.14 + 0.14, v * 0.84 + 0.03, v * 0.58][i], ssSky * 0.65);
       return lerp(c, v * 0.68, dk);
     });
     const rock = baseRock.map((v, i) => {
-      let c = lerp(v, [v * 1.08 + 0.12, v * 0.95 + 0.06, v * 0.75][i], gh * 0.5);
-      c = lerp(c, [v * 1.14 + 0.14, v * 0.84 + 0.03, v * 0.58][i], ss * 0.65);
+      let c = lerp(v, [v * 1.08 + 0.12, v * 0.95 + 0.06, v * 0.75][i], ghSky * 0.5);
+      c = lerp(c, [v * 1.14 + 0.14, v * 0.84 + 0.03, v * 0.58][i], ssSky * 0.65);
       return lerp(c, v * 0.68, dk);
     });
 
@@ -3744,7 +3748,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       uSkyTop: skyTop, uSkyHz: skyHz, uSunC: sunC,
       uGround: ground, uRock: rock, uFog: fog, uEdge: mix3('edge'),
       uSunDir: [sx / sl, sunEl / sl, sz / sl],
-      uCoast: mixN('coast'), uForest: mixN('forest'), uMeadow: mixN('meadow'), uAlpine: mixN('alpine'), uCanyon: mixN('canyon'), uOrbit: mixN('orbit'), uMisty: mixN('misty'), uSnake: mixN('snake'), uWidth: mixN('width'), uRouteA: ['coast','forest','meadow','alpine'].map(mixN), uRouteB: mixN('canyon'), uRouteC: mixN('orbit'), uRouteD: mixN('misty'), uRouteE: mixN('snake'),
+      uCoast: mixN('coast'), uForest: mixN('forest'), uMeadow: mixN('meadow'), uAlpine: mixN('alpine'), uCanyon: mixN('canyon'), uOrbit: mixN('orbit'), uMisty: mixN('misty'), uSnake: mixN('snake'), uTron: tr, uWidth: mixN('width'), uRouteA: ['coast','forest','meadow','alpine'].map(mixN), uRouteB: mixN('canyon'), uRouteC: mixN('orbit'), uRouteD: mixN('misty'), uRouteE: mixN('snake'), uRouteF: tr,
       uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: d, uFogK: mixN('fogK'), uLattice: 0.0,
     };
   }
@@ -3755,14 +3759,14 @@ uniform vec3 uCam,uRight,uUp,uFwd;
 uniform sampler2D uN,uS;
 uniform vec3 uSkyTop,uSkyHz,uSunC,uGround,uRock,uFog,uEdge,uSunDir;
 uniform float uAmp,uRidge,uSea,uSnow,uStrata,uGrid,uTrees,uDusk,uFogK;
-uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uOrbit,uMisty,uSnake,uWidth,uTravelSpeed,uLattice;
+uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uOrbit,uMisty,uSnake,uTron,uWidth,uTravelSpeed,uLattice;
 uniform float uShimmer,uAurora,uHaze,uWeather,uWarm,uBreath,uBreathOn,uNebula;
 uniform vec4 uGhost;
-uniform vec4 uRouteA; uniform float uRouteB,uRouteC,uRouteD,uRouteE;
+uniform vec4 uRouteA; uniform float uRouteB,uRouteC,uRouteD,uRouteE,uRouteF;
 float routeX(float z,float turn,float winding){z*=winding;return turn*(14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7));}
 float routeY(float z,float rise,float winding){z*=winding;return rise*(7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1));}
-float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);if(uRouteD>.000001)v+=uRouteD*routeX(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeX(z,7.,.75);return v;}
-float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);if(uRouteD>.000001)v+=uRouteD*routeY(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeY(z,.65,.75);return v;}
+float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);if(uRouteD>.000001)v+=uRouteD*routeX(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeX(z,7.,.75);if(uRouteF>.000001)v+=uRouteF*routeX(z,1.65,.9);return v;}
+float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);if(uRouteD>.000001)v+=uRouteD*routeY(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeY(z,.65,.75);if(uRouteF>.000001)v+=uRouteF*routeY(z,.35,.9);return v;}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return textureLod(uN,(i+f+.5)/256.,0.).r;}
 const mat2 R=mat2(.8,.6,-.6,.8);
 float fbm2(vec2 p){return (vn(p)+.5*vn(R*p*2.03+3.1))/1.5;}
@@ -3792,11 +3796,34 @@ vec4 tropicalTree(vec2 p,float h,float side){
   vec3 c=vec3(0.);float alpha=0.;
   float H=6.5+h*4.,bend=-side*(.5+h*1.4);
   float yf=clamp(p.y/H,0.,1.),tx=bend*yf*yf;
-  float trunk=foliageBand(p.x-tx,.22-.09*yf,foliageAA)*foliageSpan(p.y,0.,H,foliageAA);
+  float trunkW=.22-.09*yf;
+  float trunk=foliageBand(p.x-tx,trunkW,foliageAA)*foliageSpan(p.y,0.,H,foliageAA);
   float trunkDetail=1.-smoothstep(.35,1.4,foliageAA*15.);
-  if(trunk>.001)foliagePaint(c,alpha,vec3(.29,.19,.105)*(.78+.18*cos(p.y*15.)*trunkDetail+.2*clamp((p.x-tx)/.22,-1.,1.)),trunk);
+  if(trunk>.001){
+    float ring=cos(p.y*16.+sin(p.y*3.5)*.4)*trunkDetail;
+    float cyl=clamp((p.x-tx)/max(trunkW,.01),-1.,1.);
+    vec3 bark=mix(vec3(.24,.15,.08),vec3(.38,.26,.14),.5+.3*ring+.25*cyl);
+    foliagePaint(c,alpha,bark,trunk);
+  }
+  // Occasional trunk epiphyte / bromeliad rosette clinging halfway up the curved palm trunk
+  if(h>.28&&h<.68&&abs(p.y-H*.52)<.85){
+    vec2 ep=p-vec2(tx+side*.08,H*.52);
+    for(int k=0;k<4;k++){
+      float ang=(float(k)-1.5)*.55+side*.25;
+      float eLeaf=leaf2(ep,vec2(0.),vec2(sin(ang)*.52,cos(ang)*.46),.09);
+      if(eLeaf>.001)foliagePaint(c,alpha,mix(vec3(.08,.26,.07),vec3(.24,.42,.11),float(k)/3.),eLeaf);
+    }
+    float bract=leaf2(ep,vec2(0.,.05),vec2(side*.22,.48),.07);
+    if(bract>.001)foliagePaint(c,alpha,vec3(.78,.16,.22),bract);
+  }
   vec2 crown=vec2(bend,H);
   if(h<.78){
+    // Soft sunlit inner canopy behind the crisp outer fronds so sky gaps between
+    // drooping frond layers do not strobe like venetian blinds at high speed.
+    vec2 cq=(p-crown-vec2(0.,-.22))/vec2(2.7+h*.5,1.55+h*.25);
+    float innerHalo= clamp(1.-length(cq),0.,1.);
+    innerHalo=smoothstep(0.,.65,innerHalo)*.82;
+    if(innerHalo>.001)foliagePaint(c,alpha,mix(vec3(.09,.24,.07),vec3(.19,.37,.11),clamp(.5+.35*cq.y+.2*cq.x*side,0.,1.)),innerHalo);
     // Six drooping pinnate fronds plus an upright spear. Curved rachises and
     // alternating narrow leaflets give palms an unmistakable open silhouette.
     for(int f=0;f<6;f++){
@@ -3808,25 +3835,42 @@ vec4 tropicalTree(vec2 p,float h,float side){
       // Leaflet notches converge to their mean coverage once unresolved instead
       // of alternately appearing and disappearing as a subpixel frond moves.
       float resolved=1.-smoothstep(.35,1.4,foliageAA*38./span);
-      float leafWidth=(.12+.29*sin(tc*3.14159))*mix(.803775,.46+.54*abs(sin(tc*38.+h*4.)),resolved);
+      float leafWidth=(.13+.30*sin(tc*3.14159))*mix(.82,.48+.52*abs(sin(tc*38.+h*4.)),resolved);
       float slope=((2.-layer*.62)-2.*(2.25+layer*.38)*tc)/span;
       float normalScale=inversesqrt(1.+slope*slope);
       float frond=foliageBand((p.y-axisY)*normalScale,leafWidth*normalScale,foliageAA)*foliageSpan(t*span,0.,span,foliageAA);
-      if(frond>.001)foliagePaint(c,alpha,mix(vec3(.025,.13,.055),vec3(.11,.29,.075),.35+.35*sideF+.15*layer)*(.88+.12*cos(tc*38.)*resolved),frond);
+      float rachis=foliageBand((p.y-axisY)*normalScale,.028*normalScale,foliageAA)*foliageSpan(t*span,0.,span*.92,foliageAA);
+      if(frond>.001){
+        vec3 fCol=mix(vec3(.06,.20,.065),vec3(.18,.38,.105),.35+.35*sideF+.16*layer)*(.9+.12*cos(tc*38.)*resolved);
+        foliagePaint(c,alpha,fCol,frond);
+      }
+      if(rachis>.001)foliagePaint(c,alpha,vec3(.24,.36,.12),rachis*.7);
     }
     float spear=leaf2(p,crown,crown+vec2(.4*side,2.3),.18);
-    if(spear>.001)foliagePaint(c,alpha,vec3(.12,.31,.09),spear);
-    float fruit=step(length((p-crown-vec2(.12,-.18))/vec2(.25,.2)),1.);
-    if(fruit>.5){alpha=1.;c=vec3(.19,.13,.055);}
+    if(spear>.001)foliagePaint(c,alpha,vec3(.16,.37,.11),spear);
+    // Clustered coconuts nestled beneath the crown
+    for(int cn=0;cn<3;cn++){
+      vec2 cPos=crown+vec2((float(cn)-1.)*.18+.06*side,-.18-abs(float(cn)-1.)*.09);
+      vec2 cd=(p-cPos)/vec2(.16,.14);
+      float nut=1.-smoothstep(.85,1.+.8*foliageAA,length(cd));
+      if(nut>.001)foliagePaint(c,alpha,vec3(.26,.17,.07)*(1.1-.35*cd.y+.2*cd.x),nut);
+    }
   }else{
-    // Broad, overlapping leaves form a lower, rounded tropical canopy.
+    // Broad, overlapping leaves form a lower, rounded tropical canopy (banana / traveler's palm).
     for(int f=0;f<9;f++){
       float angle=float(f)*2.4+h*8.;
       vec2 base=crown+vec2(sin(angle)*.35,cos(angle)*.25-.65);
       vec2 tip=base+vec2(sin(angle)*2.25,cos(angle)*1.45+.35);
       float leaf=leaf2(p,base,tip,.72);
-      if(leaf>.001){float vein=1.-smoothstep(.012,.045,line2(p,base,tip));foliagePaint(c,alpha,mix(vec3(.035,.18,.065),vec3(.12,.29,.075),fract(float(f)*.37+h))+vec3(.05,.06,.01)*vein,leaf);}
+      if(leaf>.001){
+        float vein=1.-smoothstep(.012,.045,line2(p,base,tip));
+        float ribs=.94+.06*cos(dot(p-base,normalize(tip-base))*18.)*(1.-smoothstep(.25,1.,foliageAA*12.));
+        foliagePaint(c,alpha,(mix(vec3(.06,.23,.075),vec3(.17,.36,.095),fract(float(f)*.37+h))+vec3(.06,.08,.015)*vein)*ribs,leaf);
+      }
     }
+    // Pendulous crimson banana-flower bract hanging below the broad leaves
+    float bract=leaf2(p,crown+vec2(side*.25,-.55),crown+vec2(side*.42,-1.35),.16);
+    if(bract>.001)foliagePaint(c,alpha,vec3(.52,.09,.18),bract);
   }
   return vec4(c,alpha);
 }
@@ -3841,12 +3885,25 @@ vec4 tropicalBorder(vec2 p,float h,float sight){
     float phaseAA=foliageAA*27./length(tip-base);
     float resolved=1.-smoothstep(.35,1.4,phaseAA);
     leaf*=mix(.85879,smoothstep(.22-phaseAA,.22+phaseAA,abs(sin(t*27.))),resolved);
-    if(leaf>.001)foliagePaint(c,alpha,mix(vec3(.035,.19,.075),vec3(.12,.32,.09),float(f)/7.),leaf);
+    if(leaf>.001)foliagePaint(c,alpha,mix(vec3(.045,.22,.085),vec3(.15,.36,.105),float(f)/7.),leaf);
+  }
+  // Broad heart-shaped monstera / elephant-ear understory leaves with fenestration notches
+  if(h>.32&&h<.82)for(int m=0;m<3;m++){
+    float mx=-.15+float(m)*.38,my=.38+float(m)*.16;
+    vec2 mBase=vec2(mx,0.),mTip=vec2(mx+(float(m)-1.)*.26,my+.62);
+    float stemM=foliageBand(line2(p,mBase,mTip),.016,foliageAA);
+    if(stemM>.001)foliagePaint(c,alpha,vec3(.07,.24,.07),stemM);
+    float mLeaf=leaf2(p,mBase+vec2(0.,.18),mTip,.34);
+    if(mLeaf>.001){
+      float notch=smoothstep(.04,.09,abs(sin((p.y-my)*16.))+abs(p.x-mx)*1.8);
+      float vein=1.-smoothstep(.01,.035,line2(p,mBase+vec2(0.,.18),mTip));
+      foliagePaint(c,alpha,mix(vec3(.04,.20,.07),vec3(.13,.33,.10),float(m)*.4)+vec3(.05,.08,.02)*vein,mLeaf*mix(.85,1.,notch));
+    }
   }
   if(h>.2&&h<.72)for(int f=0;f<5;f++){
     vec2 base=vec2(.7,0.),tip=base+vec2((float(f)-2.)*.42,1.1+.3*sin(float(f)+h));
     float leaf=leaf2(p,base,tip,.22);
-    if(leaf>.001)foliagePaint(c,alpha,mix(vec3(.24,.045,.085),vec3(.44,.12,.16),float(f)/5.),leaf);
+    if(leaf>.001)foliagePaint(c,alpha,mix(vec3(.28,.055,.095),vec3(.48,.14,.18),float(f)/5.),leaf);
   }
   if(h<.3){
     // Upright heliconia stems with alternating boat-shaped orange/red bracts.
@@ -3869,6 +3926,19 @@ vec4 tropicalBorder(vec2 p,float h,float sight){
         if(length(d/vec2(.095,.095))<1.){alpha=1.;c=mix(vec3(.47,.07,.31),vec3(.68,.19,.44),h);}
       }
       if(length(p-center)<.04){alpha=1.;c=vec3(.95,.63,.11);}
+    }
+  }
+  // Iridescent Blue Morpho butterfly resting on sunlit foliage
+  if(sight>.42&&sight<.54){
+    vec2 bp=p-vec2(-.28,1.18+.15*sin(h*19.));
+    vec2 wL=vec2(abs(bp.x),bp.y);
+    float fore=1.-smoothstep(.88,1.+foliageAA*4.,length((wL-vec2(.13,.06))/vec2(.15,.11)));
+    float hind=1.-smoothstep(.88,1.+foliageAA*4.,length((wL-vec2(.10,-.05))/vec2(.12,.09)));
+    float wing=max(fore,hind);
+    if(wing>.001){
+      float rim=smoothstep(.10,.15,length(wL-vec2(.11,.01)));
+      vec3 morpho=mix(vec3(.07,.52,.96),vec3(.02,.04,.06),rim);
+      foliagePaint(c,alpha,morpho,wing);
     }
   }
   // Occasional toucan-like bird, resting on a woody branch above the flowers.
@@ -3938,6 +4008,33 @@ vec4 seasonalPlants(vec2 p,float h,float coast,float meadow,float alpine,float c
   if(abs(p.x)>1.5||p.y<-.16||p.y>1.35||floral+canyon<.002)return outp;
   float aa=foliageAA;
   vec3 stem=vec3(.085,.15,.035);
+  // Coastal dune grass blades & golden seed plumes along the cliffside shoulder
+  if(coast>.002&&h<.76){
+    for(int g=0;g<4;g++){
+      float gx=-.55+float(g)*.34+(h-.5)*.2;
+      float arch=(float(g)-1.5)*.28;
+      vec2 gFoot=vec2(gx,0.),gTip=vec2(gx+arch,.52+.18*sin(float(g)*2.+h*7.));
+      outp=epPaint(outp,mix(vec3(.18,.27,.11),vec3(.44,.41,.21),float(g)/3.),epLance(p,gFoot,gTip,.022,aa)*coast);
+      outp=epPaint(outp,vec3(.58,.50,.28),epLance(p,gTip-vec2(arch*.2,.1),gTip+vec2(arch*.15,.11),.032,aa)*coast);
+    }
+  }
+  // Fallen autumn leaf scatter & lakeside cattails/reeds in Autumn Lake
+  if(alpine>.002){
+    for(int lf=0;lf<4;lf++){
+      float lx=-.85+float(lf)*.52+sin(h*31.+float(lf)*4.)*.18;
+      float ly=.02+.03*fract(h*13.+float(lf)*.37);
+      vec3 lCol=lf==0?vec3(.48,.07,.03):lf==1?vec3(.56,.21,.03):vec3(.52,.36,.05);
+      outp=epPaint(outp,lCol,epOval(p-vec2(lx,ly),vec2(.065,.026),aa)*alpine);
+    }
+    if(h<.54){
+      for(int r=0;r<2;r++){
+        float rx=-.35+float(r)*.46;
+        vec2 rBase=vec2(rx,0.),rTop=vec2(rx+(float(r)-.5)*.08,.78+.15*h);
+        outp=epPaint(outp,vec3(.14,.22,.07),epLine(p,rBase,rTop,.011,aa)*alpine);
+        outp=epPaint(outp,vec3(.24,.12,.05),epLine(p,rTop-vec2(0.,.22),rTop-vec2(0.,.06),.032,aa)*alpine);
+      }
+    }
+  }
   if(floral>.002&&h>.18){
     for(int i=0;i<3;i++){
       float v=epHash(h*81.+float(i)*7.3),x=-.72+float(i)*.61+(v-.5)*.18;
@@ -3957,6 +4054,15 @@ vec4 seasonalPlants(vec2 p,float h,float coast,float meadow,float alpine,float c
         outp=epPaint(outp,flower,epLance(p,tip,tip+dir*size,.038,aa)*floral);
       }
       outp=epPaint(outp,vec3(.35,.20,.035),epOval(p-tip,vec2(.025),aa)*floral);
+    }
+  }
+  // Spiky blue-agave / yucca rosette in Red Canyon
+  if(canyon>.002&&h<.52){
+    vec2 agBase=vec2(.32-(h-.25)*.8,.02);
+    for(int s=0;s<7;s++){
+      float ang=-1.15+float(s)*.38;
+      vec2 sTip=agBase+vec2(sin(ang)*.46,cos(ang)*.42);
+      outp=epPaint(outp,mix(vec3(.11,.24,.18),vec3(.22,.36,.27),float(s)/6.),epLance(p,agBase,sTip,.042,aa)*canyon);
     }
   }
   // A low prickly pear complements the tall canyon saguaros; blooms are small and seasonal.
@@ -4052,9 +4158,16 @@ vec4 autumnTree(vec2 p,float h){
           float trunkA=epLine(q,vec2(0.,0.),vec2(.12,6.6),.14,aa);
           trunkA=max(trunkA,epLine(q,vec2(0.,3.7),vec2(-1.7,6.7),.08,aa));
           trunkA=max(trunkA,epLine(q,vec2(0.,4.4),vec2(1.7,7.4),.07,aa));
-          vec3 leafC=h<.44?vec3(.32,.035,.012):h<.73?vec3(.46,.12,.015):vec3(.42,.26,.025);
+          trunkA=max(trunkA,epLine(q,vec2(-.45,4.8),vec2(-1.1,7.5),.045,aa));
+          // Paper-birch white bark with dark lenticel bands vs dark sugar-maple bark
+          float birch=step(.62,h);
+          float barkBand=smoothstep(.45,.75,cos(q.y*12.+sin(q.x*6.+h*19.)))*(1.-smoothstep(.35,1.4,aa*8.));
+          vec3 barkC=mix(vec3(.12,.09,.065),mix(vec3(.78,.75,.70),vec3(.16,.14,.13),barkBand*.75),birch);
+          vec3 leafC=h<.44?vec3(.32,.035,.012):h<.73?vec3(.46,.12,.015):vec3(.44,.28,.025);
           leafC*=.6+.55*fbm2(q*1.1+h*21.)+.18*smoothstep(-3.,3.,q.x);
-          return vec4(mix(vec3(.12,.09,.065),leafC,crown),max(crown,trunkA));
+          // Visible forked upper branches peeking through the lower autumn canopy
+          float peek=trunkA*smoothstep(5.4,3.2,q.y);
+          return vec4(mix(leafC,barkC,clamp(1.-crown+peek*.65,0.,1.)),max(crown,trunkA));
 }
 
 const float SEA=-14.;
@@ -4206,6 +4319,43 @@ vec4 mistyWorld(vec3 ro,vec3 rd,vec2 sv){
     col=mix(col,skyc,smoothstep(590.,680.,t));
     trail=clamp(dot(emC,vec3(.4))*exp(-t*.0085),0.,1.);
   }
+  // Layered mountain pines and mossy pass boulders along the Misty Ridges road
+  if(rd.z>.02&&uTrees>.01){
+    for(int row=14;row>=0;row--){
+      float spacing=16.;
+      float cell=floor(ro.z/spacing)+float(row)+1.;
+      float z=cell*spacing,ot=(z-ro.z)/rd.z;
+      if(ot>t||ot>220.||ot<.5)continue;
+      vec3 hit=ro+rd*ot;
+      float aa=max(.005,ot/(uRes.y*uFocal));
+      for(int sideI=0;sideI<2;sideI++){
+        float signX=sideI==0?-1.:1.;
+        float h=fract(sin(cell*12.71+signX*91.+uSeed)*43758.54);
+        float x=pathX(z)+signX*(4.4+h*11.5),dx=hit.x-x;
+        if(abs(dx)>3.8)continue;
+        float base=mistySurface(vec2(x,z),false),y=hit.y-base;
+        if(y<-.2||y>14.)continue;
+        float treeH=6.5+h*6.5,treeW=1.5+h*1.2,pine=0.;
+        for(int tier=0;tier<4;tier++){
+          float by=1.1+float(tier)*treeH*.16,top=by+treeH*.46;
+          float rad=treeW*(1.-float(tier)*.16)*clamp((top-y)/(top-by),0.,1.);
+          rad*=.88+.12*sin(y*7.+h*23.);
+          pine=max(pine,foliageBand(dx,rad,aa)*foliageSpan(y,by,top,aa));
+        }
+        float trunk=foliageBand(dx,.14,aa)*foliageSpan(y,0.,treeH*.45,aa);
+        float boulder=epOval(vec2(dx-(h-.5)*1.4,y-.35),vec2(.85+h*.4,.52+h*.25),aa)*step(.55,h);
+        float sil=max(max(pine,trunk),boulder)*smoothstep(220.,140.,ot)*smoothstep(1.2,5.,ot);
+        if(sil>.001){
+          vec3 treeC=mix(vec3(.04,.07,.06),uGround*(.65+.35*step(0.,dx*signX)),pine);
+          treeC=mix(treeC,uRock*.85,boulder);
+          float fog=1.-exp(-pow(ot*uFogK,1.55));
+          vec3 fogC=mix(uFog,uSunC,pow(max(dot(rd,uSunDir),0.),7.)*.55)*(1.-uDusk*.55);
+          vec3 lit=treeC*(uSunC*.55+uFog*.55)*(1.-uDusk*.55);
+          col=mix(col,mix(lit,fogC,clamp(fog+.18,0.,1.)),sil*.88);
+        }
+      }
+    }
+  }
   if(uGhost.w>0.){
     vec3 og=uGhost.xyz-ro;float b=dot(og,rd);
     if(b>0.&&b<t){float dg=length(og-rd*b)/(1.+b*.006);float gg=exp(-dg*dg*2.6)*uGhost.w;col+=mix(uEdge,vec3(1.),.55)*gg*2.2;trail=max(trail,gg*.8);}
@@ -4224,7 +4374,9 @@ float height(vec2 p,bool hi){
     float coast=ry+shoulder*(4.+n*16.)*smoothstep(2.,60.,-dx);
     coast=mix(coast,SEA-5.,smoothstep(5.,21.,dx));
     vec2 stack=vec2(dx-58.,mod(p.y+uSeed*17.,135.)-67.5);
+    vec2 stack2=vec2(dx-38.,mod(p.y+uSeed*17.+52.,135.)-67.5);
     coast=max(coast,SEA-4.+26.*(1.-smoothstep(7.,15.,length(stack))));
+    coast=max(coast,SEA-4.+16.*(1.-smoothstep(4.5,10.5,length(stack2))));
     h+=coast*uCoast;
   }
   if(uForest>.001)h+=(ry+shoulder*(.2+n*.9)+smoothstep(35.,150.,d)*n*6.)*uForest;
@@ -4241,6 +4393,11 @@ float height(vec2 p,bool hi){
   if(uCanyon>.001){
     float wall=smoothstep(12.+n*12.,23.+n*16.,d);
     h+=(ry+shoulder*1.2+wall*(22.+floor(n*5.)*7.))*uCanyon;
+  }
+  if(uTron>.001){
+    float gridMesa=smoothstep(uWidth+3.,uWidth+16.,d)*(floor(n*5.)*3.5);
+    float cyberPeak=smoothstep(uWidth+14.,uWidth+58.,d)*(14.+abs(2.*vn(q*2.2)-1.)*28.+floor(n*6.)*4.5);
+    h+=(ry+gridMesa+cyberPeak)*uTron;
   }
   if(uMisty>.001)h+=mistyHeight(p,hi)*uMisty;
   // Land weights sum to 1-uOrbit during a space transition; preserve the
@@ -4265,12 +4422,23 @@ vec3 sky(vec3 rd,vec2 sv){
   float y=max(rd.y,0.);
   vec3 c=mix(uSkyHz,uSkyTop,pow(y,.52));
   float s=max(dot(rd,uSunDir),0.);
-  c+=uSunC*(pow(s,950.)*2.5+pow(s,56.)*.15);
+  c+=uSunC*(pow(s,950.)*2.5*(1.-uTron*.55)+pow(s,56.)*.15);
+  if(uTron>.001){
+    // Digital Vault sky dome wireframe, I/O Tower vertical light beam, and synth-scanline solar disk
+    float domeLong=foliageBand(abs(fract(atan(rd.x,rd.z)*4.45)-.5)-.5,.012,.025)*smoothstep(.04,.55,rd.y);
+    float domeLat=foliageBand(abs(fract(rd.y*9.)-.5)-.5,.012,.025)*smoothstep(.04,.45,rd.y);
+    c+=vec3(0.,.45,.75)*(domeLong+domeLat)*.14*uTron;
+    float ioBeam=exp(-pow(sv.x/.012,2.))*smoothstep(-.02,.65,rd.y)+.32*exp(-pow(sv.x/.085,2.))*smoothstep(-.02,.38,rd.y);
+    c+=mix(vec3(0.,.82,1.),vec3(.75,.96,1.),exp(-pow(sv.x/.006,2.)))*ioBeam*.75*uTron;
+    float sunDisk=smoothstep(.9962,.9976,s);
+    float scanline=.55+.45*smoothstep(-.2,.2,sin(rd.y*240.));
+    c+=mix(vec3(1.,.36,.04),vec3(0.,.88,1.),clamp((rd.y-.04)*12.,0.,1.))*sunDisk*scanline*1.35*uTron;
+  }
   // cloud deck
   if(rd.y>.004){
     vec2 cp=rd.xz/(rd.y+.13)*1.25+vec2(uT*.006,uCam.z*.0009);
     float cl=fbm4(cp);
-    float cov=smoothstep(.57,.88,cl);
+    float cov=smoothstep(.57,.88,cl)*(1.-uTron*.85);
     vec3 cc=mix(uFog*.9,uSunC*1.02,.3+.55*pow(s,3.));
     c=mix(c,cc,cov*.62*smoothstep(.004,.13,rd.y));
   }
@@ -4324,8 +4492,10 @@ vec3 orbitSky(vec3 rd){
     vec2 r=mat2(.94,.342,-.342,.94)*q;
     float aa=2./uRes.y,rad=length(vec2(r.x,r.y/.26));
     float ring=smoothstep(.25-aa,.25+aa,rad)*(1.-smoothstep(.42-aa,.42+aa,rad));
-    vec3 ringC=mix(vec3(.12,.18,.28),vec3(.31,.25,.16),smoothstep(.26,.41,rad));
-    ringC*=.8+.2*sin(rad*75.);
+    // Crisp Cassini-style ring division and concentric icy ringlet bands
+    ring*=1.-.62*foliageBand(rad-.334,.0055,aa);
+    vec3 ringC=mix(vec3(.12,.18,.28),vec3(.34,.27,.18),smoothstep(.26,.41,rad));
+    ringC*=.78+.22*sin(rad*85.)+.08*cos(rad*210.);
     if(r.y>0.)c=mix(c,ringC,ring*.78);
     float disk=1.-smoothstep(.202-aa,.202+aa,length(q));
     if(disk>0.){
@@ -4333,7 +4503,10 @@ vec3 orbitSky(vec3 rd){
       vec3 n=vec3(p,sqrt(max(0.,1.-dot(p,p))));
       float light=.22+.78*max(0.,dot(n,normalize(vec3(-.6,.7,.8))));
       float bands=.5+.5*sin(p.y*17.+sin(p.x*3.)*.8);
-      vec3 planet=mix(vec3(.14,.24,.31),vec3(.48,.31,.2),smoothstep(.3,.75,bands))*light;
+      vec2 storm=(p-vec2(-.22,-.18))/vec2(.19,.11);
+      float eye=exp(-dot(storm,storm)*2.2);
+      vec3 planet=mix(vec3(.14,.24,.31),vec3(.48,.31,.2),smoothstep(.3,.75,bands));
+      planet=mix(planet,vec3(.62,.34,.22),eye*.65)*light;
       planet+=vec3(.04,.09,.15)*pow(1.-n.z,3.);
       c=mix(c,planet,disk);
     }
@@ -4342,7 +4515,12 @@ vec3 orbitSky(vec3 rd){
   vec3 moonDir=normalize(vec3(-.68,.14,1.));
   float md=length(rd-moonDir),maa=2./uRes.y;
   float moon=1.-smoothstep(.052-maa,.052+maa,md);
-  c=mix(c,vec3(.12,.18,.27)*(.6+.4*smoothstep(-.052,.052,rd.x-moonDir.x)),moon);
+  if(moon>0.){
+    vec2 mq=(rd.xy-moonDir.xy)/.052;
+    float mare=smoothstep(.15,.55,fbm2(mq*2.8+4.));
+    vec3 mCol=mix(vec3(.14,.20,.29),vec3(.09,.13,.21),mare)*(.58+.42*smoothstep(-.9,.9,mq.x));
+    c=mix(c,mCol,moon);
+  }
   // Gravitational lens Einstein ring from Autonomic Console's Rest mode
   if(rd.z>0.){
     vec2 lensTh=vec2(rd.x+.06,rd.y-.11);
@@ -4391,7 +4569,12 @@ vec3 orbitWorld(vec3 ro,vec3 rd){
   float t=orbitMarch(ro,rd);
   if(t<680.){
     vec3 p=ro+rd*t;float dx=p.x-pathX(p.z),d=abs(dx);
-    c=orbitRainbow((dx/uWidth+1.)*.5)*(.8+.12*pow(1.-d/uWidth,2.));
+    float rx=(dx/uWidth+1.)*.5;
+    c=orbitRainbow(rx)*(.8+.12*pow(1.-d/uWidth,2.));
+    // Longitudinal prismatic lane filaments and crystalline facets along the ribbon
+    float aaBand=max(.006,t/(uRes.y*uFocal*uWidth)*3.);
+    float laneSeam=foliageBand(abs(fract(rx*6.)-.5)-.485,.014,aaBand)*smoothstep(.08,.22,uWidth-d);
+    c+=vec3(.12,.14,.22)*laneSeam*(1.-smoothstep(90.,240.,t));
     float seam=1.-smoothstep(.025,.07,uWidth-d);
     c=mix(c,vec3(.36,.42,.58),seam*.8);
     // A calm continuous edge glow gives the floating road a visible boundary.
@@ -4503,8 +4686,9 @@ vec3 snakeWorld(vec3 ro,vec3 rd){
     vec2 q=fract(tile)-.5;
     float arc=abs(length(vec2(q.x,q.y+.46))-.58);
     float seam=foliageBand(arc,.014,max(.01,aa));
+    float centerRidge=foliageBand(d,.045,max(.01,aa));
     vec3 base=mix(vec3(.49,.61,.79),vec3(.67,.59,.8),smoothstep(0.,uWidth,d));
-    c=base*(1.-seam*.16)*(.92+.08*cos(dx*.4));
+    c=base*(1.-seam*.16+.08*centerRidge)*(.92+.08*cos(dx*.4));
     float lip=1.-smoothstep(.06,.19,uWidth-d);
     c=mix(c,vec3(.61,.64,.78),lip);
     c=mix(c,clouds,smoothstep(370.,680.,t));
@@ -4524,14 +4708,19 @@ vec3 snakeWorld(vec3 ro,vec3 rd){
         float disc=ab*ab-aa*ac;
         if(disc>=0.&&aa>.001){
           float rt=(-ab-sqrt(disc))/aa,y=bo+rt*br;
-          if(rt>.1&&rt<t&&y>=0.&&y<=bb){float shade=.62+.15*sg;c=mix(c,vec3(.55,.59,.78)*shade,1.-smoothstep(250.,380.,rt));}
+          if(rt>.1&&rt<t&&y>=0.&&y<=bb){
+            float wallRib=.94+.06*cos(y*1.6)*(1.-smoothstep(40.,140.,rt));
+            float shade=(.62+.15*sg)*wallRib;
+            c=mix(c,vec3(.55,.59,.78)*shade,1.-smoothstep(250.,380.,rt));
+          }
         }
         float z=za+3.,ot=(z-ro.z)/rd.z;
         if(ot<.3||ot>t||ot>380.)continue;
         vec3 p=ro+rd*ot;vec2 q=vec2((p.x-pathX(z))*sg-uWidth,p.y-roadY(z));
         float px=max(.006,ot/(uRes.y*uFocal));
         float spine=epTriangle(q,vec2(-.13,.23),vec2(.65,.23),vec2(.36,1.02),px);
-        vec3 pigment=mix(vec3(.36,.39,.59),vec3(.7,.71,.84),smoothstep(.23,1.18,q.y));
+        float flute=epTriangle(q,vec2(.08,.25),vec2(.44,.25),vec2(.34,.84),px);
+        vec3 pigment=mix(vec3(.36,.39,.59),vec3(.7,.71,.84),smoothstep(.23,1.18,q.y))+vec3(.08,.09,.12)*flute;
         c=mix(c,pigment,spine*(1.-smoothstep(250.,380.,ot)));
       }
     }
@@ -4553,7 +4742,8 @@ void main(){
   float t=(uOrbit+uSnake)>.999?1e4:march(ro,rd,last);
   if(t<680.){
     vec3 p=ro+rd*t;
-    bool water=uSea>.5&&height(p.xz,false)<SEA+.25;
+    float hRaw=height(p.xz,false);
+    bool water=uSea>.5&&hRaw<SEA+.25;
     float e=.05+t*.0018;
     vec3 N=normalize(vec3(surface(p.xz-vec2(e,0.),true)-surface(p.xz+vec2(e,0.),true),2.*e,surface(p.xz-vec2(0.,e),true)-surface(p.xz+vec2(0.,e),true)));
     float px=pathX(p.z),d=abs(p.x-px),rel=p.y-roadY(p.z);
@@ -4575,7 +4765,7 @@ void main(){
     }
     if(uMeadow>0.) { float fieldAA=max(.02,t*.0008); float field=smoothstep(.48-fieldAA,.48+fieldAA,fract(p.x*.024+sin(p.z*.012)*.2)); alb=mix(alb,mix(vec3(.19,.28,.055),vec3(.34,.39,.08),field),uMeadow*.65*smoothstep(4.,9.,d)); }
     if(uStrata>0.)alb*=mix(1.,.74+.3*sin(rel*.85+dn*3.5),uStrata);
-    if(uGrid>0.){vec2 g=abs(fract(p.xz*.12)-.5);float gl=smoothstep(.47,.5,max(g.x,g.y));alb+=uEdge*gl*.32*uGrid*exp(-t*.012);}
+    if(uGrid>0.&&uTron<.001){vec2 g=abs(fract(p.xz*.12)-.5);float gl=smoothstep(.47,.5,max(g.x,g.y));alb+=uEdge*gl*.32*uGrid*exp(-t*.012);}
     float dif=clamp(dot(N,uSunDir),0.,1.);
     vec3 amb=mix(uFog*.7,uSkyTop,.5+.5*N.y)*.62;
     vec3 c=alb*(uSunC*dif*1.5+amb);
@@ -4586,28 +4776,59 @@ void main(){
       vec3 rf=reflect(rd,W);
       float keep=skyTrail;c=mix(mix(vec3(.015,.16,.26),vec3(.013,.055,.12),uAlpine),sky(vec3(rf.x,abs(rf.y),rf.z),vec2(0.)),mix(.22,.08,uAlpine)+mix(.3,.14,uAlpine)*pow(1.-max(0.,dot(-rd,W)),3.));
       c+=vec3(.12,.22,.19)*pow(max(0.,sin(p.z*.8+p.x*.17+uT)),12.)*.2*(1.-uAlpine);skyTrail=keep;
+      // Turquoise coastal shallows and whitewater surf rings around sea stacks & shoreline
+      float hSub=hRaw-SEA;
+      float shallows=smoothstep(-3.2,-.2,hSub)*uCoast;
+      c=mix(c,vec3(.05,.32,.36)*(uSunC*.75+amb),shallows*.55);
+      float surf=smoothstep(-1.15,-.02,hSub)*(.55+.45*sin(hSub*8.-uT*2.+vn(p.xz*.35)*4.))*(1.-smoothstep(80.,240.,t));
+      c=mix(c,vec3(.78,.84,.88)*(uSunC*.7+amb),surf*(uCoast*.65+uAlpine*.2));
       c+=uSunC*pow(max(dot(rf,uSunDir),0.),190.)*7.;
     }
     // the road
     float aaRoad=max(.12,t/(uRes.y*uFocal));
     float rm=1.-smoothstep(uWidth-aaRoad,uWidth+aaRoad,d);
     if(!water){
-      vec3 asphalt=mix(vec3(.07,.075,.07),vec3(.31,.25,.16),uCanyon*.35)*( .88+.18*dn);
-      asphalt=mix(asphalt,vec3(.44,.32,.17)*(.9+.14*dn),uForest);
+      float nearTex=1.-smoothstep(16.,52.,t);
+      float wheelTrack=exp(-pow((d-uWidth*.46)/.28,2.));
+      float aggregate=(vn(p.xz*1.8)-.5)*.08*nearTex*(1.-uTron);
+      vec3 asphalt=mix(vec3(.07,.075,.07),vec3(.31,.25,.16),uCanyon*.35)*(.88+.18*dn+.05*wheelTrack+aggregate);
+      float trailStone=smoothstep(.35,.75,cos(p.z*2.2+sin(p.x*3.)))*foliageBand(d-(uWidth-.22),.12,aaRoad)*nearTex;
+      asphalt=mix(asphalt,vec3(.44,.32,.17)*(.9+.14*dn+.08*trailStone),uForest);
+      asphalt=mix(asphalt,vec3(.010,.020,.038)*(.85+.25*wheelTrack),uTron);
+      float verge=foliageBand(d-(uWidth+.18),.16,aaRoad);
+      c=mix(c,uRock*(uSunC*dif+amb)*.82,verge*.45*(1.-uTron));
       c=mix(c,asphalt*(uSunC*dif*1.2+amb),rm);
     }
     float em=0.;vec3 emC=vec3(0.);
+    if(uTron>.001){
+      // Anti-aliased coordinate grid across the basin and faceted wireframe mountain slopes
+      float aaX=max(.04,t*.0035+uTravelSpeed*.014);
+      float aaZ=max(.065,t*.006+uTravelSpeed*.022);
+      float gx=foliageBand(abs(fract((p.x-px)*.14)-.5)-.5,.018,aaX);
+      float gz=foliageBand(abs(fract(p.z*.05)-.5)-.5,.022,aaZ)*exp(-t*.016);
+      float ridgeGlow=smoothstep(.18,.58,sl)*(.7+.3*gx);
+      vec3 gridCol=mix(vec3(0.,.84,1.),vec3(1.,.42,.04),smoothstep(16.,52.,rel));
+      vec3 tronBase=(vec3(.018,.048,.095)+vec3(.02,.08,.15)*smoothstep(0.,36.,rel))*(.85+.35*dif);
+      c=mix(c,tronBase,uTron*(1.-rm)*.9);
+      emC+=gridCol*(gx*.095+gz*.055+ridgeGlow*.095)*uTron*(1.-rm)*exp(-t*.010)*smoothstep(2.5,10.,t);
+      // Parallel Cyan & Orange Lightcycle jetwall ribbons slicing along the obsidian highway
+      float aaLane=max(.016,t/(uRes.y*uFocal));
+      float dxSigned=p.x-px;
+      float cyanRibbon=foliageBand(dxSigned+uWidth*.38,.055,aaLane)+.35*exp(-pow((dxSigned+uWidth*.38)/.22,2.));
+      float orangeRibbon=foliageBand(dxSigned-uWidth*.38,.055,aaLane)+.35*exp(-pow((dxSigned-uWidth*.38)/.22,2.));
+      emC+=(vec3(0.,.88,1.)*cyanRibbon+vec3(1.,.38,.02)*orangeRibbon)*.24*rm*uTron*smoothstep(1.8,8.,t);
+    }
     if(rm>0.){
       float dashL=max(uBeat*.5,1.);
       float df=fract(p.z/dashL);
       float dashAA=max(.02,t/(dashL*uRes.y*uFocal));
       float dash=smoothstep(0.,dashAA,df)*(1.-smoothstep(.5-dashAA,.5,df))*(1.-smoothstep(.05,.1,abs(p.x-px)));
-      emC+=uEdge*dash*.045*rm*smoothstep(2.,16.,t)*(1.-uForest);
+      emC+=uEdge*dash*.045*rm*smoothstep(2.,16.,t);
     }
     float aaSide=max(.02,t/(uRes.y*uFocal));
     float side=foliageBand(d-uWidth,.055,aaSide);
     float spark=pow(vn(vec2(p.z*.3,uT*1.3)),2.5)*1.8*(1.-smoothstep(35.,140.,t));
-    emC+=uEdge*side*(.055+uSpark*spark*.03)*smoothstep(2.2,10.,t);
+    emC+=uEdge*side*(.055+.085*uTron+uSpark*spark*.03)*smoothstep(2.2,10.,t);
     float fog=1.-exp(-pow(t*uFogK,1.55));
     vec3 fogC=mix(uFog,uSunC,pow(max(dot(rd,uSunDir),0.),7.)*.55)*(1.-uDusk*.55);
     col=mix(c,fogC,fog)+emC*exp(-t*.0085);
@@ -4617,8 +4838,6 @@ void main(){
   // World-space roadside silhouettes: each has a fixed seeded position, parallax and terrain occlusion.
   // A bounded set of planes avoids expensive per-step tree geometry on mobile GPUs.
   if(rd.z>.02&&(uOrbit+uSnake)<.999&&uMisty<.999){
-    vec2 cameraSlope=vec2(0.);
-    if(uForest>.001)cameraSlope=vec2(pathX(ro.z+.5)-pathX(ro.z-.5),roadY(ro.z+.5)-roadY(ro.z-.5));
     for(int row=21;row>=0;row--){
       float spacing=14.; // fixed grid: scenery blends never rehash object positions
       float cell=floor(ro.z/spacing)+float(row)+1.;
@@ -4633,13 +4852,6 @@ void main(){
       vec2 pixelX=pixelFactor*(uRight.xy-rd.xy*uRight.z/rd.z);
       vec2 pixelY=pixelFactor*(uUp.xy-rd.xy*uUp.z/rd.z);
       float worldAA=max(.003,.5*max(abs(pixelX.x)+abs(pixelY.x),abs(pixelX.y)+abs(pixelY.y)));
-      // Integrate tropical foliage over a 160 ms travel exposure as well as a
-      // pixel footprint. This filters fronds moving across bright sky without
-      // storing old images, shifting scenery, or blurring the road.
-      if(uForest>.001){
-        vec2 sweep=abs(cameraSlope-rd.xy/rd.z)*uTravelSpeed*.08;
-        worldAA=max(worldAA,uForest*max(sweep.x,sweep.y));
-      }
       foliageAA=worldAA;
       for(int sideI=0;sideI<2;sideI++){
         float signX=sideI==0?-1.:1.;
@@ -4670,6 +4882,22 @@ void main(){
         if(uAlpine>.001&&h>=.2){
           vec4 fall=autumnTree(vec2(dx,y),h);obj=fall.rgb;silhouette=fall.a*uAlpine;
         }
+        // Golden Coast: cliffside Monterey cypress trees & sun-bleached granite boulders
+        if(uCoast>.001&&signX<0.&&h<.42){
+          float cTrunk=epLine(vec2(dx,y),vec2(0.,0.),vec2(-.35,3.6),.15,worldAA);
+          cTrunk=max(cTrunk,epLine(vec2(dx,y),vec2(-.15,2.1),vec2(-1.3,3.5),.09,worldAA));
+          cTrunk=max(cTrunk,epLine(vec2(dx,y),vec2(-.22,2.5),vec2(.95,3.8),.08,worldAA));
+          float cPad=epOval(vec2(dx+.25,y-3.7),vec2(1.85+h*.6,.75),worldAA);
+          cPad=max(cPad,epOval(vec2(dx-.9,y-3.4),vec2(1.25,.55),worldAA));
+          cPad=max(cPad,epOval(vec2(dx+1.0,y-4.0),vec2(1.35,.58),worldAA));
+          float cRock=epOval(vec2(dx-1.4,y-.28),vec2(.95+h*.5,.52),worldAA);
+          float cSil=max(max(cTrunk,cPad),cRock)*uCoast;
+          if(cSil>silhouette){
+            silhouette=cSil;
+            vec3 cCol=mix(vec3(.22,.16,.11),vec3(.07,.17,.10)*(.8+.25*sin(dx*3.+y*4.)),step(.01,cPad));
+            obj=mix(cCol,vec3(.48,.43,.36)*(.85+.2*y),step(.01,cRock)*(1.-step(.01,cPad+cTrunk)));
+          }
+        }
         if(uForest>.001){
           // Composite each antialiased layer over the previous one. Replacing
           // its alpha by a tiny foreground edge opened holes in opaque canopy;
@@ -4692,7 +4920,7 @@ void main(){
           float sight=fract(sin(cell*37.7+signX*5.9+uSeed*3.)*878.31);
           float cluster=fract(sin(cell*19.31+signX*17.7+uSeed)*1237.2);
           // Natural gaps and varied clump sizes instead of one repeated bouquet.
-          if(abs(plant.x)<1.5&&plant.y<2.4&&plant.y>-.2&&(cluster>.22||sight<.055||sight>.94)){
+          if(abs(plant.x)<1.5&&plant.y<2.4&&plant.y>-.2&&(cluster>.22||sight<.055||sight>.94||(sight>.42&&sight<.54))){
             float scale=.65+.2*h;
             foliageAA=worldAA/scale;
             vec4 border=tropicalBorder(plant/scale,h,sight);
@@ -4707,27 +4935,132 @@ void main(){
             if(small.a>.001){obj=mix(obj,small.rgb,small.a);silhouette=max(silhouette,small.a);}
           }
         }
-        // Country trees have round crowns; farms sit behind the split-rail fence.
+        // Country trees have round crowns; farms and golden hay bales sit behind the split-rail fence.
         float crownShape=length(vec2(dx/(2.7+h*1.5),(y-5.2)/(2.7+h)));
         float crown=step(crownShape,1.+.06*sin(dx*8.)*sin(y*7.));
         float country=(max(trunk*step(y,5.),crown))*step(h,.35)*uMeadow;
         if(country>silhouette){silhouette=country;obj=mix(vec3(.16,.1,.04),vec3(.11,.24,.035)*(.8+.22*sin(dx*3.)*cos(y*2.)+.2*(1.-crownShape)),crown);}
+        if(uMeadow>.001&&h>.42&&h<.76){
+          vec2 baleQ=vec2(dx,y-.58);
+          float baleEnd=epOval(baleQ-vec2(-.32,0.),vec2(.58,.58),worldAA);
+          float baleSide=epOval(baleQ-vec2(.12,0.),vec2(.82,.58),worldAA);
+          float bale=max(baleEnd,baleSide)*uMeadow;
+          if(bale>silhouette){
+            silhouette=bale;
+            float swirl=.88+.12*cos(length(baleQ-vec2(-.32,0.))*18.);
+            obj=mix(vec3(.52,.39,.14),vec3(.68,.54,.21)*swirl,baleEnd);
+          }
+        }
         float house=step(abs(dx),3.3)*step(0.,y)*step(y,3.1);
         float roof=step(3.1,y)*step(y,5.-abs(dx)*.56)*step(abs(dx),3.6);
-        float farm=max(house,roof)*step(.82,h)*uMeadow;
-        if(farm>silhouette){silhouette=farm;obj=mix(vec3(.66,.55,.34),vec3(.28,.12,.065),roof);float window=step(abs(abs(dx)-1.5),.42)*step(abs(y-1.8),.6);obj=mix(obj,vec3(.05,.09,.09),window);}
-        // Upright cacti have actual arms and a stem in the desert passage.
-        float stem=step(length(vec2(dx,y-clamp(y,0.,3.+h*2.5))),.22);
-        float arm=step(length(vec2(abs(dx)-.9,y-clamp(y,2.1,2.6+h))),.17);
-        float join=step(abs(dx),1.05)*step(abs(y-2.2),.17);
-        float cactus=max(stem,max(arm,join))*uCanyon;
-        if(cactus>silhouette){silhouette=cactus;obj=vec3(.11,.22,.12)*(.7+.3*cos(dx*7.)+.15*dx);}
+        float siloBody=foliageBand(dx-4.15,.72,worldAA)*foliageSpan(y,0.,5.1,worldAA);
+        float siloDome=epOval(vec2(dx-4.15,y-5.1),vec2(.72,.68),worldAA)*step(5.1,y);
+        float silo=max(siloBody,siloDome);
+        float farm=max(max(house,roof),silo)*step(.82,h)*uMeadow;
+        if(farm>silhouette){
+          silhouette=farm;
+          float siding=.93+.07*cos(dx*11.)*(1.-smoothstep(.15,.6,worldAA*6.));
+          obj=mix(vec3(.62,.24,.16)*siding,vec3(.26,.12,.07),roof);
+          float door=step(abs(dx),.85)*step(y,2.15);
+          float crossBrace=foliageBand(abs(dx)-y*.39,.045,worldAA)*door;
+          obj=mix(obj,vec3(.42,.16,.11),door);
+          obj=mix(obj,vec3(.82,.79,.72),crossBrace);
+          float window=step(abs(abs(dx)-1.85),.38)*step(abs(y-1.85),.48)+step(abs(dx),.42)*step(abs(y-3.65),.38);
+          obj=mix(obj,vec3(.06,.09,.10),clamp(window,0.,1.));
+          if(silo>.01){
+            vec3 siloC=mix(vec3(.55,.56,.58)*(1.-.22*(dx-4.15)),vec3(.68,.70,.74),siloDome);
+            obj=mix(obj,siloC,silo);
+          }
+        }
+        // Anti-aliased ribbed saguaros with desert blossoms and sculpted red-rock hoodoos in Red Canyon
+        if(uCanyon>.001){
+          if(h>=.32){
+            float stemH=3.+h*2.5;
+            float stem=foliageBand(dx,.22,worldAA)*foliageSpan(y,0.,stemH,worldAA);
+            stem=max(stem,epOval(vec2(dx,y-stemH),vec2(.22,.22),worldAA));
+            float armL=foliageBand(dx+.9,.16,worldAA)*foliageSpan(y,2.0,2.5+h*.8,worldAA);
+            armL=max(armL,epOval(vec2(dx+.9,y-(2.5+h*.8)),vec2(.16,.16),worldAA));
+            float armR=foliageBand(dx-.85,.15,worldAA)*foliageSpan(y,1.65,2.2+h*.6,worldAA)*step(.48,h);
+            armR=max(armR,epOval(vec2(dx-.85,y-(2.2+h*.6)),vec2(.15,.15),worldAA)*step(.48,h));
+            float joinL=foliageBand(y-2.0,.16,worldAA)*foliageSpan(dx,-.9,0.,worldAA);
+            float joinR=foliageBand(y-1.65,.15,worldAA)*foliageSpan(dx,0.,.85,worldAA)*step(.48,h);
+            float bloom=epOval(vec2(dx,y-(stemH+.20)),vec2(.14,.09),worldAA);
+            float cactus=max(max(stem,max(armL,armR)),max(joinL,max(joinR,bloom)))*uCanyon;
+            if(cactus>silhouette){
+              silhouette=cactus;
+              float ribs=.82+.18*cos(dx*28.)*(1.-smoothstep(.15,.6,worldAA*8.));
+              obj=mix(vec3(.11,.23,.12)*ribs*(.75+.15*dx),vec3(.88,.68,.32),bloom);
+            }
+          }else{
+            // Stratified sandstone hoodoo / desert boulder spire
+            float hW=(1.65-.22*y+.18*sin(y*3.2+h*9.))*smoothstep(4.2,0.,y);
+            float hoodoo=foliageBand(dx,max(hW,.01),worldAA)*foliageSpan(y,0.,3.8+h*2.,worldAA);
+            hoodoo=max(hoodoo,epOval(vec2(dx,y-(3.5+h*1.8)),vec2(.75,.32),worldAA));
+            if(hoodoo*uCanyon>silhouette){
+              silhouette=hoodoo*uCanyon;
+              float strata=.78+.22*sin(y*4.5+h*11.);
+              obj=mix(vec3(.48,.22,.12),vec3(.68,.38,.21),strata)*(.85+.12*dx);
+            }
+          }
+        }
+        // Tron Grid: obsidian circuit monoliths with neon cyan/orange energy traces & floating octahedral Bit nodes
+        if(uTron>.001){
+          float mH=5.5+h*6.5, mW=.82+h*.42;
+          float stepW=mW*(1.-.28*step(mH*.68,y));
+          float tower=foliageBand(dx,stepW,worldAA)*foliageSpan(y,0.,mH,worldAA);
+          float spire=epTriangle(vec2(dx,y),vec2(-stepW*.85,mH),vec2(stepW*.85,mH),vec2(0.,mH+1.35),worldAA);
+          float bitY=mH+2.1+.25*sin(cell*3.1+h*9.);
+          float bitUp=epTriangle(vec2(dx,y),vec2(-.52,bitY),vec2(.52,bitY),vec2(0.,bitY+.72),worldAA);
+          float bitDn=epTriangle(vec2(dx,y),vec2(-.52,bitY),vec2(.52,bitY),vec2(0.,bitY-.72),worldAA);
+          float bit=max(bitUp,bitDn)*step(.35,h);
+          float mono=max(max(tower,spire),bit)*.72*uTron;
+          if(mono>silhouette){
+            silhouette=mono;
+            vec3 neon=mix(vec3(0.,.78,.95),vec3(.95,.38,.04),step(.58,h));
+            float traceAA=max(worldAA,.04+uTravelSpeed*.006);
+            float rim=foliageBand(abs(dx)-stepW,.04,traceAA)*tower;
+            float coreTrace=foliageBand(dx,.035,traceAA)*foliageSpan(y,.6,mH-.4,traceAA);
+            float rung=foliageBand(abs(fract(y*.45)-.5)-.42,.028,traceAA)*foliageSpan(abs(dx),0.,stepW*.75,traceAA)*tower;
+            obj=mix(vec3(.022,.052,.105),neon*.48,clamp(rim+coreTrace+rung,0.,1.));
+            if(bit>.01)obj=mix(obj,mix(neon*.55,vec3(.45,.72,.88),.35+.25*step(0.,dx)),bit);
+          }
+        }
         if(silhouette>.001){
           float distFade=smoothstep(300.,220.,ot);
           silhouette*=distFade;
           float fog=1.-exp(-pow(ot*uFogK,1.55));
           vec3 lit=obj*(uSunC*.8+uFog*.65)*(1.-uDusk*.5);
+          if(uTron>.001)lit=mix(lit,obj,uTron*.85);
+          // Warm sunlit canopy backlight for upper tropical fronds against bright sky
+          // prevents high-frequency venetian-blind luminance swings without smearing worldAA.
+          if(uForest>.001){
+            float skyBg=smoothstep(2.2,4.5,y);
+            lit=mix(lit,col*(.78+.14*clamp(obj.g*2.5,0.,1.))+obj*(uSunC*.32),uForest*skyBg*(1.-uDusk*.65));
+            silhouette*=mix(1.,.82,uForest*skyBg);
+          }
           col=mix(col,mix(lit,uFog*(1.-uDusk*.3),fog),clamp(silhouette,0.,1.));
+        }
+      }
+      // Distant sailboats skimming across the bay in Golden Coast & Autumn Lake
+      if((uCoast+uAlpine)>.001){
+        float bHash=fract(sin(cell*31.7+uSeed*5.3)*43758.54);
+        if(bHash>.72){
+          float waterSide=uCoast>uAlpine?1.:-1.;
+          float boatX=pathX(z)+waterSide*(30.+bHash*24.);
+          vec2 bq=vec2((hit.x-boatX)*waterSide,hit.y-SEA);
+          if(abs(bq.x)<2.6&&bq.y>-.15&&bq.y<4.2){
+            float hull=epOval(bq-vec2(0.,.18),vec2(1.35,.24),worldAA)*step(.08,bq.y);
+            float mast=epLine(bq,vec2(.05,.32),vec2(.05,3.65),.035,worldAA);
+            float mainSail=epTriangle(bq,vec2(.09,.52),vec2(.09,3.55),vec2(-1.25,.64),worldAA);
+            float jibSail=epTriangle(bq,vec2(-.04,.56),vec2(-.04,3.15),vec2(.92,.62),worldAA);
+            float boat=max(max(hull,mast),max(mainSail,jibSail))*(uCoast+uAlpine)*smoothstep(300.,210.,ot);
+            if(boat>.001){
+              vec3 bCol=mix(vec3(.14,.18,.26),vec3(.92,.89,.82),max(mainSail,jibSail));
+              float fog=1.-exp(-pow(ot*uFogK,1.55));
+              vec3 lit=bCol*(uSunC*.85+uFog*.55)*(1.-uDusk*.5);
+              col=mix(col,mix(lit,uFog*(1.-uDusk*.3),fog),clamp(boat,0.,1.));
+            }
+          }
         }
       }
       if(uAlpine>.001){
@@ -4756,26 +5089,54 @@ void main(){
         col=mix(col,mix(c,uFog,1.-exp(-ot*uFogK)),post*railWeight*distFade);
       }
     }
+    // Towering Tron Recognizer arches straddling the Lightcycle highway every 160 m
+    if(uTron>.001){
+      for(int k=4;k>=0;k--){
+        float z=(floor(ro.z/160.)+float(k)+1.)*160.;
+        float ot=(z-ro.z)/rd.z;
+        if(ot>t||ot>480.||ot<.4)continue;
+        vec3 p=ro+rd*ot;vec2 q=vec2(p.x-pathX(z),p.y-roadY(z));
+        float aa=max(.012,ot/(uRes.y*uFocal));
+        float ax=abs(q.x), legX=uWidth+2.15-.14*clamp(q.y,0.,6.2);
+        float legs=foliageBand(ax-legX,.34,aa)*foliageSpan(q.y,0.,5.8,aa);
+        float foot=foliageBand(ax-(uWidth+2.25),.62,aa)*foliageSpan(q.y,0.,.52,aa);
+        float bridge=foliageBand(q.y-5.45,.48,aa)*foliageSpan(ax,0.,uWidth+2.75,aa);
+        float pod=foliageBand(q.y-4.72,.28,aa)*foliageSpan(ax,0.,1.15,aa);
+        float rec=max(max(legs,foot),max(bridge,pod))*.78*uTron;
+        if(rec>.001){
+          float trim=foliageBand(abs(ax-legX)-.29,.04,aa)*legs+foliageBand(abs(q.y-5.45)-.43,.04,aa)*bridge+foliageBand(q.y-4.52,.045,aa)*pod;
+          vec3 rCol=mix(vec3(.022,.048,.095),vec3(.92,.36,.04)*.62,clamp(trim,0.,1.));
+          float fade=smoothstep(480.,300.,ot)*smoothstep(2.,14.,ot);
+          col=mix(col,rCol,clamp(rec*fade,0.,1.));
+        }
+      }
+    }
     // The rails are continuous 3D capsules, with curved segments and true perspective.
-    float railWeight=uCoast+uMeadow+uAlpine;
+    float railWeight=uCoast+uMeadow+uAlpine+uTron;
     if(railWeight>.01){
       for(int r=0;r<22;r++){
         float za=(floor(ro.z/14.)+float(r))*14., zb=za+14.;
         for(int sideI=0;sideI<2;sideI++){
           float side=sideI==0?-1.:1.;
-          vec3 a=vec3(pathX(za)+side*(uWidth+.65),roadY(za)+.75,za);
-          vec3 b=vec3(pathX(zb)+side*(uWidth+.65),roadY(zb)+.75,zb);
-          vec3 ba=b-a,oa=ro-a;
-          float bb=dot(ba,ba),br=dot(ba,rd),bo=dot(ba,oa),rr=dot(rd,oa);
-          float aa=bb-br*br,ab=bb*rr-bo*br,ac=bb*dot(oa,oa)-bo*bo-.004*bb;
-          float disc=ab*ab-aa*ac;
-          if(disc<0.||aa<.001)continue;
-          float rt=(-ab-sqrt(max(0.,disc)))/aa, y=bo+rt*br;
-          if(rt<.1||rt>t||y<0.||y>bb)continue;
-          float railAA=max(.004,rt/(uRes.y*uFocal));
-          float edgeAlpha=smoothstep(0.,aa*railAA*4.,disc)*smoothstep(300.,220.,rt);
-          vec3 c=mix(vec3(.65,.65,.53),vec3(.26,.18,.09),uMeadow)*(uSunC*.7+uFog*.5);
-          col=mix(col,mix(c,uFog,1.-exp(-rt*uFogK)),railWeight*edgeAlpha);
+          for(int bar=0;bar<2;bar++){
+            if(bar==1&&(uMeadow+uTron)<.01)continue;
+            float rH=bar==0?.75:.42;
+            vec3 a=vec3(pathX(za)+side*(uWidth+.65),roadY(za)+rH,za);
+            vec3 b=vec3(pathX(zb)+side*(uWidth+.65),roadY(zb)+rH,zb);
+            vec3 ba=b-a,oa=ro-a;
+            float bb=dot(ba,ba),br=dot(ba,rd),bo=dot(ba,oa),rr=dot(rd,oa);
+            float aa=bb-br*br,ab=bb*rr-bo*br,ac=bb*dot(oa,oa)-bo*bo-.004*bb;
+            float disc=ab*ab-aa*ac;
+            if(disc<0.||aa<.001)continue;
+            float rt=(-ab-sqrt(max(0.,disc)))/aa, y=bo+rt*br;
+            if(rt<.1||rt>t||y<0.||y>bb)continue;
+            float railAA=max(.004,rt/(uRes.y*uFocal));
+            float edgeAlpha=smoothstep(0.,aa*railAA*4.,disc)*smoothstep(300.,220.,rt);
+            vec3 c=mix(vec3(.65,.65,.53),vec3(.26,.18,.09),uMeadow)*(uSunC*.7+uFog*.5);
+            vec3 tronRail=bar==0?vec3(0.,.88,1.):mix(vec3(0.,.88,1.),vec3(1.,.38,.02),step(0.,side));
+            c=mix(c,tronRail,uTron);
+            col=mix(col,mix(c,uFog,1.-exp(-rt*uFogK)),(bar==0?railWeight:(uMeadow+uTron))*edgeAlpha);
+          }
         }
       }
     }
@@ -4804,11 +5165,11 @@ precision highp float;
 uniform vec3 uCam,uRight,uUp,uFwd; uniform float uFocal,uAsp,uZ,uPx,uSeed,uSpeedN,uSpark,uShimmer;
 out float vA;
 float h(float n){return fract(sin(n)*43758.5453);}
-uniform vec4 uRouteA; uniform float uRouteB,uRouteC,uRouteD,uRouteE;
+uniform vec4 uRouteA; uniform float uRouteB,uRouteC,uRouteD,uRouteE,uRouteF;
 float routeX(float z,float turn,float winding){z*=winding;return turn*(14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7));}
 float routeY(float z,float rise,float winding){z*=winding;return rise*(7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1));}
-float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);if(uRouteD>.000001)v+=uRouteD*routeX(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeX(z,7.,.75);return v;}
-float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);if(uRouteD>.000001)v+=uRouteD*routeY(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeY(z,.65,.75);return v;}
+float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);if(uRouteD>.000001)v+=uRouteD*routeX(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeX(z,7.,.75);if(uRouteF>.000001)v+=uRouteF*routeX(z,1.65,.9);return v;}
+float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);if(uRouteD>.000001)v+=uRouteD*routeY(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeY(z,.65,.75);if(uRouteF>.000001)v+=uRouteF*routeY(z,.35,.9);return v;}
 void main(){
   float i=float(gl_VertexID);
   float a=h(i*1.13),b=h(i*2.71),c=h(i*4.33);
@@ -5082,9 +5443,9 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       <tr><th>Heart rate</th><td>Cadence-powered Ride only. Heart rate above your baseline adds up to 4.5% of apparent grade and slows you, shown apart from the road's own grade. The zoom never changes. <span class="ep ep-inferred">Inferred</span></td></tr>
       <tr><th>Swing at pace</th><td>Train only. How far heart rate swings at the pacer's own frequency, over the last two breaths. It lifts the fog. Hold it for 60 seconds and dawn breaks. <span class="ep ep-proxy">Proxy</span></td></tr>
       <tr><th>Horizon</th><td>On the land scenes, the ridge on the horizon shows the last two minutes, newest in the middle. Heartbeats add a subtle brightness pulse; there are no traveling light bands across the road.</td></tr>
-      <tr><th>Road</th><td>Eight scenes share the same choices as Endless Cockpit, including the original Misty ridges. Hills and grade are procedural and seeded. Cadence acceleration and coasting use the same motion rules in both apps. <span class="ep ep-proc">Procedural</span></td></tr>
+      <tr><th>Road</th><td>Nine scenes share the same choices as Endless Cockpit, including the original Misty ridges and Tron grid. Hills and grade are procedural and seeded. Cadence acceleration and coasting use the same motion rules in both apps. <span class="ep ep-proc">Procedural</span></td></tr>
     </tbody></table>
-    <p class="note">Keys: hold <b>Space</b> to pedal · <b>1-8</b> scenes · <b>R</b> / <b>B</b> next route · <b>T</b> time of day · <b>L</b> clarity · <b>Z</b> zen mode · <b>Middle click</b> random combo · <b>D</b> demo · <b>C</b> connect · <b>F</b> full screen · <b>H</b> hide controls.</p>
+    <p class="note">Keys: hold <b>Space</b> to pedal · <b>1-9</b> scenes · <b>R</b> / <b>B</b> next route · <b>T</b> time of day · <b>L</b> clarity · <b>Z</b> zen mode · <b>Middle click</b> random combo · <b>D</b> demo · <b>C</b> connect · <b>F</b> full screen · <b>H</b> hide controls.</p>
     <details id="is-not" open><summary>What this is, and is not</summary>
       <p><b>Not a medical device.</b> It diagnoses nothing and treats nothing, and it does not detect or predict any condition.</p>
       <p>Inferred arousal is a personal, reference-relative heuristic. It is not measured, and it is not a stress reading. A charged sky is not a verdict about you.</p>
@@ -5207,7 +5568,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     onOpenSheet: (name) => { if (name === 'signal') drawSignal(); if (name === 'route') { drawElStrip(); drawCurve(); } },
     toggleDemo,
     onKey: (e, key) => {
-      if (key >= '1' && key <= '8') {
+      if (key >= '1' && key <= '9') {
         const idx = +key - 1;
         if (BIOMES[idx]) { chooseBiome(idx); shell.toast(`Scenery · ${BIOMES[idx].name}`); }
       } else if (key === 'b' || key === 'r') {
@@ -5499,6 +5860,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     document.querySelectorAll('[data-look]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.look === name)));
     syncLookInputs();
   }
+  let pThumb = null, thumbHDR = null, thumbLDR = null, thumbPx = null, thumbAt = 0, thumbDusk = -1;
   function setTod(i) {
     S.tod = i; S.duskHold = TOD[i].v;
     document.querySelectorAll('[data-tod]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.tod === i)));
@@ -5572,7 +5934,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
 
   /* ---- ride sound: cadence-driven atoms, the same as Endless Cockpit, off by default ---- */
   const ATOMS = [[98, 130.81, 196, 246.94, 293.66, 392, 493.88], [110, 146.83, 220, 277.18, 329.63, 440, 554.37], [130.81, 164.81, 196, 261.63, 392, 523.25, 659.25], [123.47, 164.81, 246.94, 329.63, 493.94, 659.25, 987.77], [82.41, 110, 164.81, 220, 277.18, 329.63, 415.3]];
-  const SCENE_ATOMS = [ATOMS[0], ATOMS[1], ATOMS[2], ATOMS[3], ATOMS[4], [130.81, 164.81, 196, 261.63, 329.63, 392, 523.25], ATOMS[1], [146.83, 196, 220, 293.66, 392, 440, 587.33]];
+  const SCENE_ATOMS = [ATOMS[0], ATOMS[1], ATOMS[2], ATOMS[3], ATOMS[4], [130.81, 164.81, 196, 261.63, 329.63, 392, 523.25], ATOMS[1], [146.83, 196, 220, 293.66, 392, 440, 587.33], [110, 130.81, 164.81, 196, 220, 261.63, 329.63]];
   let AC = null, sndOn = false, sndGain = null, nextGrain = 0;
   let windGain = null, windFilter = null, noiseSrc = null;
   function grainTick() {
@@ -6112,7 +6474,6 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
 uniform sampler2D uScene; uniform float uExposure;
 vec3 aces(vec3 x){ return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.); }
 void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1.-.45*smoothstep(.25,.95,dot(q,q)*2.1); o=vec4(pow(c,vec3(1./2.2)),1.); }`;
-  let pThumb = null, thumbHDR = null, thumbLDR = null, thumbPx = null, thumbAt = 0, thumbDusk = -1;
   function drawThumbs(now) {
     if (!G || !pScene) return;
     const small = softwareRenderer || lastScale < .2, TW = small ? 144 : 336, TH = small ? 84 : 196;
@@ -6122,16 +6483,16 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       thumbHDR = G.target(TW, TH);
       thumbLDR = G.target(TW, TH, { internal: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE }); thumbPx = new Uint8Array(TW * TH * 4);
     }
-    const z = S.vis + 60, tiles = document.querySelectorAll('.scene-tile canvas');
+    const z = S.vis + 60, td = S.duskHold != null ? S.duskHold : S.dusk, tiles = document.querySelectorAll('.scene-tile canvas');
     if (!tiles.length) return;
     gl.disable(gl.BLEND);
     BIOMES.forEach((b, i) => {
       const cam = camAt(z, 0, b);
       G.into(thumbHDR); G.bindTex(0, tNoise); G.bindTex(1, tRidge);
-      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uTravelSpeed: 0, uLattice: S.spaceLattice ? 1.0 : 0.0 }, CyclingScene.landAt(b, b, 1, S.dusk)));
+      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uTravelSpeed: 0, uLattice: S.spaceLattice ? 1.0 : 0.0 }, CyclingScene.landAt(b, b, 1, td)));
       G.draw();
       G.into(thumbLDR); G.bindTex(0, thumbHDR.tex);
-      G.use(pThumb, { uScene: 0, uExposure: 0.98 + S.dusk * 0.25 });
+      G.use(pThumb, { uScene: 0, uExposure: 0.98 + td * 0.25 });
       G.draw();
       gl.readPixels(0, 0, TW, TH, gl.RGBA, gl.UNSIGNED_BYTE, thumbPx);
       tiles[i].width = TW; tiles[i].height = TH;
@@ -6139,7 +6500,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       for (let y = 0; y < TH; y++) img.data.set(thumbPx.subarray((TH - 1 - y) * TW * 4, (TH - y) * TW * 4), y * TW * 4);
       c.putImageData(img, 0, 0);
     });
-    thumbAt = now; thumbDusk = S.dusk;
+    thumbAt = now; thumbDusk = td; last = performance.now();
   }
 
   function resize() {
@@ -6203,7 +6564,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
         const mi = Math.max(1, Math.round(S.dist / M_PER_MI));
         shell.toast(`New scenery · ${BIOMES[S.biomeNext].name} (Mile ${mi})`);
       }
-      if (frameIdx > 2 && !S.pedal && S.rpm < 5 && (!thumbAt || (now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
+      if (frameIdx > 2 && (!thumbAt || (!S.pedal && S.rpm < 5 && now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
 
       // When stopped on the bike for a few seconds, or before pedaling starts,
       // the cockpit settles into Watch: the camera looks up into the sky, and the weather

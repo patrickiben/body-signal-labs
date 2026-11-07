@@ -21,7 +21,7 @@ class Q(http.server.SimpleHTTPRequestHandler):
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Q); threading.Thread(target=srv.serve_forever, daemon=True).start()
 URL = f'http://127.0.0.1:{srv.server_port}/endless-cockpit.html'
 GPU = ['--enable-gpu', '--use-angle=metal', '--ignore-gpu-blocklist', '--enable-webgl']
-SCENES = ['Golden coast', 'Tropical', 'Meadow lanes', 'Autumn Lake', 'Red canyon', 'Rainbow orbit', 'Misty ridges', 'Snake Way']
+SCENES = ['Golden coast', 'Tropical', 'Meadow lanes', 'Autumn Lake', 'Red canyon', 'Rainbow orbit', 'Misty ridges', 'Snake Way', 'Tron grid']
 results = []
 def check(name, ok, detail=''):
     results.append(ok); print(('PASS ' if ok else 'FAIL ') + name + (f'  [{detail}]' if detail else ''), flush=True)
@@ -102,7 +102,7 @@ with sync_playwright() as p:
     pg.click(f".scene-tile[data-b='{orbit}']"); pg.wait_for_timeout(300)
     r = pg.evaluate("[__app.S.biomeNext, document.getElementById('route-caption').textContent]")
     check('the Rainbow orbit tile selects its own route', r[0] == orbit and 'skyway' in r[1].lower(), json.dumps(r))
-    for name, caption in [('Autumn Lake', 'woodland'), ('Misty ridges', 'misty'), ('Snake Way', 'cloud')]:
+    for name, caption in [('Autumn Lake', 'woodland'), ('Misty ridges', 'misty'), ('Snake Way', 'cloud'), ('Tron grid', 'lightcycle')]:
         index = SCENES.index(name)
         pg.click(f".scene-tile[data-b='{index}']"); pg.wait_for_timeout(150)
         r = pg.evaluate("[__app.S.biomeNext, document.getElementById('route-caption').textContent]")
@@ -117,7 +117,7 @@ with sync_playwright() as p:
     pg.click('#connect-button'); pg.wait_for_timeout(300); pg.fill('#steady', '100'); pg.keyboard.press('Escape')
     pg.wait_for_function('(next) => __app.S.biomeNext === next', arg=(b0 + 1) % scene_count, timeout=15000)
     r = pg.evaluate("[__app.S.biomeNext, document.getElementById('toast').textContent]")
-    check('with New scenery every mile on, Snake Way wraps to the coast after the distance is ridden', b0 == len(SCENES) - 1 and r[0] == 0 and r[1].startswith('New scenery'), json.dumps([b0] + r))
+    check('with New scenery every mile on, the last scene wraps to the coast after the distance is ridden', b0 == len(SCENES) - 1 and r[0] == 0 and r[1].startswith('New scenery'), json.dumps([b0] + r))
     pg.click('#auto-scene'); pg.evaluate("__app.S.nextSceneAt = __app.S.dist + 25"); b1 = pg.evaluate('__app.S.biomeNext')
     pg.wait_for_function('__app.S.dist >= __app.S.nextSceneAt', timeout=15000)
     r = pg.evaluate("[__app.S.biomeNext, __app.S.autoScene, document.getElementById('auto-scene').getAttribute('aria-pressed')]")
