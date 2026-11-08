@@ -483,13 +483,14 @@ body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute;
     // button used to do nothing there. A tap on the scenery, Z or Escape brings the controls back.
     const setZen = (on, why) => {
       document.body.classList.toggle('zen', on);
+      if (!on) $('toast').classList.remove('show'); // the hint goes as soon as the controls are back
       if (why) toast(why);
     };
     const fullscreen = () => {
       const el = document.documentElement;
       if (document.fullscreenElement || document.webkitFullscreenElement) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
       const request = (document.fullscreenEnabled || document.webkitFullscreenEnabled) && (el.requestFullscreen || el.webkitRequestFullscreen);
-      const noFullscreen = 'This browser cannot make a web page full screen, so the controls are hidden instead. Tap the scenery to bring them back.';
+      const noFullscreen = 'Tap the scenery for the controls';
       if (!request) { setZen(!document.body.classList.contains('zen'), document.body.classList.contains('zen') ? '' : noFullscreen); return; }
       const r = request.call(el);
       if (r && r.catch) r.catch(() => setZen(true, noFullscreen));
@@ -507,7 +508,7 @@ body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute;
       if (!phone.matches) return;
       const el = document.documentElement;
       if (sideways.matches) {
-        if (!document.body.classList.contains('zen')) setZen(true, toldSideways ? '' : 'Sideways: full screen. Tap the scenery for the controls.');
+        if (!document.body.classList.contains('zen')) setZen(true, toldSideways ? '' : 'Tap the scenery for the controls');
         sidewaysZen = true; toldSideways = true;
         const request = (document.fullscreenEnabled || document.webkitFullscreenEnabled) && (el.requestFullscreen || el.webkitRequestFullscreen);
         if (request && !(document.fullscreenElement || document.webkitFullscreenElement)) {
