@@ -37,7 +37,9 @@ a { color: var(--accent); }
 body.quiet .chrome { opacity: 0; }
 body.quiet .chrome:focus-within { opacity: 1; }
 body.quiet .chip { display: none; }
-body.zen .header, body.zen .scenebar, body.zen .dock, body.zen .intro, body.zen .chip, body.zen .suite-bar {
+/* Zen leaves the scenery, the readouts and the pedal button; every other control goes and cannot be tapped by accident. */
+body.zen .header, body.zen .scenebar, body.zen .dock, body.zen .intro, body.zen .chip, body.zen .suite-bar,
+body.zen .mode-switch, body.zen .truth, body.zen .family, body.zen .ride-power {
   opacity: 0 !important;
   pointer-events: none !important;
   transition: opacity 0.5s ease;
