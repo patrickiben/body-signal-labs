@@ -144,6 +144,7 @@
     #manuscript-workbench #mw-pane-ride h4 { margin: 18px 0 4px; font-size: 13px; color: #e8e4f0; font-weight: 600; }
     #manuscript-workbench .mw-list { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.55; color: #b5b2bd; }
     #manuscript-workbench .mw-list strong { color: #e8e4f0; }
+    #manuscript-workbench .mw-lead { margin: 10px 0 8px; max-width: 72ch; font-size: 15px; line-height: 1.55; color: #ece9f3; }
     #manuscript-workbench .mw-plain { margin: 6px 0 12px; }
     #manuscript-workbench .mw-plain ul { margin: 6px 0 8px; padding-left: 18px; }
     #manuscript-workbench .mw-plain li { margin: 7px 0; font-size: 15px; line-height: 1.5; color: #ece9f3; }
@@ -275,8 +276,11 @@
     <section id="manuscript-workbench" aria-labelledby="mw-title">
       <div class="mw-header">
         <div>
-          <p class="eyebrow" style="margin:0;color:#f1cf8e;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;">100% Air-Gapped Exercise, Locomotor-Cardiorespiratory &amp; Biofeedback Cockpit Workbench</p>
-          <h1 id="mw-title">Body Signal Labs · Three-Manuscript &amp; Biophysics Mastery</h1>
+          <p class="eyebrow" style="margin:0;color:#f1cf8e;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;">Works offline · nothing leaves your browser</p>
+          <h1 id="mw-title">The math behind Body Signal Labs</h1>
+          <p class="mw-lead">This page runs the math from three research papers on built-in sample rides, in your browser, with nothing sent anywhere. Tabs 1–4 show what each method finds in those sample rides. To see what it says about your own ride, open one in tab 5.</p>
+          <p class="mw-source" id="mw-source"><strong>Sample rides.</strong> Every number in tabs 1–4 comes from a built-in simulated ride, not from your body.</p>
+          <details class="mw-math"><summary>Which papers and methods</summary>
           <p class="mw-sub">
             Complete in-browser mathematical engine uniting <strong>Manuscript 1</strong> (10-Metric CRT Spatial &amp; Topological Engine across 20 exercise/biofeedback epochs, <code>doi:10.5281/zenodo.23486177</code>),
             <strong>Manuscript 2</strong> (Non-Negative VAR+(1), Diebold–Yılmaz GFEVD, 3 Directedness Nulls &amp; ARRO JEPA-CEM Cockpit Pacing Interdiction, <code>doi:10.5281/zenodo.21211653</code>),
@@ -289,61 +293,63 @@
             <span class="mw-badge" id="mw-badge-m3">M3 ANL (5c29a381eb7e): Ready</span>
             <span class="mw-badge" id="mw-badge-bio">Exercise Biophysics: Ready</span>
           </div>
-          <p class="mw-source" id="mw-source"><strong>Sample rides.</strong> Every number on this page comes from a built-in simulated ride you choose below, not from your body. Open a ride you exported from the Biofeedback Path Cockpit to run the parts that work on your own heart rate and cadence.</p>
+          </details>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
           <a class="mw-btn" href="biofeedback-path-cockpit.html" style="text-decoration:none;">Open Biofeedback Path Cockpit</a>
           <button type="button" id="mw-ride-btn" class="mw-btn">Open a ride (.tcx)</button>
           <input type="file" id="mw-ride-file" accept=".tcx,application/vnd.garmin.tcx+xml,application/xml,text/xml" hidden />
-          <button type="button" id="mw-recompute-btn" class="mw-btn primary">Recompute All Engines</button>
+          <button type="button" id="mw-recompute-btn" class="mw-btn primary">Run again</button>
         </div>
       </div>
 
-      <div class="mw-controls" role="group" aria-label="Workbench Parameters">
+            <details class="mw-math"><summary>Change the sample ride</summary>
+<div class="mw-controls" role="group" aria-label="Workbench Parameters">
         <label>
-          <span>Cockpit Exercise &amp; Biofeedback Regime</span>
+          <span>Sample ride</span>
           <select id="mw-regime-select">
-            <option value="fog_clearing_resonance">0.1 Hz Fog-Clearing Resonance Pacing (RSA &amp; Cadence Lock)</option>
-            <option value="steady_endurance_cruising">Steady Aerobic Endurance Cruising (Below HRVT1)</option>
-            <option value="threshold_grade_climb">Sustained Threshold Grade Climb (HRVT1 → HRVT2)</option>
-            <option value="hiit_cadence_surge">HIIT Cadence Surge &amp; Anaerobic Strain (Above HRVT2)</option>
-            <option value="post_sprint_hrr_cooldown">Post-Sprint HRR60 Vagal Reactivation Cooldown</option>
+            <option value="fog_clearing_resonance">Slow breathing at an easy pace</option>
+            <option value="steady_endurance_cruising">Steady, easy ride</option>
+            <option value="threshold_grade_climb">Long, hard climb</option>
+            <option value="hiit_cadence_surge">Hard intervals</option>
+            <option value="post_sprint_hrr_cooldown">Cooling down after a sprint</option>
           </select>
         </label>
         <label>
-          <span>CRT Randomization Design (M1)</span>
+          <span>How the segments are split into groups (paper 1)</span>
           <select id="mw-crt-design-select">
-            <option value="CRR">Cluster Rerandomized (CRR · Optimal)</option>
-            <option value="CR">Cluster Randomized (CR · Unconstrained)</option>
-            <option value="SR">Simple Epoch Randomized (SR · Naive)</option>
+            <option value="CRR">Balanced clusters (CRR)</option>
+            <option value="CR">Random clusters (CR)</option>
+            <option value="SR">Random segments (SR)</option>
           </select>
         </label>
         <label>
-          <span>Cross-Epoch Carryover c: <strong id="mw-spill-val">0.35</strong></span>
+          <span>Carryover between segments: <strong id="mw-spill-val">0.35</strong></span>
           <input type="range" id="mw-spill-slider" min="0.00" max="0.70" step="0.05" value="0.35" />
         </label>
         <label>
-          <span>Cockpit Pacing Budget B: <strong id="mw-budget-val">1.50</strong></span>
+          <span>How much the planner may adjust: <strong id="mw-budget-val">1.50</strong></span>
           <input type="range" id="mw-budget-slider" min="0.50" max="3.00" step="0.25" value="1.50" />
         </label>
         <label>
-          <span>ANL Readout Bound B: <strong id="mw-anl-b-val">0.050</strong></span>
+          <span>How far learning may nudge a choice: <strong id="mw-anl-b-val">0.050</strong></span>
           <input type="range" id="mw-anl-b-slider" min="0.020" max="0.100" step="0.005" value="0.050" />
         </label>
       </div>
+      </details>
 
       <div class="mw-tabs" role="tablist" aria-label="Manuscript &amp; Biophysics Tabs">
         <button type="button" class="mw-tab-btn" role="tab" id="mw-tabbtn-crt" aria-selected="true" aria-controls="mw-pane-crt" data-mw-tab="crt">
-          1. Manuscript 1 · 10-Metric CRT &amp; TDA
+          1. Fair test groups (paper 1)
         </button>
         <button type="button" class="mw-tab-btn" role="tab" id="mw-tabbtn-lsa" aria-selected="false" aria-controls="mw-pane-lsa" data-mw-tab="lsa">
-          2. Manuscript 2 · VAR+(1) GFEVD &amp; JEPA MPC
+          2. What drives what (paper 2)
         </button>
         <button type="button" class="mw-tab-btn" role="tab" id="mw-tabbtn-anl" aria-selected="false" aria-controls="mw-pane-anl" data-mw-tab="anl">
-          3. Manuscript 3 · Anchored Nested Learning (L0–L7)
+          3. Learning within safe limits (paper 3)
         </button>
         <button type="button" class="mw-tab-btn" role="tab" id="mw-tabbtn-bio" aria-selected="false" aria-controls="mw-pane-bio" data-mw-tab="bio">
-          4. Exercise &amp; Cardiorespiratory Biophysics Mastery
+          4. Heart and breathing measures
         </button>
         <button type="button" class="mw-tab-btn" role="tab" id="mw-tabbtn-ride" aria-selected="false" aria-controls="mw-pane-ride" data-mw-tab="ride">
           5. Your ride
@@ -352,6 +358,8 @@
 
       <!-- TAB 1: MANUSCRIPT 1 (CRT SPATIAL & TOPOLOGICAL ENGINE) -->
       <div id="mw-pane-crt" class="mw-pane active" role="tabpanel" aria-labelledby="mw-tabbtn-crt">
+        <p class="mw-lead">When you compare two ways of training, the comparison is only fair if the groups start out alike and don't affect each other. This tab shows how the first paper's method splits the sample ride's segments into balanced groups, and how much one group could leak into another.</p>
+        <details class="mw-math mw-tab-math"><summary>The math behind it</summary>
         <div class="mw-kpi-grid" id="mw-crt-kpis"></div>
         <div class="mw-two-col">
           <div class="mw-card">
@@ -408,10 +416,13 @@
             </div>
           </div>
         </div>
+        </details>
       </div>
 
       <!-- TAB 2: MANUSCRIPT 2 (DIRECTED NETWORK CRITICALITY & JEPA INTERDICTION) -->
       <div id="mw-pane-lsa" class="mw-pane" role="tabpanel" aria-labelledby="mw-tabbtn-lsa">
+        <p class="mw-lead">When several signals move together, it helps to know which one is pushing the others. This tab shows, for the sample ride, which signal drives which, and where a nudge would settle the rest fastest.</p>
+        <details class="mw-math mw-tab-math"><summary>The math behind it</summary>
         <div class="mw-kpi-grid" id="mw-lsa-kpis"></div>
         <div class="mw-two-col">
           <div class="mw-card">
@@ -479,10 +490,13 @@
             </div>
           </div>
         </div>
+        </details>
       </div>
 
       <!-- TAB 3: MANUSCRIPT 3 (ANCHORED NESTED LEARNING L0-L7) -->
       <div id="mw-pane-anl" class="mw-pane" role="tabpanel" aria-labelledby="mw-tabbtn-anl">
+        <p class="mw-lead">An app that learns from you should never be able to override fixed safety limits, such as a heart-rate ceiling or the flash limit. This tab shows the third paper's way of letting the app adjust only inside limits that learning can't move.</p>
+        <details class="mw-math mw-tab-math"><summary>The math behind it</summary>
         <div class="mw-kpi-grid" id="mw-anl-kpis"></div>
         <div class="mw-two-col">
           <div class="mw-card">
@@ -568,10 +582,13 @@
             </div>
           </div>
         </div>
+        </details>
       </div>
 
       <!-- TAB 4: EXERCISE & CARDIORESPIRATORY BIOPHYSICS MASTERY -->
       <div id="mw-pane-bio" class="mw-pane" role="tabpanel" aria-labelledby="mw-tabbtn-bio">
+        <p class="mw-lead">Standard measures from heart and breathing on the sample ride: how much heartbeats vary, how fast heart rate recovers after effort, and how breathing and heart rate move together. They come from the built-in sample because a ride file doesn't store beat-to-beat data or breathing.</p>
+        <details class="mw-math mw-tab-math"><summary>The math behind it</summary>
         <div class="mw-kpi-grid" id="mw-bio-kpis"></div>
         <div class="mw-two-col">
           <div class="mw-card">
@@ -624,6 +641,7 @@
             </div>
           </div>
         </div>
+        </details>
       </div>
       <!-- TAB 5: YOUR RIDE (only what a ride's own heart rate and cadence support) -->
       <div id="mw-pane-ride" class="mw-pane" role="tabpanel" aria-labelledby="mw-tabbtn-ride">
@@ -655,7 +673,7 @@
       </div>
     </section>
   </main>
-  <footer class="site-foot"><span>100% Offline Three-Manuscript &amp; Exercise Biophysics Workbench · Procedural visuals with stated rules, and estimates labeled as estimates. No page here is a medical device.</span><span><a href="index.html">Home</a> · <a href="field-guide.html">Field guide</a> · MIT license</span></footer>
+  <footer class="site-foot"><span>Works offline in your browser · Procedural visuals with stated rules, and estimates labeled as estimates. No page here is a medical device.</span><span><a href="index.html">Home</a> · <a href="field-guide.html">Field guide</a> · MIT license</span></footer>
 </div>
 <script>
 __BSL_MANUSCRIPT_MATH_JS__
@@ -1422,7 +1440,7 @@ __BSL_MANUSCRIPT_MATH_JS__
         ]);
         $('mw-ride-states-note').textContent = "The engine's two-state Hamilton filter, run on 5-second changes in heart rate and cadence. Its thresholds come from this ride's own changes, and rises and drops both count, so it shows when you changed fastest compared with the rest of the ride, not an absolute intensity.";
       }
-      $('mw-source').innerHTML = '<strong>Your ride is in tab 5.</strong> The other four tabs still run on the built-in simulated rides, not on you.';
+      $('mw-source').innerHTML = '<strong>Your ride is in tab 5.</strong> Tabs 1–4 still run on the built-in sample rides, not on you.';
     }
 
     window.__bslRide = { parseTcx, binRide, rideSpillover, rideStates, rideRecovery, renderRide };
@@ -1444,6 +1462,7 @@ __BSL_MANUSCRIPT_MATH_JS__
     }
   }
 
+  document.querySelectorAll('#manuscript-workbench details.mw-math').forEach((d) => { if (d.id !== 'mw-ride-math') d.open = window.matchMedia('(min-width: 900px)').matches; });
   ['mw-regime-select', 'mw-crt-design-select', 'mw-spill-slider', 'mw-budget-slider', 'mw-anl-b-slider'].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('input', () => recompute());

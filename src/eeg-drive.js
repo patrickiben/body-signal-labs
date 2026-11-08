@@ -9,11 +9,11 @@
   const FRESH_MS = 5000, REFERENCE_SAMPLES = 20, FNIRS_REF_SAMPLES = 16, PRV_REF_SAMPLES = 12, SAMPLE_SPACING_MS = 950;
   const SENSOR_MODES = ['eeg', 'fnirs', 'prv', 'stillness', 'fusion'];
   const SENSOR_LABELS = {
-    eeg: 'EEG balance (β/α)',
-    fnirs: 'fNIRS optical (ΔOD)',
-    prv: 'Optical PRV (RMSSD)',
-    stillness: 'Head stillness (IMU)',
-    fusion: 'Athena 4-sensor fusion',
+    eeg: 'Brainwave balance',
+    fnirs: 'Forehead light signal',
+    prv: 'Forehead pulse rhythm',
+    stillness: 'Head stillness',
+    fusion: 'All four together',
   };
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const median = values => {
@@ -34,7 +34,7 @@
     const fetcher = options.fetch || (global.fetch && global.fetch.bind(global));
     const Events = options.EventSource || global.EventSource;
     const initialMessage = available ? 'Connect Muse, then keep your eyes open for a personal EEG reference.' :
-      'Open the cockpit from the optional Mac EEG bridge to connect Muse.';
+      'To connect the Muse, open this page from the small headband app on your Mac.';
     let sensorMode = SENSOR_MODES.includes(options.sensorMode) ? options.sensorMode : 'eeg';
     const emptyAux = () => ({
       fnirs: {valid: false, phase: 'waiting', od: null, drift: null, channels: [], progress: 0, baseline: null, score: null, drive: 0, reason: 'Waiting for >=2 eligible forehead optical channels (64 Hz).', receivedAt: null},
@@ -95,16 +95,16 @@
         const stillScore = aux.stillness.score ?? 0.88;
         const fusionScore = clamp(0.40 * (state.score ?? 0.6) + 0.30 * fnirsScore + 0.15 * prvScore + 0.15 * stillScore, 0, 1);
         const sensors = {
-          eeg: {valid: true, phase: 'ready', ratio: Math.exp((0.5 - state.score) * 0.9), progress: 1, baseline: null, score: state.score, drive: output, reason: 'Synthetic EEG demonstration.'},
-          fnirs: {...aux.fnirs, valid: true, phase: 'ready', progress: 1, score: fnirsScore, reason: 'Synthetic fNIRS optical attenuation preview.'},
-          prv: {...aux.prv, valid: true, phase: 'ready', progress: 1, score: prvScore, reason: 'Synthetic forehead optical PRV preview.'},
+          eeg: {valid: true, phase: 'ready', ratio: Math.exp((0.5 - state.score) * 0.9), progress: 1, baseline: null, score: state.score, drive: output, reason: 'Synthetic brainwave demonstration.'},
+          fnirs: {...aux.fnirs, valid: true, phase: 'ready', progress: 1, score: fnirsScore, reason: 'Synthetic forehead light preview.'},
+          prv: {...aux.prv, valid: true, phase: 'ready', progress: 1, score: prvScore, reason: 'Synthetic forehead pulse preview.'},
           stillness: {...aux.stillness, valid: true, phase: 'ready', score: stillScore, reason: 'Synthetic 3-axis IMU head stillness preview.'},
           fusion: {...aux.fusion, valid: true, phase: 'ready', activeChannels: ['eeg', 'fnirs', 'prv', 'stillness'], score: fusionScore, reason: 'Synthetic 4-sensor Athena fusion preview.'},
         };
         const chosen = sensors[sensorMode] || sensors.eeg;
         Object.assign(state, real, {phase: 'ready', message: 'Demo EEG · synthetic brainwave ride; no headset measurement.',
           simulated: true, ratio: Math.exp((0.5 - state.score) * 0.9),
-          quality: {valid: true, reason: 'Synthetic EEG demonstration.', source_kind: 'synthetic'},
+          quality: {valid: true, reason: 'Synthetic brainwave demonstration.', source_kind: 'synthetic'},
           baseline: null, progress: 1, score: state.score, drive: output,
           sensorMode, activeDrive: chosen.drive ?? output, activeScore: chosen.score ?? state.score, activeLabel: SENSOR_LABELS[sensorMode], sensors});
       }
