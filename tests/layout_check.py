@@ -57,6 +57,16 @@ with sync_playwright() as p:
             if page == 'endless-cockpit.html' and 'LAYOUT_SCENE' in os.environ:
                 pg.evaluate('(scene) => __app.setBiome(scene, true)', int(os.environ['LAYOUT_SCENE']))
             pg.wait_for_timeout(2600)
+            full = pg.evaluate("document.body.classList.contains('zen')")
+            if mobile and w > h and not full:
+                errs.append('a phone held sideways did not open full screen')
+            if full:
+                # A phone held sideways opens full screen. One tap on the scenery shows the controls, which must then fit.
+                spot = pg.evaluate("""() => { for (let y = Math.round(innerHeight * .35); y < innerHeight * .95; y += 8) for (let x = 16; x < innerWidth - 16; x += 16) {
+                    const e = document.elementFromPoint(x, y); if (e && e.id === 'stage') return [x, y]; } return null; }""")
+                if spot: pg.touchscreen.tap(spot[0], spot[1])
+                pg.wait_for_timeout(900)
+                if pg.evaluate("document.body.classList.contains('zen')"): errs.append('a tap on the scenery did not bring the controls back')
             r = pg.evaluate(JS)
             if page == 'biofeedback-path-cockpit.html':
                 pg.click('#demo-button')

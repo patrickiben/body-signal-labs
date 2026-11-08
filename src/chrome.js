@@ -101,8 +101,50 @@
 
     /* ---------- demo, full screen, keys, quiet chrome ---------- */
     $('demo-button').addEventListener('click', () => cfg.toggleDemo());
-    const fullscreen = () => { if (document.fullscreenElement) document.exitFullscreen(); else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => toast('Full screen is not available here.')); };
+    // Zen hides the controls and keeps the readouts. It is also what the full-screen button does where a
+    // browser cannot make a web page full screen: Safari on iPhone has no full screen for pages, and the
+    // button used to do nothing there. A tap on the scenery, Z or Escape brings the controls back.
+    const setZen = (on, why) => {
+      document.body.classList.toggle('zen', on);
+      if (!on) $('toast').classList.remove('show'); // the hint goes as soon as the controls are back
+      if (why) toast(why);
+    };
+    const fullscreen = () => {
+      const el = document.documentElement;
+      if (document.fullscreenElement || document.webkitFullscreenElement) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+      const request = (document.fullscreenEnabled || document.webkitFullscreenEnabled) && (el.requestFullscreen || el.webkitRequestFullscreen);
+      const noFullscreen = 'Tap the scenery for the controls';
+      if (!request) { setZen(!document.body.classList.contains('zen'), document.body.classList.contains('zen') ? '' : noFullscreen); return; }
+      const r = request.call(el);
+      if (r && r.catch) r.catch(() => setZen(true, noFullscreen));
+    };
     $('fs-button').addEventListener('click', fullscreen);
+    // In Zen, a tap or click on the scenery itself (not a control) brings the controls back.
+    $('stage').addEventListener('pointerdown', () => { if (document.body.classList.contains('zen')) setZen(false); });
+    // A phone turned sideways goes full screen: the controls hide and the scenery fills the screen, and where
+    // the browser allows it (Android, shortly after a tap) the page also asks for real full screen. Browsers
+    // never allow full screen from turning alone, so on iPhone this is the controls hiding. Upright restores them.
+    const phone = matchMedia('(hover: none) and (pointer: coarse)');
+    const sideways = matchMedia('(orientation: landscape) and (max-height: 600px)');
+    let sidewaysZen = false, sidewaysFs = false, toldSideways = false;
+    const onTurn = () => {
+      if (!phone.matches) return;
+      const el = document.documentElement;
+      if (sideways.matches) {
+        if (!document.body.classList.contains('zen')) setZen(true, toldSideways ? '' : 'Tap the scenery for the controls');
+        sidewaysZen = true; toldSideways = true;
+        const request = (document.fullscreenEnabled || document.webkitFullscreenEnabled) && (el.requestFullscreen || el.webkitRequestFullscreen);
+        if (request && !(document.fullscreenElement || document.webkitFullscreenElement)) {
+          try { const r = request.call(el); if (r && r.then) r.then(() => { sidewaysFs = true; }, () => {}); } catch (e) { /* not allowed without a recent tap */ }
+        }
+      } else if (sidewaysZen) {
+        sidewaysZen = false; setZen(false);
+        if (sidewaysFs && (document.fullscreenElement || document.webkitFullscreenElement)) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        sidewaysFs = false;
+      }
+    };
+    sideways.addEventListener('change', onTurn);
+    onTurn();
     // A mouse click should not leave a button holding the keyboard, or Space would press it again.
     // Keyboard presses report detail 0, so keyboard users keep their focus.
     addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('button'); if (b && e.detail > 0 && !b.closest('dialog')) b.blur(); });
@@ -118,13 +160,10 @@
       else if (key === 'f') fullscreen();
       else if (key === 'h') { hideChrome = !hideChrome; document.body.classList.toggle('quiet', hideChrome); }
       else if (key === 'z') {
-        const isZen = document.body.classList.toggle('zen');
-        toast(isZen ? 'Zen mode: on (press Z to restore)' : 'Zen mode: off');
+        const isZen = !document.body.classList.contains('zen');
+        setZen(isZen, isZen ? 'Zen mode: on (press Z or tap the scenery to restore)' : 'Zen mode: off');
       }
-      else if (e.key === 'Escape' && document.body.classList.contains('zen')) {
-        document.body.classList.remove('zen');
-        toast('Zen mode: off');
-      }
+      else if (e.key === 'Escape' && document.body.classList.contains('zen')) setZen(false, 'Zen mode: off');
       else if (cfg.onKey) cfg.onKey(e, key);
     });
     const quietTick = (now, active) => { if (!hideChrome && active && now - lastMove > 9000 && !document.querySelector('dialog[open]')) document.body.classList.add('quiet'); };

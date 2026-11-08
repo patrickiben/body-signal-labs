@@ -4,6 +4,16 @@ Checked between 2026-11-02 and 2026-11-08 in Chrome 156 on an Apple M4 Max Mac. 
 
 A browser test cannot pair a real Bluetooth device, and a page that opens Chrome's device list closes headless Chrome, so every sensor state below uses a stub of `navigator.bluetooth` that sends real packet bytes through the page's own parsers.
 
+## Phones: full screen, sideways and the home page, 2026-11-08
+
+**The full-screen button did nothing on iPhone.** Safari on iPhone cannot make a web page full screen, and the button only spoke when a browser refused, so a tap there had no effect. Where a browser allows full screen (desktop Chrome and Safari, Android Chrome) the button still goes full screen; elsewhere it now hides every control, with one line, "Tap the scenery for the controls", and a tap on the scenery brings them back. Checked with real clicks and taps in desktop Chrome, Android Chrome (Pixel 7), desktop WebKit and an iPhone stand-in (WebKit with the full-screen API removed, as on a real iPhone).
+
+**A phone turned sideways now goes full screen.** The controls hide and the scenery fills the screen; Endless keeps its speed readout and pedal button, and each page keeps its status line, so a demo or a missing sensor is always labeled. Where the browser allows it shortly after a tap (Android), the page also asks for real full screen; no browser allows that from turning alone. A tap on the scenery shows the controls, and turning upright restores them. `tests/layout_check.py` now requires sideways phones to open full screen and the revealed controls to fit, at all 16 of its sizes.
+
+While riding or in the demo, every control fades after 9 seconds without a touch, upright or sideways, on every phone checked.
+
+**The home page scrolled sideways on a 320-pixel phone**, because its cards could not shrink below 320 pixels inside the page's margins. They can now; the home page and field guide fit at 320, 393 and 412 pixels.
+
 ## Tropical flicker and the phone title row, 2026-11-08
 
 **The build deployed on 2026-11-07 (a600a02) failed `tests/flash_check.py` in Tropical.** In three runs against the live site, the worst region flashing more than three times a second was 36–46% in Endless Cockpit (Clear, held at golden hour) and 39–50% in Biofeedback Path Cockpit (Ride, high feedback), with and without reduced motion, against the 25% limit. The 2026-11-07 change that made Tropical's motion blur match the other routes had removed its travel exposure, so dense fronds crossing bright sky flashed. Flicker results recorded further down describe earlier builds.
