@@ -9,7 +9,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#101525">
 <title>Endless Cockpit</title>
-<meta name="description" content="Eight procedural cycling routes: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges and Snake Way above golden clouds, moving at your cadence.">
+<meta name="description" content="Nine procedural cycling routes: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges, Snake Way above golden clouds and Tron grid, moving at your cadence.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101525'/%3E%3Cpath d='M5 17h6l2.5-6 4 11 2.5-5H27' fill='none' stroke='%23b8b7ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
 :root {
@@ -353,7 +353,7 @@ body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute;
 </head>
 <body>
 <main class="scene" id="scene" aria-label="Endless Cockpit">
-<canvas id="stage" role="img" aria-label="Eight procedural cycling routes: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges and Snake Way above golden clouds, moving at your cadence."></canvas>
+<canvas id="stage" role="img" aria-label="Nine procedural cycling routes: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges, Snake Way above golden clouds and Tron grid, moving at your cadence."></canvas>
 </main>
 <script>
 /* family.js: the same-tab bar shared by the suite's home page and its three apps, in the same order everywhere.
@@ -2125,6 +2125,9 @@ void main(){
   // World-space roadside silhouettes: each has a fixed seeded position, parallax and terrain occlusion.
   // A bounded set of planes avoids expensive per-step tree geometry on mobile GPUs.
   if(rd.z>.02&&(uOrbit+uSnake)<.999&&uMisty<.999){
+    // Where the road heads per metre: a roadside point's motion on screen is measured against it.
+    vec2 cameraSlope=vec2(0.);
+    if(uForest>.001)cameraSlope=vec2(pathX(ro.z+.5)-pathX(ro.z-.5),roadY(ro.z+.5)-roadY(ro.z-.5));
     for(int row=21;row>=0;row--){
       float spacing=14.; // fixed grid: scenery blends never rehash object positions
       float cell=floor(ro.z/spacing)+float(row)+1.;
@@ -2139,6 +2142,15 @@ void main(){
       vec2 pixelX=pixelFactor*(uRight.xy-rd.xy*uRight.z/rd.z);
       vec2 pixelY=pixelFactor*(uUp.xy-rd.xy*uUp.z/rd.z);
       float worldAA=max(.003,.5*max(abs(pixelX.x)+abs(pixelY.x),abs(pixelX.y)+abs(pixelY.y)));
+      // Tropical's dense canopy against bright sky flashes at speed: integrate its foliage over a
+      // 60 ms travel exposure as well as a pixel footprint, without storing old images, shifting scenery
+      // or blurring the road. Without it (67e7e60) Tropical flashed far above the WCAG 2.2 limit; the old
+      // 160 ms exposure (.08) looked visibly blurrier than the other routes, and 30 ms (.015) left too
+      // little margin. Other routes do not flash and keep their crisp roadside detail.
+      if(uForest>.001){
+        vec2 sweep=abs(cameraSlope-rd.xy/rd.z)*uTravelSpeed*.03;
+        worldAA=max(worldAA,uForest*max(sweep.x,sweep.y));
+      }
       foliageAA=worldAA;
       for(int sideI=0;sideI<2;sideI++){
         float signX=sideI==0?-1.:1.;

@@ -1212,6 +1212,9 @@ void main(){
   // World-space roadside silhouettes: each has a fixed seeded position, parallax and terrain occlusion.
   // A bounded set of planes avoids expensive per-step tree geometry on mobile GPUs.
   if(rd.z>.02&&(uOrbit+uSnake)<.999&&uMisty<.999){
+    // Where the road heads per metre: a roadside point's motion on screen is measured against it.
+    vec2 cameraSlope=vec2(0.);
+    if(uForest>.001)cameraSlope=vec2(pathX(ro.z+.5)-pathX(ro.z-.5),roadY(ro.z+.5)-roadY(ro.z-.5));
     for(int row=21;row>=0;row--){
       float spacing=14.; // fixed grid: scenery blends never rehash object positions
       float cell=floor(ro.z/spacing)+float(row)+1.;
@@ -1226,6 +1229,15 @@ void main(){
       vec2 pixelX=pixelFactor*(uRight.xy-rd.xy*uRight.z/rd.z);
       vec2 pixelY=pixelFactor*(uUp.xy-rd.xy*uUp.z/rd.z);
       float worldAA=max(.003,.5*max(abs(pixelX.x)+abs(pixelY.x),abs(pixelX.y)+abs(pixelY.y)));
+      // Tropical's dense canopy against bright sky flashes at speed: integrate its foliage over a
+      // 60 ms travel exposure as well as a pixel footprint, without storing old images, shifting scenery
+      // or blurring the road. Without it (67e7e60) Tropical flashed far above the WCAG 2.2 limit; the old
+      // 160 ms exposure (.08) looked visibly blurrier than the other routes, and 30 ms (.015) left too
+      // little margin. Other routes do not flash and keep their crisp roadside detail.
+      if(uForest>.001){
+        vec2 sweep=abs(cameraSlope-rd.xy/rd.z)*uTravelSpeed*.03;
+        worldAA=max(worldAA,uForest*max(sweep.x,sweep.y));
+      }
       foliageAA=worldAA;
       for(int sideI=0;sideI<2;sideI++){
         float signX=sideI==0?-1.:1.;
