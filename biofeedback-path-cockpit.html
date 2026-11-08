@@ -5558,6 +5558,9 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     spaceLattice: false, tod: 0, look: 'clear', autoScene: true, nextSceneAt: 1609.34, stoppedTime: 4, demoRide: false,
   };
   const EEG_MAX_SPEED = 7;
+  // The engine's tiers are generic 'model response' words; on screen they say what moved: one heart signal.
+  const ONE_SENSOR = 'heart rate and beat-to-beat variability, one sensor';
+  const shiftLabel = (label) => ({ 'Low model response': 'Near your first 2 minutes', 'Mild model response': 'Mild shift', 'Raised model response': 'Raised shift', 'Elevated model response': 'Large shift' })[label] || label;
   const MAX_SPEED = CadenceMotion.MAX_SPEED, M_PER_MI = 1609.34, AROUSAL_WILD = 0.5, DUSK_BIAS = 0.2, GRADE_LOAD_MAX = 0.045, CLARITY_TARGET = 0.6, SET_SECONDS = 60;
   const legacyScene = () => S.sceneCatalog !== SCENE_CATALOG;
   const sceneCatalog = () => legacyScene() ? PathScene.BIOMES : BIOMES;
@@ -5723,7 +5726,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       <div class="stat"><span class="k">Heart rate</span><span class="v" id="sig-hr">-</span><span class="n" id="sig-hr-n">no source yet</span></div>
       <div class="stat"><span class="k">RMSSD</span><span class="v" id="sig-rmssd">-</span><span class="n" id="sig-rmssd-n">from beat intervals</span></div>
       <div class="stat"><span class="k">SDNN</span><span class="v" id="sig-sdnn">-</span><span class="n">from the same intervals</span></div>
-      <div class="stat"><span class="k">Index</span><span class="v" id="sig-idx">-</span><span class="n" id="sig-idx-n">inferred, not measured</span></div>
+      <div class="stat"><span class="k">Heart shift</span><span class="v" id="sig-idx">-</span><span class="n" id="sig-idx-n">one sensor, not measured</span></div>
       <div class="stat"><span class="k">Reference</span><span class="v" id="sig-ref">-</span><span class="n" id="sig-ref-n">120 s of quiet data</span></div>
       <div class="stat"><span class="k">Swing at pace</span><span class="v" id="sig-swing">-</span><span class="n">a proxy, peak to trough</span></div>
       <div class="stat"><span class="k">Cadence</span><span class="v" id="sig-cad">-</span><span class="n" id="sig-cad-n">no source yet</span></div>
@@ -5746,7 +5749,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     <p class="sheet-intro">Every link from your body to the picture is a stated rule. Cadence is measured when a sensor reports it. Everything about your state is inferred.</p>
     <table class="maptable"><tbody>
       <tr><th>Cadence</th><td>Sets speed and zoom unless Brainwaves is selected in Ride. <span class="ep ep-measured">Measured</span> from a sensor only. The slider, the pedal button and the workout are labeled manual.</td></tr>
-      <tr><th>Inferred arousal</th><td>Watch only. A higher index makes the gas cloud wider, brighter and warmer, charges the sky toward dusk and adds warp. <span class="ep ep-inferred">Inferred</span> It means intensity, not a feeling.</td></tr>
+      <tr><th>Heart shift</th><td>Watch only. How far your heart rate has risen and its beat-to-beat variability fallen since your first 2 minutes, from one heart-rate sensor. A larger shift makes the gas cloud wider, brighter and warmer, charges the sky toward dusk and adds warp. <span class="ep ep-inferred">Inferred</span> It means a change in your heart signal, not a feeling.</td></tr>
       <tr><th>EEG balance</th><td>Brainwaves in Ride only. Lower beta/alpha relative to your eyes-open reference of 20 eligible samples gives a higher 0–100 game-control score. That direction is a game rule, not a validated mental-state interpretation. A higher control makes the road faster and steadier; this does not measure mental clarity, attention or health. Missing or poor-quality data gently stops the ride. <span class="ep ep-proxy">Proxy</span></td></tr>
       <tr><th>Heart rate</th><td>Cadence-powered Ride only. Heart rate above your baseline adds up to 4.5% of apparent grade and slows you, shown apart from the road's own grade. The zoom never changes. <span class="ep ep-inferred">Inferred</span></td></tr>
       <tr><th>Swing at pace</th><td>Train only. How far heart rate swings at the pacer's own frequency, over the last two breaths. It lifts the fog. Hold it for 60 seconds and dawn breaks. <span class="ep ep-proxy">Proxy</span></td></tr>
@@ -5756,7 +5759,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     <p class="note">Keys: hold <b>Space</b> to pedal · <b>1-9</b> scenes · <b>R</b> / <b>B</b> next route · <b>T</b> time of day · <b>L</b> clarity · <b>Z</b> zen mode · <b>Middle click</b> random combo · <b>D</b> demo · <b>C</b> connect · <b>F</b> full screen · <b>H</b> hide controls.</p>
     <details id="is-not" open><summary>What this is, and is not</summary>
       <p><b>Not a medical device.</b> It diagnoses nothing and treats nothing, and it does not detect or predict any condition.</p>
-      <p>Inferred arousal is a personal, reference-relative heuristic. It is not measured, and it is not a stress reading. A charged sky is not a verdict about you.</p>
+      <p>Heart shift is a personal, reference-relative heuristic from one heart-rate sensor: heart rate plus two beat-to-beat variability measures (RMSSD and SDNN) from the same beats. Posture, breathing, caffeine and movement move it too. It is not a measure of arousal or stress, and a charged sky is not a verdict about you.</p>
       <p>Train is a paced-breathing practice game, not therapy or treatment. Clarity is a heart-rate proxy, not a score of your health. The page has no breath sensor: it reads the swing at the pacer's frequency.</p>
       <p>A session file is your own record of a ride, not a medical record. Pedaling raises heart rate on its own, so the index waits while you pedal.</p>
     </details>
@@ -5831,7 +5834,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   const stage = `
     ${sceneBar}
     <div class="reading" id="reading" hidden>
-      <p class="eyebrow">Inferred arousal · personal</p>
+      <p class="eyebrow">Heart shift · from your first 2 minutes</p>
       <div class="read-num" id="read-num">--</div>
       <p class="read-tier" id="read-tier"></p>
       <div class="read-scale" id="read-scale"><i id="read-dot"></i><u id="read-fill"></u></div>
@@ -5902,7 +5905,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
 
   /* ---- modes ---- */
   const TRUTH = {
-    watch: 'Inferred arousal is a personal heuristic, not a medical measurement.',
+    watch: 'Heart shift comes from one heart-rate sensor. A personal heuristic, not a medical measurement.',
     ride: 'Speed follows cadence. When stopped, the sky reflects heart signals. Grade-load is inferred from heart rate, and is not a fitness measure. Not a medical device.',
     train: 'A paced-breathing practice game, not therapy or treatment. Clarity is a heart-rate proxy. Not a medical device.',
   };
@@ -6486,7 +6489,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
         <div class="stat"><span class="k">Distance</span><span class="v">${dist.length ? ((dist[dist.length - 1] - (s.distanceRelative ? 0 : dist[0])) / M_PER_MI).toFixed(2) : '0.00'} mi</span></div>
         <div class="stat"><span class="k">Cadence</span><span class="v">${rpm ? `${Math.round(rpm)} rpm` : 'none'}</span><span class="n">mean while moving</span></div>
         <div class="stat"><span class="k">Heart rate</span><span class="v">${hr ? `${Math.round(hr)} bpm` : 'none'}</span><span class="n">mean</span></div>
-        <div class="stat"><span class="k">Index</span><span class="v">${peak.length ? Math.round(Math.max(...peak)) : 'none'}</span><span class="n">highest, inferred</span></div>
+        <div class="stat"><span class="k">Heart shift</span><span class="v">${peak.length ? Math.round(Math.max(...peak)) : 'none'}</span><span class="n">highest, one sensor</span></div>
       </div>`;
   }
   async function readFile(input) { const f = input.files[0]; input.value = ''; return f ? JSON.parse(await f.text()) : null; }
@@ -6692,7 +6695,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     set('sig-rmssd-n', n.rmssd != null ? 'from beat intervals' : (bio.hr.connected || bio.demoOn) ? (bio.features.reason || 'not available') : 'from beat intervals');
     set('sig-sdnn', n.sdnn != null ? `${Math.round(n.sdnn)} ms` : 'no intervals');
     set('sig-idx', n.idx != null ? String(Math.round(n.idx)) : n.phase === 'calibrating' ? 'forming' : 'not yet');
-    set('sig-idx-n', n.idx != null ? `${n.label}, inferred` : 'inferred, not measured');
+    set('sig-idx-n', n.idx != null ? `${shiftLabel(n.label)}, one sensor` : 'one sensor, not measured');
     set('sig-ref', n.reference ? 'ready' : n.phase === 'calibrating' ? `${mmss(n.seconds)} of 2:00` : 'not started');
     set('sig-ref-n', n.reference ? 'fixed until the source changes' : '120 s of quiet data');
     set('sig-swing', n.swing != null ? `${n.swing.toFixed(1)} bpm` : 'no reading');
@@ -6723,14 +6726,14 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     reading.hidden = !show;
     let tier, sub = '', cov = '', pct = null, fill = null;
     if (n.phase === 'ready' && n.idx != null) {
-      tier = n.label; pct = clamp(n.idx, 0, 100);
-      sub = '0 to 100 · shift from your reference';
-      cov = `${bio.demoOn ? 'Synthetic demo · ' : bio.replayOn ? 'Recorded · ' : ''}${n.coverage}`;
+      tier = shiftLabel(n.label); pct = clamp(n.idx, 0, 100);
+      sub = '0 to 100 · heart shift from your first 2 minutes';
+      cov = `${bio.demoOn ? 'Synthetic demo · ' : bio.replayOn ? 'Recorded · ' : ''}${ONE_SENSOR}`;
     } else if (bio.pedaling) {
-      tier = 'On hold while you pedal'; sub = 'Pedaling raises heart rate on its own, so the index waits.';
+      tier = 'On hold while you pedal'; sub = 'Pedaling raises heart rate on its own, so the heart shift waits.';
     } else if (n.phase === 'calibrating') {
       tier = 'Forming your reference'; fill = n.progress;
-      sub = `${mmss(n.seconds)} of 2:00 · sit comfortably`; cov = n.coverage;
+      sub = `${mmss(n.seconds)} of 2:00 · sit comfortably`; cov = ONE_SENSOR;
     } else if (h.connected && !bio.demoOn && h.reportsBeats && !bio.features.valid && !n.reference) {
       tier = 'Collecting beat intervals'; sub = bio.features.reason;
     } else if (n.phase === 'held') {
