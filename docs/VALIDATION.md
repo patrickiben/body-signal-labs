@@ -1,8 +1,20 @@
 # Validation
 
-Checked between 2026-11-02 and 2026-11-04 in Chrome 156 on an Apple M4 Max Mac. **No real cadence sensor or heart-rate strap has connected to either cockpit yet.** The checks a person can do with real gear are listed at the end. Autonomic Telemetry is validated in [its own repository](https://github.com/patrickiben/autonomic-telemetry/blob/main/docs/VALIDATION.md).
+Checked between 2026-11-02 and 2026-11-08 in Chrome 156 on an Apple M4 Max Mac. **No real cadence sensor or heart-rate strap has connected to either cockpit yet.** The checks a person can do with real gear are listed at the end. Autonomic Telemetry is validated in [its own repository](https://github.com/patrickiben/autonomic-telemetry/blob/main/docs/VALIDATION.md).
 
 A browser test cannot pair a real Bluetooth device, and a page that opens Chrome's device list closes headless Chrome, so every sensor state below uses a stub of `navigator.bluetooth` that sends real packet bytes through the page's own parsers.
+
+## Tropical flicker and the phone title row, 2026-11-08
+
+**The build deployed on 2026-11-07 (a600a02) failed `tests/flash_check.py` in Tropical.** In three runs against the live site, the worst region flashing more than three times a second was 36–46% in Endless Cockpit (Clear, held at golden hour) and 39–50% in Biofeedback Path Cockpit (Ride, high feedback), with and without reduced motion, against the 25% limit. The 2026-11-07 change that made Tropical's motion blur match the other routes had removed its travel exposure, so dense fronds crossing bright sky flashed. Flicker results recorded further down describe earlier builds.
+
+Tropical's foliage is again integrated over a travel exposure, now 60 ms, about a third of the earlier 160 ms, so it stays closer to the other routes' look. On the Tropical cases, 160 ms measured at most 1.2%, 60 ms at most 5.2% over two runs, and 30 ms up to 23.4%, too close to the limit. The same exposure on every route was tried and dropped: it softened roadside detail on routes that do not flash. At speed, Tropical's nearest palms read softer in a still frame than on the other routes; that blur is what keeps them from flashing.
+
+The full suite then passed all 64 cases. Tropical's worst region is now 0.4–4.0%. The worst case overall is 18.2% (Biofeedback, Meadow lanes, high feedback, reduced motion), a route this change does not touch, and no whole-frame count exceeded 1.
+
+On upright phones, Biofeedback's Ride and Train switch sat in the title row, over the app's name and into Try a demo. It now has its own row under the title, and the scenes and the demo's reading move down with it. `tests/layout_check.py` now fails when the switch covers the name, Try a demo, the full-screen button or the scenes: on the 2026-11-07 build it reports 12 problems at three phone sizes, and on this build none at any of its sizes.
+
+The link-preview descriptions and three documents said eight scenes; there are nine, with Tron grid.
 
 ## Shared scenery and cadence motion, 2026-11-04
 

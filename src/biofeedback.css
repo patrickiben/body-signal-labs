@@ -186,6 +186,15 @@ body[data-app="biofeedback-path-cockpit"] .intro { top: 37%; }
   .seg button, .seg-solo { padding: 4px 7px; min-height: 28px; font-size: 10px; }
 }
 
+@media (max-width: 700px) and (min-height: 521px) {
+  /* Upright phones: the Ride and Train switch gets its own row under the title. In the title row it covered the
+     app's name and ran into Try a demo. The scenes move down by the same row. */
+  body[data-app="biofeedback-path-cockpit"] .mode-switch { top: max(58px, calc(env(safe-area-inset-top) + 50px)); }
+  body[data-app="biofeedback-path-cockpit"] .scenebar { top: max(100px, calc(env(safe-area-inset-top) + 92px)); }
+  /* The demo's reading moves down by the same row, so it starts below the scenes. */
+  body[data-app="biofeedback-path-cockpit"] .reading { top: max(calc(34% + 44px), 318px); }
+}
+
 @media (max-height: 520px) {
   .mode-switch { top: max(8px, env(safe-area-inset-top)); }
   .mode-switch button { padding: 3px 10px; min-height: 24px; font-size: 10px; }

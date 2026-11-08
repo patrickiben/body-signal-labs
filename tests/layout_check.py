@@ -29,6 +29,13 @@ JS = r"""() => {
   const top = sb || ms;
   if (top && dw && top.b > dw.t) out.push(`top controls (bottom ${top.b}) run into the bottom stack (top ${dw.t})`);
   if (sb && hd && sb.t < hd.b - 2 && innerWidth < 900) out.push(`scene bar (top ${sb.t}) under the header (bottom ${hd.b})`);
+  // The title row: the mode switch must not cover the app's name or the buttons beside it (it did on upright phones, 2026-11-07)
+  const nameEl = document.querySelector('.brand span');
+  const name = nameEl && vis(nameEl) ? (() => { const q = nameEl.getBoundingClientRect(); return { t: Math.round(q.top), b: Math.round(q.bottom), l: Math.round(q.left), r: Math.round(q.right) }; })() : null;
+  for (const [label, other] of [["the app's name", name], ['Try a demo', box('#demo-button')], ['full screen', box('#fs-button')]]) {
+    if (ms && other && overlap(ms, other)) out.push(`the mode switch covers ${label}`);
+  }
+  if (ms && sb && overlap(ms, sb)) out.push(`the mode switch (bottom ${ms.b}) runs into the scenes (top ${sb.t})`);
   const introOn = intro && getComputedStyle(document.querySelector('.intro')).opacity > 0.1;
   if (introOn && sb && overlap(intro, sb)) out.push('intro text overlaps the scene bar');
   if (introOn && dw && intro.b > dw.t) out.push(`intro text (bottom ${intro.b}) runs into the bottom stack (top ${dw.t})`);
