@@ -27,6 +27,7 @@ jobs:
           node tests/eeg_drive.cjs
           node tests/cadence_motion.cjs
           node tests/midi_drive.cjs
+          python3 tests/site_links.py
           node tests/bsl-manuscript-math.test.mjs
       - uses: actions/checkout@v7
         with:
