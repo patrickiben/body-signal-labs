@@ -467,6 +467,11 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
     #manuscript-workbench #mw-pane-ride h4 { margin: 18px 0 4px; font-size: 13px; color: #e8e4f0; font-weight: 600; }
     #manuscript-workbench .mw-list { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.55; color: #b5b2bd; }
     #manuscript-workbench .mw-list strong { color: #e8e4f0; }
+    #manuscript-workbench .mw-plain { margin: 6px 0 12px; }
+    #manuscript-workbench .mw-plain ul { margin: 6px 0 8px; padding-left: 18px; }
+    #manuscript-workbench .mw-plain li { margin: 7px 0; font-size: 15px; line-height: 1.5; color: #ece9f3; }
+    #manuscript-workbench .mw-plain-foot { font-size: 12.5px; color: #b5b2bd; margin: 4px 0 0; }
+    #manuscript-workbench details.mw-math > summary { cursor: pointer; margin: 16px 0 4px; font-weight: 600; color: #f1cf8e; }
     #manuscript-workbench .mw-kpi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
@@ -948,7 +953,11 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
         <div class="mw-card">
           <h3>Your ride</h3>
           <p class="mw-note" id="mw-ride-head">Ride the Biofeedback Path Cockpit with a heart-rate strap connected, open Session, press Start recording, and when you finish press Export TCX. Then open that file here with "Open a ride (.tcx)". A TCX file from another app works too if it has heart rate and cadence. Nothing leaves this browser.</p>
+          <div class="mw-plain" id="mw-ride-plain"></div>
           <div id="mw-ride-chart"></div>
+          <details class="mw-math" id="mw-ride-math">
+          <summary>The math behind it</summary>
+          <p class="mw-note">Worked on 5-second steps of the ride. Signals that move together share credit in both directions here, so the first two percentages overlap. The net leader, the difference between them, is the part that says which one led.</p>
           <h4>Manuscript 2 · Directed spillover between cadence and heart rate</h4>
           <div class="mw-kpi-grid" id="mw-ride-m2"></div>
           <h4>Heart-rate recovery after your hardest effort</h4>
@@ -964,6 +973,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
             <li><strong>The JEPA pacing planner</strong> in Manuscript 2 runs on the ten-signal sample network, not on two signals.</li>
             <li><strong>Manuscript 3</strong>: its recurrence and readout curves are properties of the model and come out the same for any ride (tab 3).</li>
           </ul>
+          </details>
         </div>
       </div>
     </section>
@@ -5361,18 +5371,36 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       const withHr = pts.filter((p) => Number.isFinite(p.hr)).length;
       const withCad = pts.filter((p) => Number.isFinite(p.cad)).length;
       const minutes = (pts[pts.length - 1].t - pts[0].t) / 60000;
-      const head = '<strong>' + rideEsc(fileName) + '</strong> · ' + rideEsc(new Date(pts[0].t).toLocaleString()) + ' · ' + minutes.toFixed(0) +
-        ' min · heart rate in ' + withHr + ' and cadence in ' + withCad + ' of ' + pts.length + ' points · analysed in ' + RIDE_BIN_S + '-second steps.';
+      const share = (k) => k === pts.length ? 'the whole ride' : Math.round(100 * k / pts.length) + '% of the ride';
+      const covered = withHr && withCad && withHr === withCad ? 'heart rate and cadence for ' + share(withHr)
+        : 'heart rate for ' + share(withHr) + ', cadence for ' + share(withCad);
+      const head = '<strong>' + rideEsc(fileName) + '</strong> · ' + minutes.toFixed(0) + ' min, ' + rideEsc(new Date(pts[0].t).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })) + ' · ' + covered + '.';
       const why = (id, msg) => { $(id).innerHTML = '<p class="mw-note">' + rideEsc(msg) + '</p>'; };
       if (!withHr) {
         $('mw-ride-head').innerHTML = head + ' This ride has no heart rate, and everything in this tab needs it. Ride the Biofeedback Path Cockpit with a heart-rate strap connected, then export again.';
-        ['mw-ride-chart', 'mw-ride-m2', 'mw-ride-hrr', 'mw-ride-states'].forEach((id) => { $(id).innerHTML = ''; });
+        ['mw-ride-plain', 'mw-ride-chart', 'mw-ride-m2', 'mw-ride-hrr', 'mw-ride-states'].forEach((id) => { $(id).innerHTML = ''; });
         $('mw-ride-states-note').textContent = '';
         return;
       }
       $('mw-ride-head').innerHTML = head;
       const rows = binRide(pts).filter((r) => Number.isFinite(r.hr) && Number.isFinite(r.cad));
       const sp = rideSpillover(rows), st = rideStates(rows), rc = rideRecovery(pts);
+      const plain = [];
+      if (sp.why) plain.push(sp.why);
+      else {
+        const lead = sp.netCad >= 0.5 ? 'Your pedaling led and your heart rate followed: when you changed pace, your heart rate changed after it.'
+          : sp.netCad <= -0.5 ? 'Your heart rate led and your pedaling followed: your changes of pace came after your heart rate moved.'
+          : 'Neither one led: your pedaling and your heart rate moved together.';
+        const tenths = Math.round(sp.cadToHr / 10);
+        plain.push(lead + ' ' + (tenths ? tenths + ' in 10 of your heart rate\u2019s unexpected swings came with a change in your pedaling.' : 'Hardly any of your heart rate\u2019s unexpected swings came with a change in your pedaling.'));
+      }
+      if (rc.why) plain.push(rc.why + (/^Your heart rate never fell/.test(rc.why) ? ' Stop pedaling for a minute after a hard effort, and the next ride will show one.' : ''));
+      else plain.push('After your hardest effort, ' + rideClock(rc.at) + ' into the ride, your heart rate fell ' + rc.hrr60.toFixed(0) + ' bpm in one minute, and closed half of the remaining gap to ' + rc.hrInf.toFixed(0) + ' bpm about every ' + Math.round(rc.tau * Math.LN2) + ' seconds.');
+      if (st.why) plain.push(st.why);
+      else plain.push('You rode steady ' + st.steady.toFixed(0) + '% of the time. Your heart rate and pedaling changed fast ' + st.fast.toFixed(0) + '% of the time: the shaded parts of the chart.');
+      $('mw-ride-plain').innerHTML = '<h4>In plain words</h4><ul>' + plain.map((t) => '<li>' + rideEsc(t) + '</li>').join('') +
+        '</ul><p class="mw-plain-foot">Compare these with your own earlier rides, not with other people\u2019s. None of this is a medical measurement.</p>';
+      if ($('mw-ride-math')) $('mw-ride-math').open = window.matchMedia('(min-width: 900px)').matches;
       $('mw-ride-chart').innerHTML = rows.length > 2 ? rideChartSvg(rows, st.p ? st : null) +
         '<p class="mw-note">Red: heart rate (left scale) · blue: cadence (right scale) · shaded: fast-change periods.</p>' : '';
       if (sp.why) why('mw-ride-m2', sp.why); else renderKpis('mw-ride-m2', [

@@ -90,6 +90,23 @@ def main():
         total = sum(float(st.get(k, '0%').rstrip('%')) for k in ('Steady', 'Transition', 'Fast change'))
         if not 98 <= total <= 102:
             fails.append(f'state shares should sum to 100%, got {total}')
+        plain = page.inner_text('#mw-ride-plain')
+        for phrase in ('Your pedaling led', 'bpm in one minute', 'You rode steady', 'None of this is a medical measurement'):
+            if phrase not in plain:
+                fails.append(f'the plain-words summary is missing "{phrase}"')
+        if page.evaluate("document.getElementById('mw-ride-math').open") is not True:
+            fails.append('the math section should be open on a wide screen')
+        phone = browser.new_context(viewport={'width': 393, 'height': 852}, is_mobile=True, has_touch=True).new_page()
+        phone.goto(f'http://127.0.0.1:{srv.server_port}/offline.html')
+        phone.wait_for_timeout(1200)
+        phone.set_input_files('#mw-ride-file', str(tmp / 'ride.tcx'))
+        phone.wait_for_timeout(1200)
+        if phone.evaluate("document.getElementById('mw-ride-math').open"):
+            fails.append('the math section should start closed on a phone')
+        if 'Your pedaling led' not in phone.inner_text('#mw-ride-plain'):
+            fails.append('the plain-words summary is missing on a phone')
+        if phone.evaluate('document.documentElement.scrollWidth > innerWidth'):
+            fails.append('the ride tab scrolls sideways on a phone')
         if page.locator('#mw-ride-chart svg polyline').count() != 2:
             fails.append('the ride chart should draw heart rate and cadence')
 
