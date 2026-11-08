@@ -16,7 +16,7 @@ The shared renderer and route functions live in `src/cyclingscene.js`. Watch's i
 |---|---|---|---|
 | Cadence | default drive | Speed and zoom, through the same curve as Endless Cockpit | Measured from a sensor; the slider, pedal button and workout are labeled manual |
 | Muse S EEG balance | Ride with Brainwaves | Calibrated speed and steadiness, with no cadence requirement | Experimental game proxy, not measured mental clarity |
-| Inferred arousal index | Watch | The gas cloud grows wider, brighter and warmer, the sky charges toward dusk by up to 0.2, and warp rises by up to 0.5 | Inferred |
+| Heart shift, from one heart-rate sensor | Watch | The gas cloud grows wider, brighter and warmer, the sky charges toward dusk by up to 0.2, and warp rises by up to 0.5 | Inferred |
 | Heart rate above baseline | Ride with cadence | Up to 4.5% of apparent grade, which slows you. Shown apart from the road's own grade. The zoom never changes | Inferred |
 | Swing at pace | Train | Clarity lifts the fog. A held clarity of 0.6 brings dawn | Proxy |
 | Heart rate history | Signal view and land-scene horizons | The last two minutes of heart rate remain available for inspection | Measured |
@@ -40,7 +40,7 @@ Over the last 32 seconds: at least 20 intervals. Intervals outside 333 to 1500 m
 
 The index is Autonomic Telemetry's engine, `multivariate-1`, copied unchanged into `src/vendor/autonomic/` from autonomic-telemetry at 8a2f1c9. Its rules are in [Autonomic's methods](https://github.com/patrickiben/autonomic-telemetry/blob/main/docs/METHODS.md): a personal reference from 120 seconds of quiet data, fixed coverage, a five-second median, and tiers at 25, 46 and 68. With a strap that reports beat intervals the profile is heart rate, pulse RMSSD and pulse SDNN, 75 of 100 nominal points. With a rate-only sensor it is the explicitly limited heart-rate profile.
 
-Pedaling raises heart rate on its own, so any cadence above 15 rpm is passed to the engine as movement, and the engine withholds the index rather than reading exercise as arousal. Waiting, stale and held estimates take the index off the sky, which drifts back to ambient.
+Pedaling raises heart rate on its own, so any cadence above 15 rpm is passed to the engine as movement, and the engine withholds the heart shift rather than reading exercise as one. Waiting, stale and held estimates take the index off the sky, which drifts back to ambient.
 
 ## Ride
 
