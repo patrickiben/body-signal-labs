@@ -15,6 +15,7 @@ The shared renderer and route functions live in `src/cyclingscene.js`. Watch's i
 | Signal | Mode | Effect | Kind |
 |---|---|---|---|
 | Cadence | default drive | Speed and zoom, through the same curve as Endless Cockpit | Measured from a sensor; the slider, pedal button and workout are labeled manual |
+| MIDI notes | Ride | Speed and zoom through the same cadence curve: every note-on pushes, harder notes push more, and the push fades over about a second | Measured from your instrument: note-on and velocity only |
 | Muse S EEG balance | Ride with Brainwaves | Calibrated speed and steadiness, with no cadence requirement | Experimental game proxy, not measured mental clarity |
 | Heart shift, from one heart-rate sensor | Watch | The gas cloud grows wider, brighter and warmer, the sky charges toward dusk by up to 0.2, and warp rises by up to 0.5 | Inferred |
 | Heart rate above baseline | Ride with cadence | Up to 4.5% of apparent grade, which slows you. Shown apart from the road's own grade. The zoom never changes | Inferred |
@@ -66,6 +67,10 @@ Clarity is `clamp(swing / full, 0, 1)`, with full at 10 bpm by default and adjus
 
 A stated script, sent as real packet bytes through the same parsers: a rest that rises toward an arc and recovers over 72 seconds in Watch, heart rate that follows the demo's interval workout in Ride, and a heart-rate swing at the pacer's frequency that grows over 40 seconds in Train. The demo's reference is formed by running 126 seconds of synthetic rest through the same engine before the first frame. The page labels it "Demo · synthetic signals, not your body" the whole time, and a recorded demo session is marked synthetic.
 
+## MIDI input
+
+`src/midi-drive.js` turns notes into cadence: x(t) = Σ (velocity / 127) · e^(−(t − t_note) / 1 s), and rpm = 110 · (1 − e^(−x / 2)). About four notes a second at medium velocity rides near 75–80 rpm, and the sum saturates smoothly at 110 rpm, so top speed and the scenery's flash limits are the same as with a cadence sensor. Only note-on with velocity above zero counts, on any channel. Note-off, controllers and clock are ignored. MIDI joins a cadence sensor as a source while notes arrive, taking the higher of the two, and steps aside when the instrument is quiet so Hold to pedal still works. While notes arrive, playing counts as exertion, so the heart shift waits and its reference leaves those samples out.
+
 ## Sessions and the Ghost Deck
 
 A session file holds cadence ten times a second, distance twice a second, and heart rate, RMSSD, SDNN, the index, the swing, clarity, the hold and dawn once a second, with the mode, scene and route seed. It is your own record, not a medical record, and nothing leaves the computer unless you share it. Completed rides can also be exported directly as standard Training Center XML (`.tcx`) files containing timestamped speed, cadence, elevation and heart-rate tracks compatible with Strava, Garmin Connect, and Apple Health. Replay plays back what was computed, without re-running the model. New files include the starting route, cadence mapping and baseline/settings. Their distance begins at zero when recording starts. The Ghost Deck restores that start and races the recorded distance as a light on the road, with the gap in meters. Older files are rebased to zero and label their starting position as approximate. A ride saved by the older page also replays and races, marked synthetic.
@@ -73,5 +78,7 @@ A session file holds cadence ten times a second, distance twice a second, and he
 New files identify the shared scene catalog as `cycling-scenes@1`. Files saved before that marker use the original five-scene Biofeedback catalog and `PathScene` renderer, preserving their numeric scene meanings. Re-recording one of those replays retains its original catalog. Recorded EEG game-control values and synthetic labels remain separate from cadence.
 
 ## Not verified
+
+No real MIDI instrument has connected to this page. The MIDI path was driven by a fake MIDI input in a real browser (`tests/midi_ride.py`), and the note-to-cadence model is unit-tested in `tests/midi_drive.cjs`.
 
 No real heart-rate strap, Hume Band or cadence sensor has connected to this page. The device states were driven by a fake Bluetooth stack that sends real packet bytes (`tests/bio_states.py`), and the refusal and plain-http states by real Chrome. The swing and clarity thresholds are game settings. Nothing here has been validated against any physiological outcome, and no expert has reviewed it.

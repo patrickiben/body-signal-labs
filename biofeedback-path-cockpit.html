@@ -2492,6 +2492,37 @@ void main(){
       p[15] = p.slice(0, 15).reduce((s, x) => s + x, 0) & 0xff;
       return p;
     },
+    humeVersionCommand() {
+      const p = new Uint8Array(16);
+      p[0] = 0x27; p[15] = 0x27;
+      return p;
+    },
+    humeBatteryCommand() {
+      const p = new Uint8Array(16);
+      p[0] = 0x13; p[15] = 0x13;
+      return p;
+    },
+    decodeHumeVersion(dv) {
+      const d = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
+      if (!d.length || d[0] !== 0x27) return null;
+      if (d.length === 2 && d[1] === 0xff) throw new Error('The band refused the firmware-version request.');
+      if (d.length !== 16 || (d.slice(0, 15).reduce((s, x) => s + x, 0) & 0xff) !== d[15]) throw new Error('The band sent a damaged firmware-version reply.');
+      if (d[1] === 0xff) throw new Error('The band refused the firmware-version request.');
+      const bcd = (b) => { const hi = (b >> 4) & 0x0f, lo = b & 0x0f; return hi <= 9 && lo <= 9 ? hi * 10 + lo : null; };
+      const yy = bcd(d[5]), mm = bcd(d[6]), dd = bcd(d[7]);
+      const buildDate = yy != null && mm != null && dd != null && (yy || mm || dd) && mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31
+        ? `${2000 + yy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}` : null;
+      return { version: `${d[1]}.${d[2]}.${d[3]}.${d[4]}`, buildDate };
+    },
+    decodeHumeBattery(dv) {
+      const d = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
+      if (!d.length || d[0] !== 0x13) return null;
+      if (d.length === 2 && d[1] === 0xff) throw new Error('The band refused the battery request.');
+      if (d.length !== 16 || (d.slice(0, 15).reduce((s, x) => s + x, 0) & 0xff) !== d[15]) throw new Error('The band sent a damaged battery reply.');
+      if (d[1] === 0xff) throw new Error('The band refused the battery request.');
+      if (d[1] > 100) throw new Error('The band sent an out-of-range battery percentage.');
+      return d[1];
+    },
     decodeHume(dv) {
       const d = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
       if (!d.length || d[0] !== 0x28) return null;
@@ -2646,6 +2677,7 @@ void main(){
     const bio = {
       on, hr, cadence, now: now_, hist, BioMath,
       mode: 'watch',
+      playing: false,   /* set by the page while MIDI notes arrive: playing counts as exertion, like pedaling */
       pace: { rate: 6, on: true, t0: performance.now() },
       fullSwing: 10, fullOver: 60,
       setMode(m) { if (m === 'train' && demo) demo.trainT0 = performance.now(); bio.mode = m; },
@@ -2654,7 +2686,7 @@ void main(){
       get recording() { return !!session; },
       get syntheticReplay() { return !!(replay && replay.s.synthetic); },
       get supported() { return !!navigator.bluetooth; },
-      get pedaling() { return (cadence.rpm || 0) > PEDALING_RPM; },
+      get pedaling() { return (cadence.rpm || 0) > PEDALING_RPM || bio.playing === true; },
       get beatPhase() { return beatPhase; },
       get features() { return features; },
       breath() {
@@ -2745,7 +2777,15 @@ void main(){
           const svc = await gatt.getPrimaryService(HUME.service);
           const write = await svc.getCharacteristic(HUME.write), notify = await svc.getCharacteristic(HUME.notify);
           notify.addEventListener('characteristicvaluechanged', (e) => {
-            try { const v = BioMath.decodeHume(e.target.value); if (v != null) deviceHeart({ bpm: v, rr: [], contact: null }); } catch (err) { setHr('failed', err.message); }
+            const val = e.target.value;
+            if (val && val.byteLength && (val.getUint8(0) === 0x27 || val.getUint8(0) === 0x13)) {
+              try {
+                if (val.getUint8(0) === 0x27) { const info = BioMath.decodeHumeVersion(val); if (info) { hr.firmware = info.version; hr.firmwareBuildDate = info.buildDate; } }
+                else { const bat = BioMath.decodeHumeBattery(val); if (bat != null) hr.battery = bat; }
+              } catch (_) { /* ignore malformed metadata notifications */ }
+              return;
+            }
+            try { const v = BioMath.decodeHume(val); if (v != null) deviceHeart({ bpm: v, rr: [], contact: null }); } catch (err) { setHr('failed', err.message); }
           });
           await notify.startNotifications();
           hr.connected = true; hr.warming = true; humeChar = write;
@@ -3045,11 +3085,11 @@ void main(){
   const FRESH_MS = 5000, REFERENCE_SAMPLES = 20, FNIRS_REF_SAMPLES = 16, PRV_REF_SAMPLES = 12, SAMPLE_SPACING_MS = 950;
   const SENSOR_MODES = ['eeg', 'fnirs', 'prv', 'stillness', 'fusion'];
   const SENSOR_LABELS = {
-    eeg: 'EEG balance (β/α)',
-    fnirs: 'fNIRS optical (ΔOD)',
-    prv: 'Optical PRV (RMSSD)',
-    stillness: 'Head stillness (IMU)',
-    fusion: 'Athena 4-sensor fusion',
+    eeg: 'Brainwave balance',
+    fnirs: 'Forehead light signal',
+    prv: 'Forehead pulse rhythm',
+    stillness: 'Head stillness',
+    fusion: 'All four together',
   };
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const median = values => {
@@ -3070,7 +3110,7 @@ void main(){
     const fetcher = options.fetch || (global.fetch && global.fetch.bind(global));
     const Events = options.EventSource || global.EventSource;
     const initialMessage = available ? 'Connect Muse, then keep your eyes open for a personal EEG reference.' :
-      'Open the cockpit from the optional Mac EEG bridge to connect Muse.';
+      'To connect the Muse, open this page from the small headband app on your Mac.';
     let sensorMode = SENSOR_MODES.includes(options.sensorMode) ? options.sensorMode : 'eeg';
     const emptyAux = () => ({
       fnirs: {valid: false, phase: 'waiting', od: null, drift: null, channels: [], progress: 0, baseline: null, score: null, drive: 0, reason: 'Waiting for >=2 eligible forehead optical channels (64 Hz).', receivedAt: null},
@@ -3131,16 +3171,16 @@ void main(){
         const stillScore = aux.stillness.score ?? 0.88;
         const fusionScore = clamp(0.40 * (state.score ?? 0.6) + 0.30 * fnirsScore + 0.15 * prvScore + 0.15 * stillScore, 0, 1);
         const sensors = {
-          eeg: {valid: true, phase: 'ready', ratio: Math.exp((0.5 - state.score) * 0.9), progress: 1, baseline: null, score: state.score, drive: output, reason: 'Synthetic EEG demonstration.'},
-          fnirs: {...aux.fnirs, valid: true, phase: 'ready', progress: 1, score: fnirsScore, reason: 'Synthetic fNIRS optical attenuation preview.'},
-          prv: {...aux.prv, valid: true, phase: 'ready', progress: 1, score: prvScore, reason: 'Synthetic forehead optical PRV preview.'},
+          eeg: {valid: true, phase: 'ready', ratio: Math.exp((0.5 - state.score) * 0.9), progress: 1, baseline: null, score: state.score, drive: output, reason: 'Synthetic brainwave demonstration.'},
+          fnirs: {...aux.fnirs, valid: true, phase: 'ready', progress: 1, score: fnirsScore, reason: 'Synthetic forehead light preview.'},
+          prv: {...aux.prv, valid: true, phase: 'ready', progress: 1, score: prvScore, reason: 'Synthetic forehead pulse preview.'},
           stillness: {...aux.stillness, valid: true, phase: 'ready', score: stillScore, reason: 'Synthetic 3-axis IMU head stillness preview.'},
           fusion: {...aux.fusion, valid: true, phase: 'ready', activeChannels: ['eeg', 'fnirs', 'prv', 'stillness'], score: fusionScore, reason: 'Synthetic 4-sensor Athena fusion preview.'},
         };
         const chosen = sensors[sensorMode] || sensors.eeg;
         Object.assign(state, real, {phase: 'ready', message: 'Demo EEG · synthetic brainwave ride; no headset measurement.',
           simulated: true, ratio: Math.exp((0.5 - state.score) * 0.9),
-          quality: {valid: true, reason: 'Synthetic EEG demonstration.', source_kind: 'synthetic'},
+          quality: {valid: true, reason: 'Synthetic brainwave demonstration.', source_kind: 'synthetic'},
           baseline: null, progress: 1, score: state.score, drive: output,
           sensorMode, activeDrive: chosen.drive ?? output, activeScore: chosen.score ?? state.score, activeLabel: SENSOR_LABELS[sensorMode], sensors});
       }
@@ -5534,6 +5574,58 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
 
 </script>
 <script>
+/* midi-drive.js: turns MIDI notes into a cadence the bike can ride on.
+   Any MIDI instrument works (drums, pads, keys): every note-on pushes, and a harder note (higher velocity)
+   pushes more. Each push fades with time constant TAU, and the sum saturates smoothly at RPM_MAX:
+     x(t) = sum over notes of (velocity / 127) * exp(-(t - t_note) / TAU),   rpm(t) = RPM_MAX * (1 - exp(-x / X0)).
+   Steady playing at r notes per second with mean velocity v holds x near v * r * TAU, so about 4 notes a
+   second at medium velocity rides near 75 rpm, and stopping lets the cadence fall away within a few seconds.
+   The cockpit feeds this rpm into the same motion model as a cadence sensor, so top speed and the
+   scenery's flash limits stay exactly as they are. Pure functions, no browser APIs: tested in tests/midi_drive.cjs. */
+(function (root) {
+  'use strict';
+  const VERSION = 'midi-drive@1', TAU = 1.0, X0 = 2.0, RPM_MAX = 110, RATE_WINDOW = 10, PLAYING_WINDOW = 3;
+
+  function create() { return { x: 0, t: null, times: [] }; }
+
+  function decay(st, t) {
+    if (st.t != null && t > st.t) st.x *= Math.exp(-(t - st.t) / TAU);
+    if (st.t == null || t > st.t) st.t = t;
+  }
+
+  /* One note-on at time t (seconds) with MIDI velocity 1-127. */
+  function note(st, t, velocity) {
+    decay(st, t);
+    st.x += Math.max(0, Math.min(127, Number(velocity) || 0)) / 127;
+    st.times.push(t);
+    if (st.times.length > 4096) st.times.splice(0, st.times.length - 4096);
+  }
+
+  function rpm(st, t) { decay(st, t); return RPM_MAX * (1 - Math.exp(-st.x / X0)); }
+
+  function notesPerMin(st, t) {
+    while (st.times.length && t - st.times[0] > RATE_WINDOW) st.times.shift();
+    return Math.round(st.times.length * 60 / RATE_WINDOW);
+  }
+
+  /* Playing means a note in the last few seconds: the heart shift waits, as it does while pedaling. */
+  function playing(st, t) { return st.times.length > 0 && t - st.times[st.times.length - 1] <= PLAYING_WINDOW; }
+
+  /* A raw MIDI message to a note, or null. Only note-on with velocity above 0 counts, on any channel;
+     note-off, note-on with velocity 0, controllers, clock and other system messages are ignored. */
+  function parse(data) {
+    if (!data || data.length < 3) return null;
+    if ((data[0] & 0xF0) !== 0x90 || !(data[2] > 0)) return null;
+    return { note: data[1], velocity: data[2], channel: (data[0] & 0x0F) + 1 };
+  }
+
+  const api = { VERSION, TAU, X0, RPM_MAX, create, note, rpm, notesPerMin, playing, parse };
+  root.MidiDrive = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+</script>
+<script>
 /* biofeedback.js: Biofeedback Path Cockpit. A road whose weather, grade and fog follow your body.
    Cadence sets the speed and is measured when a sensor reports it. Everything about your state is inferred, and says so.
    Watch: the index paints the sky. Ride: heart rate adds grade-load. Train: the swing at your breathing pace lifts the fog. */
@@ -5560,6 +5652,8 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   const EEG_MAX_SPEED = 7;
   // The engine's tiers are generic 'model response' words; on screen they say what moved: one heart signal.
   const ONE_SENSOR = 'heart rate and beat-to-beat variability, one sensor';
+  // The engine's component names, said plainly where the Signal sheet shows how the number is built.
+  const PLAIN_PARTS = { 'Pulse RMSSD · PRV': 'Beat variation (RMSSD)', 'Pulse SDNN · PRV': 'Overall variation (SDNN)', 'Respiratory rate': 'Breathing rate', 'EEG beta / alpha': 'Brainwave balance (EEG)', 'Multivariate turbulence': 'How unusual this moment is, compared with your first two minutes' };
   const shiftLabel = (label) => ({ 'Low model response': 'Near your first 2 minutes', 'Mild model response': 'Mild shift', 'Raised model response': 'Raised shift', 'Elevated model response': 'Large shift' })[label] || label;
   const MAX_SPEED = CadenceMotion.MAX_SPEED, M_PER_MI = 1609.34, AROUSAL_WILD = 0.5, DUSK_BIAS = 0.2, GRADE_LOAD_MAX = 0.045, CLARITY_TARGET = 0.6, SET_SECONDS = 60;
   const legacyScene = () => S.sceneCatalog !== SCENE_CATALOG;
@@ -5573,6 +5667,10 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   const roadY = (z, s) => legacyScene() ? 7 * Math.sin(z * 0.0071 + 0.4 + S.seed) + 3.4 * Math.sin(z * 0.0193 + 1.9 + S.seed * 2.3) + 1.1 * Math.sin(z * 0.0471 + 3.1) : CyclingScene.roadY(z, S.seed, s || sceneNow());
   const gradeAt = (z) => (roadY(z + 3) - roadY(z - 3)) / 6;
   const gradeFactor = CadenceMotion.gradeFactor;
+  /* MIDI input state; the Connect sheet wires it up further down. */
+  const midi = { st: MidiDrive.create(), access: null, inputs: 0, name: '' };
+  const midiNow = () => performance.now() / 1000;
+  const midiLive = () => midi.inputs > 0;
   const motion01 = (rpm) => CadenceMotion.motion01(rpm, S.map);
   function camAt(z, roll, b) {
     const s = b || sceneNow();
@@ -5614,24 +5712,33 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       </div>
       <button class="pill" id="cad-connect">Connect</button>
     </div>
+    <div class="device-card">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="ic"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7.5 6v7M12 6v7M16.5 6v7"/></svg>
+      <div class="device-info" id="midi-info" data-tone="idle">
+        <strong>MIDI input <span class="dot"></span></strong>
+        <p class="state" id="midi-state">Not connected</p>
+        <p class="why" id="midi-why">Any MIDI instrument rides the bike in Ride: every note pushes, and harder notes push more.</p>
+      </div>
+      <button class="pill" id="midi-connect">Connect</button>
+    </div>
     <section class="eeg-connect" aria-labelledby="eeg-title">
-      <div class="device-info" id="eeg-info" data-tone="idle"><strong id="eeg-title">Muse S / Athena brainwaves &amp; optical <span class="dot"></span></strong>
+      <div class="device-info" id="eeg-info" data-tone="idle"><strong id="eeg-title">Muse S headband <span class="dot"></span></strong>
         <p class="state" id="eeg-state">Not connected</p><p class="why" id="eeg-why"></p></div>
-      <p class="note">Calibrated headband automation. Choose EEG balance (8–12 Hz α / 13–30 Hz β), fNIRS slow optical density (&lt;0.18 Hz), forehead optical PRV, 3-axis IMU stillness, or 4-sensor fusion.</p>
-      <div class="field" style="margin-top:8px"><span>Headband automation source</span>
-        <div class="row-actions" id="athena-sensor-row" role="group" aria-label="Headband automation source" style="margin-top:4px">
-          <button class="pill on" data-athena="eeg" aria-pressed="true">EEG balance</button>
-          <button class="pill" data-athena="fnirs" aria-pressed="false">fNIRS optical</button>
-          <button class="pill" data-athena="prv" aria-pressed="false">Optical PRV</button>
+      <p class="note">Choose what from the headband drives the ride: brainwave balance, the forehead light signal, forehead pulse rhythm, how still your head is, or all four together. Each one is a game rule set against your own baseline, not a measure of your mind or health.</p>
+      <div class="field" style="margin-top:8px"><span>What drives the ride</span>
+        <div class="row-actions" id="athena-sensor-row" role="group" aria-label="What drives the ride" style="margin-top:4px">
+          <button class="pill on" data-athena="eeg" aria-pressed="true">Brainwave balance</button>
+          <button class="pill" data-athena="fnirs" aria-pressed="false">Forehead light</button>
+          <button class="pill" data-athena="prv" aria-pressed="false">Forehead pulse</button>
           <button class="pill" data-athena="stillness" aria-pressed="false">Head stillness</button>
-          <button class="pill" data-athena="fusion" aria-pressed="false">4-sensor fusion</button>
+          <button class="pill" data-athena="fusion" aria-pressed="false">All four</button>
         </div>
       </div>
       <div class="statgrid" id="athena-grid" style="margin-top:10px">
-        <div class="stat"><span class="k">EEG β/α</span><span class="v" id="ath-eeg">-</span><span class="n" id="ath-eeg-n">256 Hz · 4 s PSD</span></div>
-        <div class="stat"><span class="k">fNIRS ΔOD</span><span class="v" id="ath-fnirs">-</span><span class="n" id="ath-fnirs-n">64 Hz · &lt;0.18 Hz</span></div>
-        <div class="stat"><span class="k">Optical PRV</span><span class="v" id="ath-prv">-</span><span class="n" id="ath-prv-n">forehead RMSSD</span></div>
-        <div class="stat"><span class="k">IMU stillness</span><span class="v" id="ath-still">-</span><span class="n" id="ath-still-n">52 Hz · 3-axis g</span></div>
+        <div class="stat"><span class="k">Brainwave balance</span><span class="v" id="ath-eeg">-</span><span class="n" id="ath-eeg-n">waiting for the headband</span></div>
+        <div class="stat"><span class="k">Forehead light</span><span class="v" id="ath-fnirs">-</span><span class="n" id="ath-fnirs-n">waiting for the headband</span></div>
+        <div class="stat"><span class="k">Forehead pulse</span><span class="v" id="ath-prv">-</span><span class="n" id="ath-prv-n">waiting for the headband</span></div>
+        <div class="stat"><span class="k">Head stillness</span><span class="v" id="ath-still">-</span><span class="n" id="ath-still-n">waiting for the headband</span></div>
       </div>
       <p class="note" id="eeg-setup">Muse S needs the optional private relay. <a href="docs/EEG_SETUP.md">Set up the Muse S connection</a>. The synthetic preview works without it.</p>
       <div class="row-actions"><button class="pill" id="eeg-start">Find Muse S</button><button class="pill" id="eeg-scan">Scan again</button><button class="pill" id="eeg-disconnect">Disconnect</button></div>
@@ -5724,11 +5831,11 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   const signalSheet = `
     <div class="statgrid">
       <div class="stat"><span class="k">Heart rate</span><span class="v" id="sig-hr">-</span><span class="n" id="sig-hr-n">no source yet</span></div>
-      <div class="stat"><span class="k">RMSSD</span><span class="v" id="sig-rmssd">-</span><span class="n" id="sig-rmssd-n">from beat intervals</span></div>
-      <div class="stat"><span class="k">SDNN</span><span class="v" id="sig-sdnn">-</span><span class="n">from the same intervals</span></div>
+      <div class="stat"><span class="k">Beat variation</span><span class="v" id="sig-rmssd">-</span><span class="n" id="sig-rmssd-n">how much the gap between heartbeats changes, beat to beat (RMSSD)</span></div>
+      <div class="stat"><span class="k">Overall variation</span><span class="v" id="sig-sdnn">-</span><span class="n">how much the gap between heartbeats varies across recent beats (SDNN)</span></div>
       <div class="stat"><span class="k">Heart shift</span><span class="v" id="sig-idx">-</span><span class="n" id="sig-idx-n">one sensor, not measured</span></div>
       <div class="stat"><span class="k">Reference</span><span class="v" id="sig-ref">-</span><span class="n" id="sig-ref-n">120 s of quiet data</span></div>
-      <div class="stat"><span class="k">Swing at pace</span><span class="v" id="sig-swing">-</span><span class="n">a proxy, peak to trough</span></div>
+      <div class="stat"><span class="k">Swing with the pacer</span><span class="v" id="sig-swing">-</span><span class="n">heart rate rise and fall with each paced breath</span></div>
       <div class="stat"><span class="k">Cadence</span><span class="v" id="sig-cad">-</span><span class="n" id="sig-cad-n">no source yet</span></div>
       <div class="stat"><span class="k">Frame rate</span><span class="v" id="sig-fps">-</span><span class="n" id="sig-quality">-</span></div>
     </div>
@@ -5736,8 +5843,8 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     <canvas class="sig-canvas" id="sig-trace" width="1400" height="240" role="img" aria-label="Heart rate over the last two minutes"></canvas>
     <div class="sig-title"><span>Beat intervals over the last 32 seconds</span><span id="sig-rr-note">milliseconds</span></div>
     <canvas class="sig-canvas" id="sig-rr" width="1400" height="170" role="img" aria-label="Beat intervals over the last 32 seconds"></canvas>
-    <div class="sig-title"><span>Inferred index over the last ten minutes</span><span>lines at 25, 46 and 68</span></div>
-    <canvas class="sig-canvas" id="sig-index" width="1400" height="190" role="img" aria-label="Inferred index over the last ten minutes, with the tier boundaries"></canvas>
+    <div class="sig-title"><span>Heart shift over the last ten minutes</span><span>lines mark where a mild, raised and large shift begin</span></div>
+    <canvas class="sig-canvas" id="sig-index" width="1400" height="190" role="img" aria-label="Heart shift over the last ten minutes, with lines where a mild, raised and large shift begin"></canvas>
     <div class="sig-title"><span>How the number is built</span><span id="sig-cover">no reference yet</span></div>
     <table class="maptable" id="sig-table"><thead><tr><th>Channel</th><th>Now</th><th>Reference</th><th>Weight</th><th>Adds</th></tr></thead><tbody id="sig-rows"><tr><td colspan="5">No fixed profile yet.</td></tr></tbody></table>
     <p class="note" id="sig-sum"></p>
@@ -5749,18 +5856,19 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     <p class="sheet-intro">Every link from your body to the picture is a stated rule. Cadence is measured when a sensor reports it. Everything about your state is inferred.</p>
     <table class="maptable"><tbody>
       <tr><th>Cadence</th><td>Sets speed and zoom unless Brainwaves is selected in Ride. <span class="ep ep-measured">Measured</span> from a sensor only. The slider, the pedal button and the workout are labeled manual.</td></tr>
+      <tr><th>MIDI input</th><td>Rides the bike in Ride, from any MIDI instrument. Every note pushes and harder notes push more; stop playing and the bike coasts down. <span class="ep ep-measured">Measured</span> from your instrument. While you play, the heart shift waits, as it does while you pedal. Works in Chrome or Edge on a computer or on Android; iPhone browsers have no MIDI.</td></tr>
       <tr><th>Heart shift</th><td>Watch only. How far your heart rate has risen and its beat-to-beat variability fallen since your first 2 minutes, from one heart-rate sensor. A larger shift makes the gas cloud wider, brighter and warmer, charges the sky toward dusk and adds warp. <span class="ep ep-inferred">Inferred</span> It means a change in your heart signal, not a feeling.</td></tr>
-      <tr><th>EEG balance</th><td>Brainwaves in Ride only. Lower beta/alpha relative to your eyes-open reference of 20 eligible samples gives a higher 0–100 game-control score. That direction is a game rule, not a validated mental-state interpretation. A higher control makes the road faster and steadier; this does not measure mental clarity, attention or health. Missing or poor-quality data gently stops the ride. <span class="ep ep-proxy">Proxy</span></td></tr>
-      <tr><th>Heart rate</th><td>Cadence-powered Ride only. Heart rate above your baseline adds up to 4.5% of apparent grade and slows you, shown apart from the road's own grade. The zoom never changes. <span class="ep ep-inferred">Inferred</span></td></tr>
-      <tr><th>Swing at pace</th><td>Train only. How far heart rate swings at the pacer's own frequency, over the last two breaths. It lifts the fog. Hold it for 60 seconds and dawn breaks. <span class="ep ep-proxy">Proxy</span></td></tr>
+      <tr><th>Brainwave balance</th><td>In Ride, with a Muse headband: your speed follows your brainwave balance, compared with 20 seconds recorded with your eyes open. It's a game rule, not a reading of your mind, attention or health. If the headband's signal is missing or poor, the ride gently stops. (The rule: a lower EEG beta/alpha ratio than in those 20 seconds scores higher. Readings: EEG at 256 Hz, the forehead light signal at 64 Hz, head motion at 52 Hz.) <span class="ep ep-proxy">Proxy</span></td></tr>
+      <tr><th>Heart rate</th><td>In Ride with pedaling: when your heart rate rises above your usual level, the road feels up to 4.5% steeper and slows you, shown apart from the road's own hills. The zoom never changes. <span class="ep ep-inferred">Inferred</span></td></tr>
+      <tr><th>Swing with the pacer</th><td>In Train: how much your heart rate rises and falls with the breathing pacer, over your last two breaths. A bigger swing lifts the fog; hold it for 60 seconds and dawn breaks. <span class="ep ep-proxy">Proxy</span></td></tr>
       <tr><th>Horizon</th><td>On the land scenes, the ridge on the horizon shows the last two minutes, newest in the middle. Heartbeats add a subtle brightness pulse; there are no traveling light bands across the road.</td></tr>
       <tr><th>Road</th><td>Nine scenes share the same choices as Endless Cockpit, including the original Misty ridges and Tron grid. Hills and grade are procedural and seeded. Cadence acceleration and coasting use the same motion rules in both apps. <span class="ep ep-proc">Procedural</span></td></tr>
     </tbody></table>
     <p class="note">Keys: hold <b>Space</b> to pedal · <b>1-9</b> scenes · <b>R</b> / <b>B</b> next route · <b>T</b> time of day · <b>L</b> clarity · <b>Z</b> zen mode · <b>Middle click</b> random combo · <b>D</b> demo · <b>C</b> connect · <b>F</b> full screen · <b>H</b> hide controls.</p>
     <details id="is-not" open><summary>What this is, and is not</summary>
       <p><b>Not a medical device.</b> It diagnoses nothing and treats nothing, and it does not detect or predict any condition.</p>
-      <p>Heart shift is a personal, reference-relative heuristic from one heart-rate sensor: heart rate plus two beat-to-beat variability measures (RMSSD and SDNN) from the same beats. Posture, breathing, caffeine and movement move it too. It is not a measure of arousal or stress, and a charged sky is not a verdict about you.</p>
-      <p>Train is a paced-breathing practice game, not therapy or treatment. Clarity is a heart-rate proxy, not a score of your health. The page has no breath sensor: it reads the swing at the pacer's frequency.</p>
+      <p>Heart shift compares you with your own first two minutes, using one heart-rate sensor: your heart rate, and how much the time between your heartbeats varies (measured two ways, RMSSD and SDNN). Posture, breathing, caffeine and movement move it too. It is not a measure of arousal or stress, and a charged sky is not a verdict about you.</p>
+      <p>Train is a paced-breathing practice game, not therapy or treatment. Clarity comes from your heart rate, not your breathing, and it isn't a score of your health: the page has no breathing sensor, so it reads how your heart rate rises and falls with the pacer.</p>
       <p>A session file is your own record of a ride, not a medical record. Pedaling raises heart rate on its own, so the index waits while you pedal.</p>
     </details>
     <details id="the-model"><summary>The model</summary>
@@ -5782,7 +5890,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   const hudHtml = `
     <div class="hud-set" data-for="watch" hidden>
       <div class="gauge"><span class="k">Heart rate</span><span class="v"><span id="w-hr">--</span><small>bpm</small></span></div>
-      <div class="gauge"><span class="k">RMSSD</span><span class="v"><span id="w-rmssd">--</span><small>ms</small></span></div>
+      <div class="gauge" title="How much the time between your heartbeats varies, beat to beat (RMSSD)"><span class="k">Beat variation</span><span class="v"><span id="w-rmssd">--</span><small>ms</small></span></div>
       <div class="gauge"><span class="k">Trend</span><span class="v word" id="w-trend">--</span></div>
     </div>
     <div class="hud-set" data-for="ride">
@@ -5867,12 +5975,13 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       <button class="source-badge" id="source-badge" data-source="ambient" title="Open the sensor settings"><span class="dot" aria-hidden="true"></span><span id="source-label">Ambient · no sensor connected</span></button>
       <button class="chip chrome" id="chip-hr" data-tone="idle"><span class="dot" aria-hidden="true"></span><span id="chip-hr-text">Heart rate · not connected</span></button>
       <button class="chip chrome" id="chip-eeg" data-tone="idle" hidden><span class="dot" aria-hidden="true"></span><span id="chip-eeg-text">EEG · not connected</span></button>
+      <button class="chip chrome" id="chip-midi" data-tone="idle" hidden><span class="dot" aria-hidden="true"></span><span id="chip-midi-text">MIDI · connected</span></button>
       <button class="chip chrome" id="chip-cad" data-tone="idle"><span class="dot" aria-hidden="true"></span><span id="chip-cad-text">Cadence · not connected</span></button>`,
     truth: '',
     sheets: [
       { id: 'connect', label: 'Connect', icon: 'connect', title: 'Bring your signals.', intro: 'Heart rate paints the weather and the grade. Cadence sets the speed. Either works directly in a compatible browser. Muse S brainwave control uses an optional private relay.', html: connectSheet },
       { id: 'route', label: 'Route', icon: 'route', title: 'Choose the road.', intro: 'Scenes, time of day and looks are on the main screen. These fine-tune how it looks and moves, and never change the readings.', html: routeSheet },
-      { id: 'session', label: 'Session', icon: 'session', title: 'Keep what you rode.', intro: 'A session file holds cadence, heart rate, inferred values and any recorded EEG game control. EEG control is a derived proxy, not a measured mental state. Nothing leaves this computer unless you share the file.', html: sessionSheet },
+      { id: 'session', label: 'Session', icon: 'session', title: 'Keep what you rode.', intro: 'A session file holds your cadence, your heart rate, the estimates made from them and any headband game score. Nothing leaves this computer unless you share the file.', html: sessionSheet },
       { id: 'signal', label: 'Signal', icon: 'signal', title: 'What the page reads.', wide: true, html: signalSheet },
       { id: 'about', label: 'About', icon: 'about', title: 'What drives what.', html: about },
     ],
@@ -5905,7 +6014,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
 
   /* ---- modes ---- */
   const TRUTH = {
-    watch: 'Heart shift comes from one heart-rate sensor. A personal heuristic, not a medical measurement.',
+    watch: 'Heart shift comes from one heart-rate sensor. A personal estimate, not a medical measurement.',
     ride: 'Speed follows cadence. When stopped, the sky reflects heart signals. Grade-load is inferred from heart rate, and is not a fitness measure. Not a medical device.',
     train: 'A paced-breathing practice game, not therapy or treatment. Clarity is a heart-rate proxy. Not a medical device.',
   };
@@ -5969,18 +6078,18 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   }
   const manualRide = () => S.mode === 'ride' && S.drivePower === 'cadence' && (S.steady != null || S.pedal || S.auto);
   const ATHENA_POWER_LABELS = {
-    eeg: 'EEG control / 100',
-    fnirs: 'fNIRS control / 100',
-    prv: 'Optical PRV / 100',
+    eeg: 'Brainwave balance / 100',
+    fnirs: 'Forehead light / 100',
+    prv: 'Forehead pulse / 100',
     stillness: 'Head stillness / 100',
-    fusion: 'Athena fusion / 100',
+    fusion: 'All four / 100',
   };
   const ATHENA_CHIP_NAMES = {
-    eeg: 'EEG',
-    fnirs: 'fNIRS',
-    prv: 'PRV',
+    eeg: 'Brainwaves',
+    fnirs: 'Forehead light',
+    prv: 'Forehead pulse',
     stillness: 'Stillness',
-    fusion: 'Fusion',
+    fusion: 'All four',
   };
   function sourceView() {
     if (brainRide()) {
@@ -5990,12 +6099,13 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       if (bio.replayOn) return ['replay', q.simulated || bio.syntheticReplay ? 'Replay · EEG control includes synthetic data' : 'Replay · recorded EEG game control'];
       if (bio.demoOn) return ['demo', sm === 'eeg' ? 'Demo · synthetic EEG preview, not your brainwaves' : `Demo · synthetic ${tag} preview, not your headband`];
       if (q.simulated) return ['demo', q.valid ? `Synthetic bridge · ${tag} game control, not headset data` : `Synthetic bridge · ${q.phase} · no usable ${tag} control`];
-      if (q.valid) return ['live', sm === 'eeg' ? 'Brainwaves · Muse S · EEG balance proxy' : `Headband · Muse S Athena · ${eeg.state.activeLabel || tag} proxy`];
+      if (q.valid) return ['live', sm === 'eeg' ? 'Headband · Muse S · brainwave balance, a game rule' : `Headband · Muse S · ${String(eeg.state.activeLabel || tag).toLowerCase()}, a game rule`];
       return ['open', `Brainwaves · ${eeg.state.phase} · coasting to a stop`];
     }
     if (bio.demoOn) return ['demo', 'Demo · synthetic signals, not your body'];
     if (bio.replayOn) return ['replay', bio.syntheticReplay ? 'Replay · recording includes synthetic signals' : 'Replay · a recorded session, not live'];
     const h = bio.hr.state === 'live', c = bio.cadence.state === 'live';
+    if (midiLive()) return ['live', 'Live · ' + [h && 'heart rate from your sensor', c && 'cadence from your sensor', 'motion from MIDI'].filter(Boolean).join(', ')];
     if (h && c) return ['live', 'Live · heart rate and cadence from your sensors'];
     if (h) return ['live', 'Live · heart rate from your sensor'];
     if (c) return ['live', 'Live · cadence from your sensor'];
@@ -6008,6 +6118,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     if (bio.demoOn) return ['Demo', 'ep-demo'];
     if (bio.replayOn) return ['Recorded', 'ep-proc'];
     if (bio.cadence.state === 'live') return ['Measured', 'ep-measured'];
+    if (bio.playing && bio.cadence.state !== 'live') return ['MIDI', 'ep-measured'];
     return ['Manual', 'ep-proc'];
   }
 
@@ -6085,23 +6196,23 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     const sens = q.sensors || {};
     if ($('ath-eeg')) {
       const se = sens.eeg || {};
-      $('ath-eeg').textContent = se.valid && se.score != null ? `${se.score}/100` : se.ratio != null ? `${se.ratio.toFixed(2)} β/α` : '-';
-      $('ath-eeg-n').textContent = se.ratio != null ? `β/α ${se.ratio.toFixed(2)} · 256 Hz` : '256 Hz · 4 s PSD';
+      $('ath-eeg').textContent = se.valid && se.score != null ? `${se.score}/100` : se.ratio != null ? 'setting baseline' : '-';
+      $('ath-eeg-n').textContent = se.ratio != null ? 'compared with your baseline' : 'waiting for the headband';
     }
     if ($('ath-fnirs')) {
       const sf = sens.fnirs || {};
-      $('ath-fnirs').textContent = sf.valid && sf.score != null ? `${sf.score}/100` : sf.od != null ? `${sf.od >= 0 ? '+' : ''}${sf.od.toFixed(3)} OD` : '-';
-      $('ath-fnirs-n').textContent = sf.od != null ? `ΔOD ${sf.od >= 0 ? '+' : ''}${sf.od.toFixed(3)} · <0.18 Hz` : '64 Hz · <0.18 Hz';
+      $('ath-fnirs').textContent = sf.valid && sf.score != null ? `${sf.score}/100` : sf.od != null ? 'setting baseline' : '-';
+      $('ath-fnirs-n').textContent = sf.od != null ? 'compared with your baseline' : 'waiting for the headband';
     }
     if ($('ath-prv')) {
       const sp = sens.prv || {};
       $('ath-prv').textContent = sp.valid && sp.rmssd != null ? `${Math.round(sp.rmssd)} ms` : sp.valid && sp.score != null ? `${sp.score}/100` : '-';
-      $('ath-prv-n').textContent = sp.bpm != null ? `${Math.round(sp.bpm)} bpm · forehead` : 'forehead RMSSD';
+      $('ath-prv-n').textContent = sp.bpm != null ? `pulse ${Math.round(sp.bpm)} bpm · beat variation` : 'waiting for the headband';
     }
     if ($('ath-still')) {
       const ss = sens.stillness || {};
       $('ath-still').textContent = ss.valid && ss.score != null ? `${ss.score}/100` : '-';
-      $('ath-still-n').textContent = ss.rms != null ? `${ss.rms.toFixed(3)} g RMS` : '52 Hz · 3-axis g';
+      $('ath-still-n').textContent = ss.rms != null ? 'how still your head is' : 'waiting for the headband';
     }
     $('pedal').hidden = S.mode !== 'ride' || active;
     $('ride-controls').hidden = active; $('mapping').hidden = active;
@@ -6111,11 +6222,11 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     $('chip-cad').hidden = active; $('chip-eeg').hidden = !active;
     $('chip-eeg').dataset.tone = reading.valid ? 'good' : 'warn';
     $('chip-eeg-text').textContent = bio.replayOn ? `${tag} · recorded proxy` : reading.simulated ? bio.demoOn ? `${tag} · synthetic preview` : `${tag} · synthetic bridge` : reading.valid ? `${tag} · personal reference ready` : `${tag} · ${q.phase}`;
-    $('truth').textContent = active ? (sm === 'eeg' ? 'An EEG balance game control, calibrated to you. Higher control makes a faster, steadier ride. Not a measure of mental clarity.' : `A Muse S Athena ${q.activeLabel || tag} game control, calibrated to your personal reference. Higher control makes a faster, steadier ride. Not a clinical or diagnostic measure.`) : TRUTH[S.mode];
+    $('truth').textContent = active ? (sm === 'eeg' ? 'A game rule from your brainwave balance, set against your own baseline: a higher score makes a faster, steadier ride. It isn\u2019t a measure of your mind.' : `A game rule from the headband\u2019s ${String(q.activeLabel || tag).toLowerCase()}, set against your own baseline: a higher score makes a faster, steadier ride. It isn\u2019t a medical measure.`) : TRUTH[S.mode];
     if (active) {
       $('intro-eyebrow').textContent = sm === 'eeg' ? 'Ride · brainwave control' : `Ride · ${q.activeLabel || tag} control`;
-      $('intro-title').textContent = sm === 'eeg' ? 'Let the EEG balance move the road.' : `Let ${q.activeLabel || tag} move the road.`;
-      $('intro-sub').textContent = 'Use Muse S / Athena with a personal reference. Switch between EEG, fNIRS optical, optical PRV, IMU stillness, or 4-sensor fusion.';
+      $('intro-title').textContent = sm === 'eeg' ? 'Let your brainwave balance move the road.' : `Let the headband\u2019s ${String(q.activeLabel || tag).toLowerCase()} move the road.`;
+      $('intro-sub').textContent = 'Your Muse S headband, set against your own baseline. Switch between brainwave balance, the forehead light signal, forehead pulse rhythm, head stillness, or all four together.';
     } else if (S.mode === 'ride') {
       $('intro-eyebrow').textContent = 'Ride · cadence sets the speed'; $('intro-title').textContent = 'Your legs set the speed.';
       $('intro-sub').textContent = 'Cadence is measured from a sensor. Grade-load is inferred from heart rate.';
@@ -6151,7 +6262,47 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   }
 
   bio.on('state', renderStates);
-  ['source-badge', 'chip-hr', 'chip-cad', 'chip-eeg'].forEach((id) => $(id).addEventListener('click', () => shell.openSheet('connect')));
+  ['source-badge', 'chip-hr', 'chip-cad', 'chip-eeg', 'chip-midi'].forEach((id) => $(id).addEventListener('click', () => shell.openSheet('connect')));
+
+  /* ---- MIDI input: any instrument rides the bike in Ride; every note pushes, harder notes push more (src/midi-drive.js) ---- */
+  function midiAttach() {
+    if (!midi.access) return;
+    const ins = Array.from(midi.access.inputs.values()).filter((i) => i.state !== 'disconnected');
+    ins.forEach((i) => { i.onmidimessage = (e) => { const n = MidiDrive.parse(e.data); if (n) MidiDrive.note(midi.st, midiNow(), n.velocity); }; });
+    midi.inputs = ins.length;
+    midi.name = ins.map((i) => i.name).filter(Boolean).join(', ');
+    midiStatus();
+  }
+  function midiStatus() {
+    const on = midiLive(), can = !!navigator.requestMIDIAccess;
+    $('midi-info').dataset.tone = on ? 'good' : midi.access ? 'warn' : 'idle';
+    $('midi-state').textContent = !can ? 'This browser has no MIDI. Use Chrome or Edge on a computer or on Android.'
+      : on ? `Connected · ${midi.name || 'MIDI input'}` : midi.access ? 'Allowed · no MIDI device found yet. Plug one in and it connects on its own.' : 'Not connected';
+    $('midi-connect').textContent = on ? 'Connected' : 'Connect';
+    $('midi-connect').disabled = !can || on;
+    $('chip-midi').hidden = !on;
+  }
+  $('midi-connect').addEventListener('click', async () => {
+    if (!navigator.requestMIDIAccess) return midiStatus();
+    try {
+      midi.access = await navigator.requestMIDIAccess();
+      midi.access.onstatechange = midiAttach;
+      midiAttach();
+    } catch (err) {
+      $('midi-info').dataset.tone = 'warn';
+      $('midi-state').textContent = 'MIDI was not allowed. Allow MIDI for this page in the browser, then press Connect again.';
+    }
+  });
+  midiStatus();
+  setInterval(() => {
+    const t = midiNow();
+    bio.playing = midiLive() && MidiDrive.playing(midi.st, t);
+    if (!midiLive()) return;
+    const per = MidiDrive.notesPerMin(midi.st, t);
+    const text = per ? `MIDI · ${per} notes/min` : 'MIDI · connected';
+    if ($('chip-midi-text').textContent !== text) $('chip-midi-text').textContent = text;
+    $('chip-midi').dataset.tone = bio.playing ? 'good' : 'idle';
+  }, 250);
   $('read-more').addEventListener('click', () => shell.openSheet('signal'));
   $('hr-connect').addEventListener('click', () => (bio.hr.connected ? bio.disconnectHeart() : bio.connectHeart('standard')));
   $('hume-connect').addEventListener('click', () => bio.connectHeart('hume'));
@@ -6692,7 +6843,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     set('sig-hr', n.hr != null ? `${Math.round(n.hr)} bpm` : src ? 'no reading' : 'no sensor');
     set('sig-hr-n', bio.demoOn ? 'synthetic demo' : bio.replayOn ? 'from a recording' : bio.hr.state === 'live' ? bio.hr.label : 'no source yet');
     set('sig-rmssd', n.rmssd != null ? `${Math.round(n.rmssd)} ms` : 'no intervals');
-    set('sig-rmssd-n', n.rmssd != null ? 'from beat intervals' : (bio.hr.connected || bio.demoOn) ? (bio.features.reason || 'not available') : 'from beat intervals');
+    set('sig-rmssd-n', n.rmssd != null ? 'how much the gap between heartbeats changes, beat to beat (RMSSD)' : (bio.hr.connected || bio.demoOn) ? (bio.features.reason || 'not available') : 'from beat intervals');
     set('sig-sdnn', n.sdnn != null ? `${Math.round(n.sdnn)} ms` : 'no intervals');
     set('sig-idx', n.idx != null ? String(Math.round(n.idx)) : n.phase === 'calibrating' ? 'forming' : 'not yet');
     set('sig-idx-n', n.idx != null ? `${shiftLabel(n.label)}, one sensor` : 'one sensor, not measured');
@@ -6707,8 +6858,8 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     const near = (id) => $(id);
     if (near('sig-hr-range')) set('sig-hr-range', n.baseHr != null ? `bpm · baseline ${Math.round(n.baseHr)} from ${n.baseFrom}` : 'bpm');
     set('sig-rr-note', bio.hr.connected && !bio.hr.reportsBeats ? 'rate only' : 'milliseconds');
-    set('sig-cover', n.coverage || 'no reference yet');
-    const rows = (n.components || []).map((c) => `<tr><th>${shell.esc(c.label)}</th><td>${c.value != null ? `${(+c.value).toFixed(c.key === 'turbulence' ? 2 : 0)} ${shell.esc(c.unit)}` : 'none'}</td><td>${c.reference != null ? (+c.reference).toFixed(0) : 'forming'}</td><td>${c.effectiveWeight != null ? (+c.effectiveWeight).toFixed(0) : '-'}</td><td>${c.contribution != null ? `+${(+c.contribution).toFixed(1)}` : 'none'}</td></tr>`).join('');
+    set('sig-cover', n.phase === 'ready' ? ONE_SENSOR : n.phase === 'calibrating' ? 'forming your reference' : 'no reference yet');
+    const rows = (n.components || []).map((c) => `<tr><th>${shell.esc(PLAIN_PARTS[c.label] || c.label)}</th><td>${c.value != null ? `${(+c.value).toFixed(c.key === 'turbulence' ? 2 : 0)} ${shell.esc(c.unit)}` : 'none'}</td><td>${c.reference != null ? (+c.reference).toFixed(0) : 'forming'}</td><td>${c.effectiveWeight != null ? (+c.effectiveWeight).toFixed(0) : '-'}</td><td>${c.contribution != null ? `+${(+c.contribution).toFixed(1)}` : 'none'}</td></tr>`).join('');
     const key = rows || '<tr><td colspan="5">No fixed profile yet.</td></tr>';
     if ($('sig-rows').dataset.key !== key) { $('sig-rows').dataset.key = key; $('sig-rows').innerHTML = key; }
     set('sig-sum', n.base != null ? `Sum ${n.base.toFixed(1)} × modifier ${n.multiplier.toFixed(3)} = ${n.raw.toFixed(1)}, then the median of the last five seconds = ${Math.round(n.idx)}. ${n.reason}` : (n.reason || ''));
@@ -6730,7 +6881,8 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       sub = '0 to 100 · heart shift from your first 2 minutes';
       cov = `${bio.demoOn ? 'Synthetic demo · ' : bio.replayOn ? 'Recorded · ' : ''}${ONE_SENSOR}`;
     } else if (bio.pedaling) {
-      tier = 'On hold while you pedal'; sub = 'Pedaling raises heart rate on its own, so the heart shift waits.';
+      tier = bio.playing ? 'On hold while you play' : 'On hold while you pedal';
+      sub = bio.playing ? 'Playing raises heart rate on its own, so the heart shift waits.' : 'Pedaling raises heart rate on its own, so the heart shift waits.';
     } else if (n.phase === 'calibrating') {
       tier = 'Forming your reference'; fill = n.progress;
       sub = `${mmss(n.seconds)} of 2:00 · sit comfortably`; cov = ONE_SENSOR;
@@ -6788,9 +6940,18 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   }
 
   /* ---- motion: fixed simulation steps; saved positions anchor replay to its recorded route ---- */
+  /* A cadence sensor (or the labeled demo) is the source; MIDI joins it while you play, taking the higher of the two.
+     When the instrument is quiet, MIDI steps aside so Hold to pedal still works. */
+  function midiOrSensorRpm() {
+    const sensor = bio.demoOn || bio.cadence.state === 'live' ? bio.cadence.rpm || 0 : null;
+    if (!midiLive() || S.mode !== 'ride') return sensor;
+    const t = midiNow(), m = MidiDrive.rpm(midi.st, t);
+    if (m < 1 && !MidiDrive.playing(midi.st, t)) return sensor;
+    return Math.max(m, sensor || 0);
+  }
   function targetRpm(h) {
     const next = CadenceMotion.target({ replayRpm: S.replayRpm,
-      sourceRpm: bio.demoOn || bio.cadence.state === 'live' ? bio.cadence.rpm || 0 : null,
+      sourceRpm: midiOrSensorRpm(),
       manualEnabled: S.mode === 'ride', steady: S.steady, pedal: S.pedal, auto: S.auto, autoT: S.autoT }, h);
     S.autoT = next.autoT;
     return next.rpm;
