@@ -57,6 +57,37 @@
       p[15] = p.slice(0, 15).reduce((s, x) => s + x, 0) & 0xff;
       return p;
     },
+    humeVersionCommand() {
+      const p = new Uint8Array(16);
+      p[0] = 0x27; p[15] = 0x27;
+      return p;
+    },
+    humeBatteryCommand() {
+      const p = new Uint8Array(16);
+      p[0] = 0x13; p[15] = 0x13;
+      return p;
+    },
+    decodeHumeVersion(dv) {
+      const d = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
+      if (!d.length || d[0] !== 0x27) return null;
+      if (d.length === 2 && d[1] === 0xff) throw new Error('The band refused the firmware-version request.');
+      if (d.length !== 16 || (d.slice(0, 15).reduce((s, x) => s + x, 0) & 0xff) !== d[15]) throw new Error('The band sent a damaged firmware-version reply.');
+      if (d[1] === 0xff) throw new Error('The band refused the firmware-version request.');
+      const bcd = (b) => { const hi = (b >> 4) & 0x0f, lo = b & 0x0f; return hi <= 9 && lo <= 9 ? hi * 10 + lo : null; };
+      const yy = bcd(d[5]), mm = bcd(d[6]), dd = bcd(d[7]);
+      const buildDate = yy != null && mm != null && dd != null && (yy || mm || dd) && mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31
+        ? `${2000 + yy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}` : null;
+      return { version: `${d[1]}.${d[2]}.${d[3]}.${d[4]}`, buildDate };
+    },
+    decodeHumeBattery(dv) {
+      const d = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
+      if (!d.length || d[0] !== 0x13) return null;
+      if (d.length === 2 && d[1] === 0xff) throw new Error('The band refused the battery request.');
+      if (d.length !== 16 || (d.slice(0, 15).reduce((s, x) => s + x, 0) & 0xff) !== d[15]) throw new Error('The band sent a damaged battery reply.');
+      if (d[1] === 0xff) throw new Error('The band refused the battery request.');
+      if (d[1] > 100) throw new Error('The band sent an out-of-range battery percentage.');
+      return d[1];
+    },
     decodeHume(dv) {
       const d = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
       if (!d.length || d[0] !== 0x28) return null;
@@ -211,6 +242,7 @@
     const bio = {
       on, hr, cadence, now: now_, hist, BioMath,
       mode: 'watch',
+      playing: false,   /* set by the page while MIDI notes arrive: playing counts as exertion, like pedaling */
       pace: { rate: 6, on: true, t0: performance.now() },
       fullSwing: 10, fullOver: 60,
       setMode(m) { if (m === 'train' && demo) demo.trainT0 = performance.now(); bio.mode = m; },
@@ -219,7 +251,7 @@
       get recording() { return !!session; },
       get syntheticReplay() { return !!(replay && replay.s.synthetic); },
       get supported() { return !!navigator.bluetooth; },
-      get pedaling() { return (cadence.rpm || 0) > PEDALING_RPM; },
+      get pedaling() { return (cadence.rpm || 0) > PEDALING_RPM || bio.playing === true; },
       get beatPhase() { return beatPhase; },
       get features() { return features; },
       breath() {
@@ -310,7 +342,15 @@
           const svc = await gatt.getPrimaryService(HUME.service);
           const write = await svc.getCharacteristic(HUME.write), notify = await svc.getCharacteristic(HUME.notify);
           notify.addEventListener('characteristicvaluechanged', (e) => {
-            try { const v = BioMath.decodeHume(e.target.value); if (v != null) deviceHeart({ bpm: v, rr: [], contact: null }); } catch (err) { setHr('failed', err.message); }
+            const val = e.target.value;
+            if (val && val.byteLength && (val.getUint8(0) === 0x27 || val.getUint8(0) === 0x13)) {
+              try {
+                if (val.getUint8(0) === 0x27) { const info = BioMath.decodeHumeVersion(val); if (info) { hr.firmware = info.version; hr.firmwareBuildDate = info.buildDate; } }
+                else { const bat = BioMath.decodeHumeBattery(val); if (bat != null) hr.battery = bat; }
+              } catch (_) { /* ignore malformed metadata notifications */ }
+              return;
+            }
+            try { const v = BioMath.decodeHume(val); if (v != null) deviceHeart({ bpm: v, rr: [], contact: null }); } catch (err) { setHr('failed', err.message); }
           });
           await notify.startNotifications();
           hr.connected = true; hr.warming = true; humeChar = write;

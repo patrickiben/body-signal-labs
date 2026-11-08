@@ -20,12 +20,14 @@ jobs:
       - name: Built pages match src
         run: |
           python3 build.py
-          git diff --exit-code -- endless-cockpit.html biofeedback-path-cockpit.html index.html field-guide.html
+          git diff --exit-code -- endless-cockpit.html biofeedback-path-cockpit.html index.html field-guide.html Body_Signal_Labs_Offline.html offline.html
       - name: Sensor freshness and session integrity
         run: |
           node tests/session_regressions.cjs
           node tests/eeg_drive.cjs
           node tests/cadence_motion.cjs
+          node tests/midi_drive.cjs
+          node tests/bsl-manuscript-math.test.mjs
       - uses: actions/checkout@v7
         with:
           repository: patrickiben/autonomic-telemetry
@@ -37,3 +39,6 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_brainwave_bridge.py
       - run: pip install playwright && playwright install --with-deps chromium
       - run: python3 tests/smoke.py
+      - run: python3 tests/workbench_ride.py
+      - run: python3 tests/midi_ride.py
+      - run: python3 tests/bsl_manuscript_math_test.py

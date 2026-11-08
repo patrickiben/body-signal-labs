@@ -10,7 +10,10 @@ REPO_URL = "https://github.com/patrickiben/body-signal-labs"
 
 
 def fill(text):
-    return text.replace("__SITE_NAME__", SITE_NAME).replace("__REPO_URL__", REPO_URL)
+    out = text.replace("__SITE_NAME__", SITE_NAME).replace("__REPO_URL__", REPO_URL)
+    if "__BSL_MANUSCRIPT_MATH_JS__" in out:
+        out = out.replace("__BSL_MANUSCRIPT_MATH_JS__", (SRC / "bsl-manuscript-math.js").read_text())
+    return out
 
 
 HEAD = """<!doctype html>
@@ -48,7 +51,8 @@ def page(out, title, description, scripts, theme="#101525", extra_css="", base=(
     html += '<body>\n<main class="scene" id="scene" aria-label="' + title + '">\n'
     html += '<canvas id="stage" role="img" aria-label="' + description + '"></canvas>\n</main>\n'
     html += script(*base, *scripts) + "\n</body>\n</html>\n"
-    (ROOT / out).write_text(fill(html))
+    html = fill(html)
+    (ROOT / out).write_text(html)
     print(f"{out}: {len(html) // 1024} KB")
 
 
@@ -58,12 +62,15 @@ def static(out, src, title, description):
     css = (SRC / "shell.css").read_text() + (SRC / "family.css").read_text() + (SRC / "site.css").read_text()
     html = HEAD.format(title=title, description=description, theme="#101525", icon=ICON, css=css)
     html += (SRC / src).read_text()
-    (ROOT / out).write_text(fill(html))
+    html = fill(html)
+    (ROOT / out).write_text(html)
     print(f"{out}: {len(html) // 1024} KB")
 
 
 if __name__ == "__main__":
     page("endless-cockpit.html", "Endless Cockpit", "Nine procedural cycling routes: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges, Snake Way above golden clouds and Tron grid, moving at your cadence.", ["ride.js", "cadence-motion.js", "cyclingscene.js", "endless.js"], extra_css=(SRC / "endless.css").read_text())
-    page("biofeedback-path-cockpit.html", "Biofeedback Path Cockpit", "Nine cycling scenes whose weather, grade and fog follow your body, with cadence-powered riding or an optional Muse S Athena EEG balance game control. Not a medical device.", ["vendor/autonomic/research-math.js", "vendor/autonomic/multivariate-engine.js", "bio.js", "eeg-drive.js", "cadence-motion.js", "pathscene.js", "cyclingscene.js", "biofeedback.js"], extra_css=(SRC / "biofeedback.css").read_text())
+    page("biofeedback-path-cockpit.html", "Biofeedback Path Cockpit", "Nine cycling scenes whose weather, grade and fog follow your body, with cadence-powered riding or an optional Muse S Athena EEG balance game control. Not a medical device.", ["vendor/autonomic/research-math.js", "vendor/autonomic/multivariate-engine.js", "bio.js", "eeg-drive.js", "cadence-motion.js", "pathscene.js", "cyclingscene.js", "midi-drive.js", "biofeedback.js"], extra_css=(SRC / "biofeedback.css").read_text())
     static("index.html", "index.src.html", "Body Signal Labs", "Autonomic Telemetry, Endless Cockpit and Biofeedback Path Cockpit: immersive scenes that follow signals from your body, in the browser.")
     static("field-guide.html", "field-guide.src.html", "Field Guide", "How to connect a cadence or heart-rate sensor to these pages, what each status means, and what is measured or inferred.")
+    static("Body_Signal_Labs_Offline.html", "offline.src.html", "Body Signal Labs · Offline Three-Manuscript & Biophysics Workbench", "100% offline in-browser execution of Manuscript 1 (CRT Spatial/TDA), Manuscript 2 (VAR+(1) GFEVD & JEPA-CEM Interdiction), Manuscript 3 (Anchored Nested Learning L0-L7), and 4-Pillar Exercise & Cardiorespiratory Biophysics Mastery.")
+    static("offline.html", "offline.src.html", "Body Signal Labs · Offline Three-Manuscript & Biophysics Workbench", "100% offline in-browser execution of Manuscript 1 (CRT Spatial/TDA), Manuscript 2 (VAR+(1) GFEVD & JEPA-CEM Interdiction), Manuscript 3 (Anchored Nested Learning L0-L7), and 4-Pillar Exercise & Cardiorespiratory Biophysics Mastery.")

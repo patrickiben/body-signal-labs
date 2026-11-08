@@ -37,6 +37,10 @@
   const roadY = (z, s) => legacyScene() ? 7 * Math.sin(z * 0.0071 + 0.4 + S.seed) + 3.4 * Math.sin(z * 0.0193 + 1.9 + S.seed * 2.3) + 1.1 * Math.sin(z * 0.0471 + 3.1) : CyclingScene.roadY(z, S.seed, s || sceneNow());
   const gradeAt = (z) => (roadY(z + 3) - roadY(z - 3)) / 6;
   const gradeFactor = CadenceMotion.gradeFactor;
+  /* MIDI input state; the Connect sheet wires it up further down. */
+  const midi = { st: MidiDrive.create(), access: null, inputs: 0, name: '' };
+  const midiNow = () => performance.now() / 1000;
+  const midiLive = () => midi.inputs > 0;
   const motion01 = (rpm) => CadenceMotion.motion01(rpm, S.map);
   function camAt(z, roll, b) {
     const s = b || sceneNow();
@@ -77,6 +81,15 @@
         <p class="why" id="cad-why"></p>
       </div>
       <button class="pill" id="cad-connect">Connect</button>
+    </div>
+    <div class="device-card">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="ic"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7.5 6v7M12 6v7M16.5 6v7"/></svg>
+      <div class="device-info" id="midi-info" data-tone="idle">
+        <strong>MIDI input <span class="dot"></span></strong>
+        <p class="state" id="midi-state">Not connected</p>
+        <p class="why" id="midi-why">Any MIDI instrument rides the bike in Ride: every note pushes, and harder notes push more.</p>
+      </div>
+      <button class="pill" id="midi-connect">Connect</button>
     </div>
     <section class="eeg-connect" aria-labelledby="eeg-title">
       <div class="device-info" id="eeg-info" data-tone="idle"><strong id="eeg-title">Muse S / Athena brainwaves &amp; optical <span class="dot"></span></strong>
@@ -213,6 +226,7 @@
     <p class="sheet-intro">Every link from your body to the picture is a stated rule. Cadence is measured when a sensor reports it. Everything about your state is inferred.</p>
     <table class="maptable"><tbody>
       <tr><th>Cadence</th><td>Sets speed and zoom unless Brainwaves is selected in Ride. <span class="ep ep-measured">Measured</span> from a sensor only. The slider, the pedal button and the workout are labeled manual.</td></tr>
+      <tr><th>MIDI input</th><td>Rides the bike in Ride, from any MIDI instrument. Every note pushes and harder notes push more; stop playing and the bike coasts down. <span class="ep ep-measured">Measured</span> from your instrument. While you play, the heart shift waits, as it does while you pedal. Works in Chrome or Edge on a computer or on Android; iPhone browsers have no MIDI.</td></tr>
       <tr><th>Heart shift</th><td>Watch only. How far your heart rate has risen and its beat-to-beat variability fallen since your first 2 minutes, from one heart-rate sensor. A larger shift makes the gas cloud wider, brighter and warmer, charges the sky toward dusk and adds warp. <span class="ep ep-inferred">Inferred</span> It means a change in your heart signal, not a feeling.</td></tr>
       <tr><th>EEG balance</th><td>Brainwaves in Ride only. Lower beta/alpha relative to your eyes-open reference of 20 eligible samples gives a higher 0–100 game-control score. That direction is a game rule, not a validated mental-state interpretation. A higher control makes the road faster and steadier; this does not measure mental clarity, attention or health. Missing or poor-quality data gently stops the ride. <span class="ep ep-proxy">Proxy</span></td></tr>
       <tr><th>Heart rate</th><td>Cadence-powered Ride only. Heart rate above your baseline adds up to 4.5% of apparent grade and slows you, shown apart from the road's own grade. The zoom never changes. <span class="ep ep-inferred">Inferred</span></td></tr>
@@ -331,6 +345,7 @@
       <button class="source-badge" id="source-badge" data-source="ambient" title="Open the sensor settings"><span class="dot" aria-hidden="true"></span><span id="source-label">Ambient · no sensor connected</span></button>
       <button class="chip chrome" id="chip-hr" data-tone="idle"><span class="dot" aria-hidden="true"></span><span id="chip-hr-text">Heart rate · not connected</span></button>
       <button class="chip chrome" id="chip-eeg" data-tone="idle" hidden><span class="dot" aria-hidden="true"></span><span id="chip-eeg-text">EEG · not connected</span></button>
+      <button class="chip chrome" id="chip-midi" data-tone="idle" hidden><span class="dot" aria-hidden="true"></span><span id="chip-midi-text">MIDI · connected</span></button>
       <button class="chip chrome" id="chip-cad" data-tone="idle"><span class="dot" aria-hidden="true"></span><span id="chip-cad-text">Cadence · not connected</span></button>`,
     truth: '',
     sheets: [
@@ -460,6 +475,7 @@
     if (bio.demoOn) return ['demo', 'Demo · synthetic signals, not your body'];
     if (bio.replayOn) return ['replay', bio.syntheticReplay ? 'Replay · recording includes synthetic signals' : 'Replay · a recorded session, not live'];
     const h = bio.hr.state === 'live', c = bio.cadence.state === 'live';
+    if (midiLive()) return ['live', 'Live · ' + [h && 'heart rate from your sensor', c && 'cadence from your sensor', 'motion from MIDI'].filter(Boolean).join(', ')];
     if (h && c) return ['live', 'Live · heart rate and cadence from your sensors'];
     if (h) return ['live', 'Live · heart rate from your sensor'];
     if (c) return ['live', 'Live · cadence from your sensor'];
@@ -472,6 +488,7 @@
     if (bio.demoOn) return ['Demo', 'ep-demo'];
     if (bio.replayOn) return ['Recorded', 'ep-proc'];
     if (bio.cadence.state === 'live') return ['Measured', 'ep-measured'];
+    if (bio.playing && bio.cadence.state !== 'live') return ['MIDI', 'ep-measured'];
     return ['Manual', 'ep-proc'];
   }
 
@@ -615,7 +632,47 @@
   }
 
   bio.on('state', renderStates);
-  ['source-badge', 'chip-hr', 'chip-cad', 'chip-eeg'].forEach((id) => $(id).addEventListener('click', () => shell.openSheet('connect')));
+  ['source-badge', 'chip-hr', 'chip-cad', 'chip-eeg', 'chip-midi'].forEach((id) => $(id).addEventListener('click', () => shell.openSheet('connect')));
+
+  /* ---- MIDI input: any instrument rides the bike in Ride; every note pushes, harder notes push more (src/midi-drive.js) ---- */
+  function midiAttach() {
+    if (!midi.access) return;
+    const ins = Array.from(midi.access.inputs.values()).filter((i) => i.state !== 'disconnected');
+    ins.forEach((i) => { i.onmidimessage = (e) => { const n = MidiDrive.parse(e.data); if (n) MidiDrive.note(midi.st, midiNow(), n.velocity); }; });
+    midi.inputs = ins.length;
+    midi.name = ins.map((i) => i.name).filter(Boolean).join(', ');
+    midiStatus();
+  }
+  function midiStatus() {
+    const on = midiLive(), can = !!navigator.requestMIDIAccess;
+    $('midi-info').dataset.tone = on ? 'good' : midi.access ? 'warn' : 'idle';
+    $('midi-state').textContent = !can ? 'This browser has no MIDI. Use Chrome or Edge on a computer or on Android.'
+      : on ? `Connected · ${midi.name || 'MIDI input'}` : midi.access ? 'Allowed · no MIDI device found yet. Plug one in and it connects on its own.' : 'Not connected';
+    $('midi-connect').textContent = on ? 'Connected' : 'Connect';
+    $('midi-connect').disabled = !can || on;
+    $('chip-midi').hidden = !on;
+  }
+  $('midi-connect').addEventListener('click', async () => {
+    if (!navigator.requestMIDIAccess) return midiStatus();
+    try {
+      midi.access = await navigator.requestMIDIAccess();
+      midi.access.onstatechange = midiAttach;
+      midiAttach();
+    } catch (err) {
+      $('midi-info').dataset.tone = 'warn';
+      $('midi-state').textContent = 'MIDI was not allowed. Allow MIDI for this page in the browser, then press Connect again.';
+    }
+  });
+  midiStatus();
+  setInterval(() => {
+    const t = midiNow();
+    bio.playing = midiLive() && MidiDrive.playing(midi.st, t);
+    if (!midiLive()) return;
+    const per = MidiDrive.notesPerMin(midi.st, t);
+    const text = per ? `MIDI · ${per} notes/min` : 'MIDI · connected';
+    if ($('chip-midi-text').textContent !== text) $('chip-midi-text').textContent = text;
+    $('chip-midi').dataset.tone = bio.playing ? 'good' : 'idle';
+  }, 250);
   $('read-more').addEventListener('click', () => shell.openSheet('signal'));
   $('hr-connect').addEventListener('click', () => (bio.hr.connected ? bio.disconnectHeart() : bio.connectHeart('standard')));
   $('hume-connect').addEventListener('click', () => bio.connectHeart('hume'));
@@ -1194,7 +1251,8 @@
       sub = '0 to 100 · heart shift from your first 2 minutes';
       cov = `${bio.demoOn ? 'Synthetic demo · ' : bio.replayOn ? 'Recorded · ' : ''}${ONE_SENSOR}`;
     } else if (bio.pedaling) {
-      tier = 'On hold while you pedal'; sub = 'Pedaling raises heart rate on its own, so the heart shift waits.';
+      tier = bio.playing ? 'On hold while you play' : 'On hold while you pedal';
+      sub = bio.playing ? 'Playing raises heart rate on its own, so the heart shift waits.' : 'Pedaling raises heart rate on its own, so the heart shift waits.';
     } else if (n.phase === 'calibrating') {
       tier = 'Forming your reference'; fill = n.progress;
       sub = `${mmss(n.seconds)} of 2:00 · sit comfortably`; cov = ONE_SENSOR;
@@ -1252,9 +1310,18 @@
   }
 
   /* ---- motion: fixed simulation steps; saved positions anchor replay to its recorded route ---- */
+  /* A cadence sensor (or the labeled demo) is the source; MIDI joins it while you play, taking the higher of the two.
+     When the instrument is quiet, MIDI steps aside so Hold to pedal still works. */
+  function midiOrSensorRpm() {
+    const sensor = bio.demoOn || bio.cadence.state === 'live' ? bio.cadence.rpm || 0 : null;
+    if (!midiLive() || S.mode !== 'ride') return sensor;
+    const t = midiNow(), m = MidiDrive.rpm(midi.st, t);
+    if (m < 1 && !MidiDrive.playing(midi.st, t)) return sensor;
+    return Math.max(m, sensor || 0);
+  }
   function targetRpm(h) {
     const next = CadenceMotion.target({ replayRpm: S.replayRpm,
-      sourceRpm: bio.demoOn || bio.cadence.state === 'live' ? bio.cadence.rpm || 0 : null,
+      sourceRpm: midiOrSensorRpm(),
       manualEnabled: S.mode === 'ride', steady: S.steady, pedal: S.pedal, auto: S.auto, autoT: S.autoT }, h);
     S.autoT = next.autoT;
     return next.rpm;

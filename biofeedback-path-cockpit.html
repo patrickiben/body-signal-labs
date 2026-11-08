@@ -2492,6 +2492,37 @@ void main(){
       p[15] = p.slice(0, 15).reduce((s, x) => s + x, 0) & 0xff;
       return p;
     },
+    humeVersionCommand() {
+      const p = new Uint8Array(16);
+      p[0] = 0x27; p[15] = 0x27;
+      return p;
+    },
+    humeBatteryCommand() {
+      const p = new Uint8Array(16);
+      p[0] = 0x13; p[15] = 0x13;
+      return p;
+    },
+    decodeHumeVersion(dv) {
+      const d = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
+      if (!d.length || d[0] !== 0x27) return null;
+      if (d.length === 2 && d[1] === 0xff) throw new Error('The band refused the firmware-version request.');
+      if (d.length !== 16 || (d.slice(0, 15).reduce((s, x) => s + x, 0) & 0xff) !== d[15]) throw new Error('The band sent a damaged firmware-version reply.');
+      if (d[1] === 0xff) throw new Error('The band refused the firmware-version request.');
+      const bcd = (b) => { const hi = (b >> 4) & 0x0f, lo = b & 0x0f; return hi <= 9 && lo <= 9 ? hi * 10 + lo : null; };
+      const yy = bcd(d[5]), mm = bcd(d[6]), dd = bcd(d[7]);
+      const buildDate = yy != null && mm != null && dd != null && (yy || mm || dd) && mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31
+        ? `${2000 + yy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}` : null;
+      return { version: `${d[1]}.${d[2]}.${d[3]}.${d[4]}`, buildDate };
+    },
+    decodeHumeBattery(dv) {
+      const d = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
+      if (!d.length || d[0] !== 0x13) return null;
+      if (d.length === 2 && d[1] === 0xff) throw new Error('The band refused the battery request.');
+      if (d.length !== 16 || (d.slice(0, 15).reduce((s, x) => s + x, 0) & 0xff) !== d[15]) throw new Error('The band sent a damaged battery reply.');
+      if (d[1] === 0xff) throw new Error('The band refused the battery request.');
+      if (d[1] > 100) throw new Error('The band sent an out-of-range battery percentage.');
+      return d[1];
+    },
     decodeHume(dv) {
       const d = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
       if (!d.length || d[0] !== 0x28) return null;
@@ -2646,6 +2677,7 @@ void main(){
     const bio = {
       on, hr, cadence, now: now_, hist, BioMath,
       mode: 'watch',
+      playing: false,   /* set by the page while MIDI notes arrive: playing counts as exertion, like pedaling */
       pace: { rate: 6, on: true, t0: performance.now() },
       fullSwing: 10, fullOver: 60,
       setMode(m) { if (m === 'train' && demo) demo.trainT0 = performance.now(); bio.mode = m; },
@@ -2654,7 +2686,7 @@ void main(){
       get recording() { return !!session; },
       get syntheticReplay() { return !!(replay && replay.s.synthetic); },
       get supported() { return !!navigator.bluetooth; },
-      get pedaling() { return (cadence.rpm || 0) > PEDALING_RPM; },
+      get pedaling() { return (cadence.rpm || 0) > PEDALING_RPM || bio.playing === true; },
       get beatPhase() { return beatPhase; },
       get features() { return features; },
       breath() {
@@ -2745,7 +2777,15 @@ void main(){
           const svc = await gatt.getPrimaryService(HUME.service);
           const write = await svc.getCharacteristic(HUME.write), notify = await svc.getCharacteristic(HUME.notify);
           notify.addEventListener('characteristicvaluechanged', (e) => {
-            try { const v = BioMath.decodeHume(e.target.value); if (v != null) deviceHeart({ bpm: v, rr: [], contact: null }); } catch (err) { setHr('failed', err.message); }
+            const val = e.target.value;
+            if (val && val.byteLength && (val.getUint8(0) === 0x27 || val.getUint8(0) === 0x13)) {
+              try {
+                if (val.getUint8(0) === 0x27) { const info = BioMath.decodeHumeVersion(val); if (info) { hr.firmware = info.version; hr.firmwareBuildDate = info.buildDate; } }
+                else { const bat = BioMath.decodeHumeBattery(val); if (bat != null) hr.battery = bat; }
+              } catch (_) { /* ignore malformed metadata notifications */ }
+              return;
+            }
+            try { const v = BioMath.decodeHume(val); if (v != null) deviceHeart({ bpm: v, rr: [], contact: null }); } catch (err) { setHr('failed', err.message); }
           });
           await notify.startNotifications();
           hr.connected = true; hr.warming = true; humeChar = write;
@@ -5534,6 +5574,58 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
 
 </script>
 <script>
+/* midi-drive.js: turns MIDI notes into a cadence the bike can ride on.
+   Any MIDI instrument works (drums, pads, keys): every note-on pushes, and a harder note (higher velocity)
+   pushes more. Each push fades with time constant TAU, and the sum saturates smoothly at RPM_MAX:
+     x(t) = sum over notes of (velocity / 127) * exp(-(t - t_note) / TAU),   rpm(t) = RPM_MAX * (1 - exp(-x / X0)).
+   Steady playing at r notes per second with mean velocity v holds x near v * r * TAU, so about 4 notes a
+   second at medium velocity rides near 75 rpm, and stopping lets the cadence fall away within a few seconds.
+   The cockpit feeds this rpm into the same motion model as a cadence sensor, so top speed and the
+   scenery's flash limits stay exactly as they are. Pure functions, no browser APIs: tested in tests/midi_drive.cjs. */
+(function (root) {
+  'use strict';
+  const VERSION = 'midi-drive@1', TAU = 1.0, X0 = 2.0, RPM_MAX = 110, RATE_WINDOW = 10, PLAYING_WINDOW = 3;
+
+  function create() { return { x: 0, t: null, times: [] }; }
+
+  function decay(st, t) {
+    if (st.t != null && t > st.t) st.x *= Math.exp(-(t - st.t) / TAU);
+    if (st.t == null || t > st.t) st.t = t;
+  }
+
+  /* One note-on at time t (seconds) with MIDI velocity 1-127. */
+  function note(st, t, velocity) {
+    decay(st, t);
+    st.x += Math.max(0, Math.min(127, Number(velocity) || 0)) / 127;
+    st.times.push(t);
+    if (st.times.length > 4096) st.times.splice(0, st.times.length - 4096);
+  }
+
+  function rpm(st, t) { decay(st, t); return RPM_MAX * (1 - Math.exp(-st.x / X0)); }
+
+  function notesPerMin(st, t) {
+    while (st.times.length && t - st.times[0] > RATE_WINDOW) st.times.shift();
+    return Math.round(st.times.length * 60 / RATE_WINDOW);
+  }
+
+  /* Playing means a note in the last few seconds: the heart shift waits, as it does while pedaling. */
+  function playing(st, t) { return st.times.length > 0 && t - st.times[st.times.length - 1] <= PLAYING_WINDOW; }
+
+  /* A raw MIDI message to a note, or null. Only note-on with velocity above 0 counts, on any channel;
+     note-off, note-on with velocity 0, controllers, clock and other system messages are ignored. */
+  function parse(data) {
+    if (!data || data.length < 3) return null;
+    if ((data[0] & 0xF0) !== 0x90 || !(data[2] > 0)) return null;
+    return { note: data[1], velocity: data[2], channel: (data[0] & 0x0F) + 1 };
+  }
+
+  const api = { VERSION, TAU, X0, RPM_MAX, create, note, rpm, notesPerMin, playing, parse };
+  root.MidiDrive = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+</script>
+<script>
 /* biofeedback.js: Biofeedback Path Cockpit. A road whose weather, grade and fog follow your body.
    Cadence sets the speed and is measured when a sensor reports it. Everything about your state is inferred, and says so.
    Watch: the index paints the sky. Ride: heart rate adds grade-load. Train: the swing at your breathing pace lifts the fog. */
@@ -5573,6 +5665,10 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   const roadY = (z, s) => legacyScene() ? 7 * Math.sin(z * 0.0071 + 0.4 + S.seed) + 3.4 * Math.sin(z * 0.0193 + 1.9 + S.seed * 2.3) + 1.1 * Math.sin(z * 0.0471 + 3.1) : CyclingScene.roadY(z, S.seed, s || sceneNow());
   const gradeAt = (z) => (roadY(z + 3) - roadY(z - 3)) / 6;
   const gradeFactor = CadenceMotion.gradeFactor;
+  /* MIDI input state; the Connect sheet wires it up further down. */
+  const midi = { st: MidiDrive.create(), access: null, inputs: 0, name: '' };
+  const midiNow = () => performance.now() / 1000;
+  const midiLive = () => midi.inputs > 0;
   const motion01 = (rpm) => CadenceMotion.motion01(rpm, S.map);
   function camAt(z, roll, b) {
     const s = b || sceneNow();
@@ -5613,6 +5709,15 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
         <p class="why" id="cad-why"></p>
       </div>
       <button class="pill" id="cad-connect">Connect</button>
+    </div>
+    <div class="device-card">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="ic"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7.5 6v7M12 6v7M16.5 6v7"/></svg>
+      <div class="device-info" id="midi-info" data-tone="idle">
+        <strong>MIDI input <span class="dot"></span></strong>
+        <p class="state" id="midi-state">Not connected</p>
+        <p class="why" id="midi-why">Any MIDI instrument rides the bike in Ride: every note pushes, and harder notes push more.</p>
+      </div>
+      <button class="pill" id="midi-connect">Connect</button>
     </div>
     <section class="eeg-connect" aria-labelledby="eeg-title">
       <div class="device-info" id="eeg-info" data-tone="idle"><strong id="eeg-title">Muse S / Athena brainwaves &amp; optical <span class="dot"></span></strong>
@@ -5749,6 +5854,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     <p class="sheet-intro">Every link from your body to the picture is a stated rule. Cadence is measured when a sensor reports it. Everything about your state is inferred.</p>
     <table class="maptable"><tbody>
       <tr><th>Cadence</th><td>Sets speed and zoom unless Brainwaves is selected in Ride. <span class="ep ep-measured">Measured</span> from a sensor only. The slider, the pedal button and the workout are labeled manual.</td></tr>
+      <tr><th>MIDI input</th><td>Rides the bike in Ride, from any MIDI instrument. Every note pushes and harder notes push more; stop playing and the bike coasts down. <span class="ep ep-measured">Measured</span> from your instrument. While you play, the heart shift waits, as it does while you pedal. Works in Chrome or Edge on a computer or on Android; iPhone browsers have no MIDI.</td></tr>
       <tr><th>Heart shift</th><td>Watch only. How far your heart rate has risen and its beat-to-beat variability fallen since your first 2 minutes, from one heart-rate sensor. A larger shift makes the gas cloud wider, brighter and warmer, charges the sky toward dusk and adds warp. <span class="ep ep-inferred">Inferred</span> It means a change in your heart signal, not a feeling.</td></tr>
       <tr><th>EEG balance</th><td>Brainwaves in Ride only. Lower beta/alpha relative to your eyes-open reference of 20 eligible samples gives a higher 0–100 game-control score. That direction is a game rule, not a validated mental-state interpretation. A higher control makes the road faster and steadier; this does not measure mental clarity, attention or health. Missing or poor-quality data gently stops the ride. <span class="ep ep-proxy">Proxy</span></td></tr>
       <tr><th>Heart rate</th><td>Cadence-powered Ride only. Heart rate above your baseline adds up to 4.5% of apparent grade and slows you, shown apart from the road's own grade. The zoom never changes. <span class="ep ep-inferred">Inferred</span></td></tr>
@@ -5867,6 +5973,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       <button class="source-badge" id="source-badge" data-source="ambient" title="Open the sensor settings"><span class="dot" aria-hidden="true"></span><span id="source-label">Ambient · no sensor connected</span></button>
       <button class="chip chrome" id="chip-hr" data-tone="idle"><span class="dot" aria-hidden="true"></span><span id="chip-hr-text">Heart rate · not connected</span></button>
       <button class="chip chrome" id="chip-eeg" data-tone="idle" hidden><span class="dot" aria-hidden="true"></span><span id="chip-eeg-text">EEG · not connected</span></button>
+      <button class="chip chrome" id="chip-midi" data-tone="idle" hidden><span class="dot" aria-hidden="true"></span><span id="chip-midi-text">MIDI · connected</span></button>
       <button class="chip chrome" id="chip-cad" data-tone="idle"><span class="dot" aria-hidden="true"></span><span id="chip-cad-text">Cadence · not connected</span></button>`,
     truth: '',
     sheets: [
@@ -5996,6 +6103,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     if (bio.demoOn) return ['demo', 'Demo · synthetic signals, not your body'];
     if (bio.replayOn) return ['replay', bio.syntheticReplay ? 'Replay · recording includes synthetic signals' : 'Replay · a recorded session, not live'];
     const h = bio.hr.state === 'live', c = bio.cadence.state === 'live';
+    if (midiLive()) return ['live', 'Live · ' + [h && 'heart rate from your sensor', c && 'cadence from your sensor', 'motion from MIDI'].filter(Boolean).join(', ')];
     if (h && c) return ['live', 'Live · heart rate and cadence from your sensors'];
     if (h) return ['live', 'Live · heart rate from your sensor'];
     if (c) return ['live', 'Live · cadence from your sensor'];
@@ -6008,6 +6116,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     if (bio.demoOn) return ['Demo', 'ep-demo'];
     if (bio.replayOn) return ['Recorded', 'ep-proc'];
     if (bio.cadence.state === 'live') return ['Measured', 'ep-measured'];
+    if (bio.playing && bio.cadence.state !== 'live') return ['MIDI', 'ep-measured'];
     return ['Manual', 'ep-proc'];
   }
 
@@ -6151,7 +6260,47 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   }
 
   bio.on('state', renderStates);
-  ['source-badge', 'chip-hr', 'chip-cad', 'chip-eeg'].forEach((id) => $(id).addEventListener('click', () => shell.openSheet('connect')));
+  ['source-badge', 'chip-hr', 'chip-cad', 'chip-eeg', 'chip-midi'].forEach((id) => $(id).addEventListener('click', () => shell.openSheet('connect')));
+
+  /* ---- MIDI input: any instrument rides the bike in Ride; every note pushes, harder notes push more (src/midi-drive.js) ---- */
+  function midiAttach() {
+    if (!midi.access) return;
+    const ins = Array.from(midi.access.inputs.values()).filter((i) => i.state !== 'disconnected');
+    ins.forEach((i) => { i.onmidimessage = (e) => { const n = MidiDrive.parse(e.data); if (n) MidiDrive.note(midi.st, midiNow(), n.velocity); }; });
+    midi.inputs = ins.length;
+    midi.name = ins.map((i) => i.name).filter(Boolean).join(', ');
+    midiStatus();
+  }
+  function midiStatus() {
+    const on = midiLive(), can = !!navigator.requestMIDIAccess;
+    $('midi-info').dataset.tone = on ? 'good' : midi.access ? 'warn' : 'idle';
+    $('midi-state').textContent = !can ? 'This browser has no MIDI. Use Chrome or Edge on a computer or on Android.'
+      : on ? `Connected · ${midi.name || 'MIDI input'}` : midi.access ? 'Allowed · no MIDI device found yet. Plug one in and it connects on its own.' : 'Not connected';
+    $('midi-connect').textContent = on ? 'Connected' : 'Connect';
+    $('midi-connect').disabled = !can || on;
+    $('chip-midi').hidden = !on;
+  }
+  $('midi-connect').addEventListener('click', async () => {
+    if (!navigator.requestMIDIAccess) return midiStatus();
+    try {
+      midi.access = await navigator.requestMIDIAccess();
+      midi.access.onstatechange = midiAttach;
+      midiAttach();
+    } catch (err) {
+      $('midi-info').dataset.tone = 'warn';
+      $('midi-state').textContent = 'MIDI was not allowed. Allow MIDI for this page in the browser, then press Connect again.';
+    }
+  });
+  midiStatus();
+  setInterval(() => {
+    const t = midiNow();
+    bio.playing = midiLive() && MidiDrive.playing(midi.st, t);
+    if (!midiLive()) return;
+    const per = MidiDrive.notesPerMin(midi.st, t);
+    const text = per ? `MIDI · ${per} notes/min` : 'MIDI · connected';
+    if ($('chip-midi-text').textContent !== text) $('chip-midi-text').textContent = text;
+    $('chip-midi').dataset.tone = bio.playing ? 'good' : 'idle';
+  }, 250);
   $('read-more').addEventListener('click', () => shell.openSheet('signal'));
   $('hr-connect').addEventListener('click', () => (bio.hr.connected ? bio.disconnectHeart() : bio.connectHeart('standard')));
   $('hume-connect').addEventListener('click', () => bio.connectHeart('hume'));
@@ -6730,7 +6879,8 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       sub = '0 to 100 · heart shift from your first 2 minutes';
       cov = `${bio.demoOn ? 'Synthetic demo · ' : bio.replayOn ? 'Recorded · ' : ''}${ONE_SENSOR}`;
     } else if (bio.pedaling) {
-      tier = 'On hold while you pedal'; sub = 'Pedaling raises heart rate on its own, so the heart shift waits.';
+      tier = bio.playing ? 'On hold while you play' : 'On hold while you pedal';
+      sub = bio.playing ? 'Playing raises heart rate on its own, so the heart shift waits.' : 'Pedaling raises heart rate on its own, so the heart shift waits.';
     } else if (n.phase === 'calibrating') {
       tier = 'Forming your reference'; fill = n.progress;
       sub = `${mmss(n.seconds)} of 2:00 · sit comfortably`; cov = ONE_SENSOR;
@@ -6788,9 +6938,18 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   }
 
   /* ---- motion: fixed simulation steps; saved positions anchor replay to its recorded route ---- */
+  /* A cadence sensor (or the labeled demo) is the source; MIDI joins it while you play, taking the higher of the two.
+     When the instrument is quiet, MIDI steps aside so Hold to pedal still works. */
+  function midiOrSensorRpm() {
+    const sensor = bio.demoOn || bio.cadence.state === 'live' ? bio.cadence.rpm || 0 : null;
+    if (!midiLive() || S.mode !== 'ride') return sensor;
+    const t = midiNow(), m = MidiDrive.rpm(midi.st, t);
+    if (m < 1 && !MidiDrive.playing(midi.st, t)) return sensor;
+    return Math.max(m, sensor || 0);
+  }
   function targetRpm(h) {
     const next = CadenceMotion.target({ replayRpm: S.replayRpm,
-      sourceRpm: bio.demoOn || bio.cadence.state === 'live' ? bio.cadence.rpm || 0 : null,
+      sourceRpm: midiOrSensorRpm(),
       manualEnabled: S.mode === 'ride', steady: S.steady, pedal: S.pedal, auto: S.auto, autoT: S.autoT }, h);
     S.autoT = next.autoT;
     return next.rpm;

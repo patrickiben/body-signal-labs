@@ -165,12 +165,17 @@ with sync_playwright() as p:
     check('the strap run has no page errors', not err, '; '.join(err[:2]))
     b.close()
 
-    # 7. stubbed Hume Band: the start command, warm-up, a reading, a refusal
+    # 7. stubbed Hume Band: the start command, warm-up, firmware/battery metadata, a reading, a refusal
     b, pg, err = session(p, init=FAKE)
     pg.evaluate("__fake.mode='hume'"); connect(pg, '#hume-connect'); r = read(pg)
     writes = pg.evaluate('__fake.writes')
     check('the Hume start command matches the bridge byte for byte', writes and writes[0] == [0x28, 2, 1] + [0] * 12 + [0x2B], str(writes[:1]))
     check('a warming Hume band says so (stubbed)', r['hr'] == 'no-signal' and 'warming up' in r['hrWhy'], r['hrWhy'])
+    v2_fw = [0x27, 0, 0, 3, 9, 0x26, 0x07, 0x07, 0, 0, 0x19, 0x06, 0x06, 0, 9, 0x95]
+    bat84 = [0x13, 84] + [0] * 13; bat84.append(sum(bat84) & 255)
+    pg.evaluate(f"__fake.emit('{HUME}', {v2_fw}); __fake.emit('{HUME}', {bat84})"); pg.wait_for_timeout(150); r = read(pg)
+    meta = pg.evaluate("({fw: __app.bio.hr.firmware, build: __app.bio.hr.firmwareBuildDate, bat: __app.bio.hr.battery})")
+    check('Hume firmware and battery frames are decoded without claiming live HR', r['hr'] == 'no-signal' and meta == {'fw': '0.0.3.9', 'build': '2026-07-07', 'bat': 84}, str(meta))
     frame = [0x28, 2, 64] + [0] * 12; frame.append(sum(frame) & 255)
     pg.evaluate(f"__fake.emit('{HUME}', {frame})"); pg.wait_for_timeout(400); r = read(pg)
     check('a Hume reading reads as live, rate only (stubbed)', r['hr'] == 'live' and '64 bpm' in r['chipH'] and 'rate only' in r['hrWhy'], r['hrWhy'])
