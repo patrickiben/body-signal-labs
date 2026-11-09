@@ -1,37 +1,30 @@
 /**
- * Autonomic Telemetry — Complete Three-Manuscript Mathematical Engine &
- * Autonomic / Cardiorespiratory Biophysics Mastery Workbench
+ * Autonomic Telemetry — mathematical engine for heart, breathing and sensor signals
  *
  * Implements:
- * 1. Manuscript 1 (doi:10.5281/zenodo.23486177):
- *    - 10-Metric Contamination-Resilient CRT Spatial & Topological Suite adapted
- *      to multi-sensor physiological state manifolds (bounded 2D Voronoi tessellation,
- *      Vietoris-Rips 2-skeleton Euler/Betti filtration chi = V - E + F = beta0 - beta1 + beta2,
- *      3D Rips H0/H1 persistence diagrams with p=2 l_inf Hungarian Wasserstein matching,
- *      Mean-Field Potts Variational Free Energy F(q), CRITIC x Shannon Entropy x Bootstrap
- *      Stability cube-root weights, Leave-One-Out ablation, and 3-Design x 3-Estimator
- *      Cross-Epoch Spillover Inference Ladder).
- * 2. Manuscript 2 (doi:10.5281/zenodo.21211653):
- *    - Constrained Non-Negative VAR+(1) via projected coordinate descent vs Ridge VAR(1)
- *      across the 10-node cardiorespiratory-autonomic network (HR/SA-Node, Vagal RMSSD,
- *      Pulse SDNN, Respiratory RSA, EEG Beta/Alpha, Baroreflex Gain, EDA Phasic, EDA Tonic,
- *      Pulse Transit Time, Peripheral Thermal), rolling spectral radius rho(Phi(t)) = kappa_B(t),
- *      Pesaran-Shin / Diebold-Yilmaz 10x10 GFEVD connectedness (TO%, FROM%, NET%, TCI%,
- *      horizon-integrated AUC), 3 spectral-radius-matched structural directedness nulls
- *      (Symmetrization, Direction-Flip, Weight-Permutation) + Time-Reversal null, and
- *      ARRO JEPA Latent World-Model + CEM Learned-MPC Biofeedback / Paced-Breathing
- *      Interdiction with Directed vs Symmetrized Twin Advantage.
- * 3. Manuscript 3 (Anchored Nested Learning, PLOS ONE submission / macgyver-bot):
- *    - 8-Level Nested Hierarchy (L0_constitution .. L7_meta, pinned anchor hash 5c29a381eb7e,
- *      bound B = +/-0.05) enforcing frozen physiological safety red lines, Proposition 1
- *      rank preservation (s(a) - s(b) > 2B = 0.10 => S(a) > S(b)) & Experiment J unclipped
- *      centered-and-contracted protocol readout, Proposition 2 incremental contraction &
- *      4x4 coupled M3 recurrence (Faddeev-LeVerrier + Durand-Kerner complex eigenvalues,
- *      rho(A_M3) = 0.9987567254 -> 0.99876, CorrectedFullAt = 280 vs shipped double-retention
- *      defect 0.87% at ep 1,500), Level 2 Active Inference EFE diagnostic physiological probe
- *      selection, Level 4 Entropic Sinkhorn sensor-to-recovery optimal transport with MISSING
- *      slack & 5-pass critical-gap refinement, and the 4-Gate Component Admission Protocol (CAP)
- *      + Experiment K 9-rate sensitivity grid.
+ * 1. Spatial and topological metrics of physiological state manifolds:
+ *    - bounded 2D Voronoi tessellation, Vietoris-Rips 2-skeleton Euler/Betti filtration
+ *      chi = V - E + F = beta0 - beta1 + beta2, 3D Rips H0/H1 persistence diagrams with p=2 l_inf
+ *      Hungarian Wasserstein matching, mean-field Potts variational free energy F(q), CRITIC x
+ *      Shannon entropy x bootstrap stability cube-root weights, leave-one-out ablation, and a
+ *      3-design x 3-estimator cross-epoch spillover inference ladder.
+ * 2. Directed networks of signals:
+ *    - constrained non-negative VAR+(1) by projected coordinate descent vs ridge VAR(1) across a
+ *      10-node cardiorespiratory-autonomic network (HR/SA node, vagal RMSSD, pulse SDNN, respiratory
+ *      RSA, EEG beta/alpha, baroreflex gain, EDA phasic, EDA tonic, pulse transit time, peripheral
+ *      thermal), rolling spectral radius rho(Phi(t)), Pesaran-Shin / Diebold-Yilmaz 10x10 GFEVD
+ *      connectedness (TO%, FROM%, NET%, TCI%, horizon-integrated AUC), 3 spectral-radius-matched
+ *      directedness nulls (symmetrization, direction flip, weight permutation) plus a time-reversal
+ *      null, and a latent world-model with a cross-entropy-method planner for paced-breathing
+ *      interdiction.
+ * 3. Learning within fixed safety limits:
+ *    - an 8-level nested hierarchy (L0 constitution .. L7 meta, pinned anchor hash 5c29a381eb7e,
+ *      bound B = +/-0.05) enforcing frozen physiological safety limits; rank preservation
+ *      (s(a) - s(b) > 2B = 0.10 => S(a) > S(b)) with an unclipped centered-and-contracted readout;
+ *      incremental contraction and the 4x4 coupled recurrence (Faddeev-LeVerrier + Durand-Kerner
+ *      complex eigenvalues, rho = 0.9987567254); active-inference EFE probe selection; entropic
+ *      Sinkhorn sensor-to-recovery optimal transport with MISSING slack and 5-pass critical-gap
+ *      refinement; and a 4-gate component admission protocol with a 9-rate sensitivity grid.
  * 4. Autonomic & Cardiorespiratory Biophysics Mastery Workbench:
  *    - Pillar 1: Non-Gaussian HRV, Poincare (SD1, SD2, SD1/SD2, ellipse area), Detrended
  *      Fluctuation Analysis (DFA alpha1, alpha2), Sample & Multiscale Entropy, Lomb-Scargle
@@ -282,7 +275,7 @@
   }
 
   /* =========================================================================
-   * SECTION 2: MANUSCRIPT 1 — 10-METRIC CRT SPATIAL & TOPOLOGICAL ENGINE
+   * SECTION 2: 10-METRIC SPATIAL & TOPOLOGICAL ENGINE
    *            APPLIED TO MULTI-SENSOR PHYSIOLOGICAL STATE MANIFOLDS
    * ========================================================================= */
   function ensembleWeights(M, seed = 20260614, nBoot = 80) {
@@ -1282,8 +1275,8 @@
   }
 
   /* =========================================================================
-   * SECTION 3: MANUSCRIPT 2 — NON-NEGATIVE VAR+(1), DIEBOLD-YILMAZ GFEVD,
-   *            3 DIRECTEDNESS NULLS, AND ARRO JEPA BIOFEEDBACK INTERDICTION
+   * SECTION 3: NON-NEGATIVE VAR+(1), DIEBOLD-YILMAZ GFEVD,
+   *            3 DIRECTEDNESS NULLS, AND LATENT-PLANNER BIOFEEDBACK INTERDICTION
    * ========================================================================= */
   function powerIterationSpectralRadius(Phi) {
     const n = Phi.length;
@@ -2981,9 +2974,7 @@
 
 
   /* ============================================================================
-   * SECTION 5: MANUSCRIPT 3 — ANCHORED NESTED LEARNING (ANL)
-   * ("Adaptive decision support under frozen rules: guarantees, failure modes,
-   *  and component admission", PLOS ONE submission; macgyver-bot)
+   * SECTION 5: LEARNING WITHIN FIXED SAFETY LIMITS (L0-L7)
    * Applied to Body Signal Labs Biofeedback Path Cockpit & Endless Cockpit
    * ============================================================================ */
 
@@ -3036,8 +3027,8 @@
     const epsUlp = 1e-15;
     const cap = boundB * (1.0 - epsUlp);
     const active = candidates.filter(c => !c.fallback && c.approved !== false);
-    /* In macgyver/meta.py:662 (ranking_biases), raw combined biases are centered BEFORE clipping,
-       whereas legacy ranking_bias (meta.py:642) clips each candidate individually to [-B, B]. */
+    /* Raw combined biases are centered BEFORE clipping; the older per-candidate form clipped each candidate
+       on its own to [-B, B]. */
     const rawUnclipped = active.map(c => (c.nativeBias || 0) + (c.memoryBias || 0) + (c.elasticBias || 0));
     const meanRaw = rawUnclipped.length ? rawUnclipped.reduce((a, b) => a + b, 0) / rawUnclipped.length : 0;
     const centered = rawUnclipped.map(r => r - meanRaw);
@@ -3551,7 +3542,7 @@
       { policy: 'Unconstrained Naive', anchor: false, adaptation: false, escapePct: 14.3, fatalPct: 85.7, timeoutPct: 0.0, meanTurns: 19.4, vetoesPerRun: 0.00 },
       { policy: 'Frozen Rules Static (SOP Only)', anchor: true, adaptation: false, escapePct: 50.0, fatalPct: 0.0, timeoutPct: 50.0, meanTurns: 9.0, vetoesPerRun: 0.00 },
       { policy: 'Adaptive Unanchored', anchor: false, adaptation: true, escapePct: 14.3, fatalPct: 85.7, timeoutPct: 0.0, meanTurns: 10.7, vetoesPerRun: 0.00 },
-      { policy: 'MacGyver Anchored (Full L0 Veto + Bounded Adapt)', anchor: true, adaptation: true, escapePct: 100.0, fatalPct: 0.0, timeoutPct: 0.0, meanTurns: 11.8, vetoesPerRun: 0.17 }
+      { policy: 'Anchored (Full L0 Veto + Bounded Adapt)', anchor: true, adaptation: true, escapePct: 100.0, fatalPct: 0.0, timeoutPct: 0.0, meanTurns: 11.8, vetoesPerRun: 0.17 }
     ];
 
     return {
@@ -3600,8 +3591,76 @@
     };
   }
 
+  /**
+   * 4.5j Effort changes read from cadence, and how heart rate answered. For rides that carry cadence: the effort change is
+   *   observed, not inferred, so this is change detection on a measured signal.
+   *   rows: [{ hr, cad }] per bin (5-s bin means, binRide). Cadence noise s = 1.4826 x the median absolute deviation of the
+   *   bin-to-bin cadence changes, over sqrt 2. At each bin k: the mean cadence over the next `after` bins (6 = 30 s) against
+   *   the previous `before` bins (6), z = (after - before) / (s sqrt(1/n_before + 1/n_after)). A change is a peak of |z|
+   *   (the largest within `before` bins either side) over `threshold` (6) with |after - before| at least minRpm (5).
+   *   Heart rate's answer, measured: the mean over the 30 s before against the mean from 60 to 120 s after (cut at the next
+   *   change; if that leaves under 30 s, the last 30 s before the next change); secondsTo90: the first bin where the
+   *   3-bin running mean of heart rate has covered 90% of that change.
+   *   Limit: an effort change without a cadence change (a climb in a harder gear) is invisible to cadence.
+   */
+  function cadenceEffortChanges(rows, options = {}) {
+    const binS = options.binS ?? 5, nb = options.before ?? 6, na = options.after ?? 6;
+    const threshold = options.threshold ?? 6, minRpm = options.minRpm ?? 5, T = rows.length;
+    const cad = rows.map(r => r.cad), hr = rows.map(r => r.hr);
+    const dc = [];
+    for (let i = 1; i < T; i++) if (Number.isFinite(cad[i]) && Number.isFinite(cad[i - 1])) dc.push(cad[i] - cad[i - 1]);
+    if (dc.length < 60) return { valid: false, reason: 'needs at least 5 minutes of cadence' };
+    const md = median(dc), noise = Math.max(0.25, 1.4826 * median(dc.map(v => Math.abs(v - md))) / Math.SQRT2);
+    const meanOf = (arr, a, b) => {
+      let sum = 0, n = 0;
+      for (let i = Math.max(0, a); i < Math.min(T, b); i++) if (Number.isFinite(arr[i])) { sum += arr[i]; n++; }
+      return n ? { m: sum / n, n } : null;
+    };
+    const z = new Array(T).fill(0), diff = new Array(T).fill(0);
+    for (let k = nb; k <= T - na; k++) {
+      const b = meanOf(cad, k - nb, k), a = meanOf(cad, k, k + na);
+      if (!b || !a || b.n < nb / 2 || a.n < na / 2) continue;
+      diff[k] = a.m - b.m;
+      z[k] = diff[k] / (noise * Math.sqrt(1 / b.n + 1 / a.n));
+    }
+    const at = [];
+    for (let k = 0; k < T; k++) {
+      if (!(Math.abs(z[k]) > threshold && Math.abs(diff[k]) >= minRpm)) continue;
+      let peak = true;
+      for (let j = Math.max(0, k - nb); j <= Math.min(T - 1, k + nb) && peak; j++) if (j !== k && Math.abs(z[j]) > Math.abs(z[k])) peak = false;
+      if (peak) at.push(k);
+    }
+    const bins = s => Math.round(s / binS);
+    const changes = at.map((k, i) => {
+      const next = i + 1 < at.length ? at[i + 1] : T;
+      const pre = meanOf(hr, k - bins(30), k);
+      let from = k + bins(60), to = Math.min(next, k + bins(120));
+      if (to - from < bins(30)) { to = next; from = Math.max(k + 1, next - bins(30)); }
+      const post = to > from ? meanOf(hr, from, to) : null;
+      const change = pre && post ? post.m - pre.m : NaN;
+      let secondsTo90 = null;
+      if (Number.isFinite(change) && change !== 0) {
+        for (let j = k; j < to; j++) {
+          const run = meanOf(hr, j - 1, j + 2);
+          if (run && (run.m - pre.m) / change >= 0.9) { secondsTo90 = (j - k) * binS; break; }
+        }
+      }
+      return {
+        at: k,
+        direction: diff[k] > 0 ? 'up' : 'down',
+        cadenceChange: diff[k],
+        z: z[k],
+        heartRateBefore: pre ? pre.m : NaN,
+        heartRateChange: change,
+        secondsTo90,
+        shadeTo: secondsTo90 === null ? Math.min(T - 1, to - 1) : k + Math.round(secondsTo90 / binS)
+      };
+    });
+    return { valid: true, noise, changes };
+  }
+
   const API = {
-    version: '2.1.0-offline-bsl-manuscript-biophysics-anl',
+    version: '2.1.0-offline-bsl-biophysics',
     /* Section 1 */
     makeRng,
     makeNormal,
@@ -3613,7 +3672,7 @@
     solveLinearSystem,
     invertMatrix,
     jacobiEigenSymmetric,
-    /* Section 2 (Manuscript 1) */
+    /* Section 2 */
     ensembleWeights,
     computeVoronoiTessellation,
     vietorisRipsComplex,
@@ -3629,7 +3688,7 @@
     scoreCRTDesign,
     looAblation,
     runCRTDesignAndInference,
-    /* Section 3 (Manuscript 2) */
+    /* Section 3 */
     spectralRadius: powerIterationSpectralRadius,
     powerIterationSpectralRadius,
     ridgeVar1,
@@ -3652,9 +3711,10 @@
     computeAllocationShootout,
     computeAutonomicRegimeFilter,
     computeMacroRegimeFilter,
+    cadenceEffortChanges,
     runAutonomicBiophysicsMastery,
     runFinancialRiskMastery,
-    /* Section 5 (Manuscript 3 — Anchored Nested Learning) */
+    /* Section 5 */
     ANL_PINNED_ANCHOR_HASH,
     ANL_BOUND_B,
     ANL_LEVELS,
@@ -3671,9 +3731,9 @@
     runAnchoredNestedLearning
   };
 
-  root.BSLManuscriptMath = API;
-  root.ATManuscriptMath = API;
-  root.RTManuscriptMath = API;
+  root.BSLMath = API;
+  root.ATMath = API;
+  root.RTMath = API;
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = API;
   }

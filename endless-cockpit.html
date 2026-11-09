@@ -28,7 +28,7 @@
   --warn: #f1cf8e;
   --bad: #f4a3a3;
   --demo: #e6c7a3;
-  --serif: Georgia, "Times New Roman", serif;
+  --serif: var(--sans);   /* headings use the interface sans-serif; the serif read like an essay */
   --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -364,7 +364,7 @@ body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute;
   'use strict';
   const MEMBERS = [
     { id: 'home', label: 'Body Signal Labs', href: 'index.html' },
-    { id: 'autonomic-telemetry', label: 'Autonomic Telemetry', href: '../autonomic-telemetry/Autonomic_Telemetry_Console.html' },
+    { id: 'autonomic-telemetry', label: 'Autonomic Telemetry', href: 'autonomic/Autonomic_Telemetry_Console.html' },
     { id: 'endless-cockpit', label: 'Endless Cockpit', href: 'endless-cockpit.html' },
     { id: 'biofeedback-path-cockpit', label: 'Biofeedback Path Cockpit', href: 'biofeedback-path-cockpit.html' },
   ];

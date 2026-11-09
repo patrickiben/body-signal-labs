@@ -9,9 +9,9 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 const require = createRequire(import.meta.url);
 
-const M = require(path.join(ROOT, 'src', 'bsl-manuscript-math.js'));
+const M = require(path.join(ROOT, 'src', 'bsl-math.js'));
 
-test('1. Manuscript 1 (CRT Spatial & Topological Engine) verifies 20 exercise epochs, 10 metrics, LOO, and 3x3 ladder', () => {
+test('1. Spatial and topological engine verifies 20 exercise epochs, 10 metrics, LOO, and 3x3 ladder', () => {
   assert.equal(M.DEFAULT_PHYSIOLOGICAL_NODES.length, 20, '20 exercise/biofeedback epochs');
   assert.equal(M.DEFAULT_PHYSIOLOGICAL_NODES[0].id, 'E01_WARM_SPIN');
   const res = M.runCRTDesignAndInference(M.DEFAULT_PHYSIOLOGICAL_NODES, {
@@ -21,7 +21,7 @@ test('1. Manuscript 1 (CRT Spatial & Topological Engine) verifies 20 exercise ep
     deltaTrue: -0.45
   });
 
-  assert.equal(res.activeScore.rawMetrics.length, 10, 'All 10 CRT metrics M1..M10 computed');
+  assert.equal(res.activeScore.rawMetrics.length, 10, 'All 10 metrics M1..M10 computed');
   for (let m = 0; m < 10; m++) {
     assert.ok(Number.isFinite(res.activeScore.rawMetrics[m]), `Metric M${m + 1} is finite`);
   }
@@ -41,7 +41,7 @@ test('1. Manuscript 1 (CRT Spatial & Topological Engine) verifies 20 exercise ep
   assert.ok(res.designPoolsSummary.CRR.meanLeakage < res.designPoolsSummary.SR.meanLeakage);
 });
 
-test('2. Manuscript 2 (VAR+(1), GFEVD, 3 Directedness Nulls & JEPA-CEM Cockpit Interdiction) across all 5 cockpit regimes', () => {
+test('2. VAR+(1), GFEVD, directedness nulls and latent-planner interdiction across all 5 cockpit regimes', () => {
   const regimes = [
     'fog_clearing_resonance',
     'steady_endurance_cruising',
@@ -81,7 +81,7 @@ test('2. Manuscript 2 (VAR+(1), GFEVD, 3 Directedness Nulls & JEPA-CEM Cockpit I
   assert.ok(lsa.interdiction.directedVsSymmetricAdvantage.advantageGainPts > 0);
 });
 
-test('3. Manuscript 3 (Anchored Nested Learning L0-L7) verifies frozen vetoes, Prop 1 & 2, EFE, Sinkhorn, and CAP', () => {
+test('3. Learning within fixed safety limits (L0-L7) verifies frozen vetoes, Prop 1 & 2, EFE, Sinkhorn, and CAP', () => {
   const anl = M.runAnchoredNestedLearning();
 
   assert.equal(anl.anchorHash, '5c29a381eb7e');
