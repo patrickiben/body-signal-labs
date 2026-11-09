@@ -163,10 +163,6 @@
       <label class="field"><div class="row"><span>Wildness, warp and color split</span><b id="wild-v"></b></div><input type="range" id="wild" min="0" max="100"></label>
     </div></details>
 
-    <details><summary>Rainbow orbit</summary><div class="controls-grid" style="padding:10px 0 0">
-      <label class="check"><input type="checkbox" id="space-lattice"> Space corridor frames on Rainbow orbit</label>
-      <p class="note" style="margin:0">Echoes Autonomic Console's Rest light frames along the floating track. Off by default to keep the road calm.</p>
-    </div></details>
 
     <details id="mapping"><summary>Cadence to motion</summary><div class="controls-grid" style="padding:10px 0 0">
       <label class="field"><div class="row"><span>Idle cadence, no motion below</span><b id="v-idle"></b></div><input type="range" id="m-idle" min="0" max="60"></label>
@@ -308,6 +304,7 @@
         <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'clear'}" title="${l.title}">${l.label}</button>`).join('')}</div>
         <button class="seg-solo" id="auto-scene" aria-pressed="true" aria-label="Auto scenery: new scenery every mile" title="A new scene blends in after each mile you ride"><span class="long">New scenery every mile</span><span class="short">Auto scenery</span></button>
         <button class="seg-solo" id="new-route" title="Generate a new procedural road layout (Keys: R / B for next scene · Middle-click for random combo)">New route</button>
+        <button class="seg-solo" id="frames-button" aria-pressed="false" hidden title="Light frames along the Rainbow orbit track">Light frames</button>
       </div>
     </div>`;
 
@@ -717,6 +714,7 @@
       b.setAttribute('aria-pressed', String(on));
     });
     document.body.style.setProperty('--accent', currentBiome().edge);
+    syncFrames();
     if ($('scene-name')) $('scene-name').textContent = currentBiome().name;
     const desc = currentBiome().description || 'Original scene from this recording.';
     if ($('scene-description')) $('scene-description').textContent = desc;
@@ -734,11 +732,14 @@
   $('scene-description').textContent = currentBiome().description;
   $('tod').addEventListener('change', (e) => { S.lookFrom = S.lastLand; S.lookT = 0; S.duskSnap = true; S.duskHold = e.target.value === 'auto' ? null : +e.target.value; thumbAt = 0; });
   $('new-route').addEventListener('click', () => { S.seed = (Math.random() * 40) | 0; thumbAt = 0; bio.noteLane('seed', S.seed); shell.toast('New route'); });
-  const sl = $('space-lattice');
-  if (sl) {
-    sl.checked = !!S.spaceLattice;
-    sl.addEventListener('change', (e) => { S.spaceLattice = e.target.checked; });
+  // Rainbow orbit's light frames: the switch shows only while that landscape is chosen.
+  function syncFrames() {
+    const b = $('frames-button'); if (!b) return;
+    b.hidden = !currentBiome() || currentBiome().id !== 'rainbow-orbit';
+    b.setAttribute('aria-pressed', String(!!S.spaceLattice));
   }
+  $('frames-button').addEventListener('click', () => { S.spaceLattice = !S.spaceLattice; syncFrames(); });
+  syncFrames();
   document.body.style.setProperty('--accent', currentBiome().edge);
 
   function syncLookInputs() {

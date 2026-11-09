@@ -169,6 +169,7 @@ body[data-app="biofeedback-path-cockpit"] .intro { top: 37%; }
   #new-route { order: 2; }
   .scene-row > .seg:nth-child(2) { order: 3; }
   #auto-scene { order: 4; }
+  #frames-button { order: 6; }
   body[data-app="biofeedback-path-cockpit"] .intro .eyebrow { display: none; }
   body[data-app="biofeedback-path-cockpit"] .intro { top: 46%; }
   .route-caption { max-width: 95%; font-size: 10px; padding: 3px 9px; }

@@ -46,6 +46,7 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
   .scene-row > .seg:nth-child(2) { order: 3; }
   #auto-scene { order: 4; }
   #custom-button { order: 5; }
+  #frames-button { order: 6; }
   body[data-app="endless-cockpit"] .intro .eyebrow { display: none; }
   body[data-app="endless-cockpit"] .intro { top: 46%; }
 }

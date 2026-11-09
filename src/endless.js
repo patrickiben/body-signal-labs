@@ -53,10 +53,6 @@
       <label class="field"><div class="row"><span>Wildness, warp and color split</span><b id="wild-v"></b></div><input type="range" id="wild" min="0" max="100"></label>
     </div></details>
 
-    <details><summary>Rainbow orbit</summary><div class="controls-grid" style="padding:10px 0 0">
-      <label class="check"><input type="checkbox" id="space-lattice"> Space corridor frames on Rainbow orbit</label>
-      <p class="note" style="margin:0">Echoes Autonomic Console's Rest light frames along the floating track. Off by default to keep the road calm.</p>
-    </div></details>
 
     <details id="mapping"><summary>Cadence to motion</summary><div class="controls-grid" style="padding:10px 0 0">
       <label class="field"><div class="row"><span>Idle cadence, no motion below</span><b id="v-idle"></b></div><input type="range" id="m-idle" min="0" max="60"></label>
@@ -92,6 +88,7 @@
         <button class="seg-solo" id="auto-scene" aria-pressed="true" aria-label="Auto scenery: new scenery every mile" title="A new scene blends in after each mile you ride"><span class="long">New scenery every mile</span><span class="short">Auto scenery</span></button>
         <button class="seg-solo" id="new-route" title="Generate a new procedural road layout (Keys: R / B for next scene · Middle-click for random combo)">New route</button>
         <button class="seg-solo" id="custom-button" data-active="false" aria-haspopup="dialog" aria-expanded="false" title="Set the hills, bends and width of the road you ride">Customize route</button>
+        <button class="seg-solo" id="frames-button" aria-pressed="false" hidden title="Light frames along the Rainbow orbit track">Light frames</button>
       </div>
     </div>`;
 
@@ -343,7 +340,7 @@
 
   /* ---- scenery: eight scenes, the time of day and a look, all on the main screen, and remembered ---- */
   const SAVE_KEY = 'endless-cockpit-scenery';
-  const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ b: S.biomeNext, custom: S.custom, tod: S.tod, look: S.look, dream: S.dream, wild: S.wild, auto: S.autoScene })); } catch (e) { /* storage can be off */ } };
+  const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ b: S.biomeNext, custom: S.custom, tod: S.tod, look: S.look, dream: S.dream, wild: S.wild, auto: S.autoScene, frames: S.spaceLattice })); } catch (e) { /* storage can be off */ } };
   const pressOnly = (sel, on) => document.querySelectorAll(sel).forEach((b) => b.setAttribute('aria-pressed', String(on(b))));
   function setBiome(i, instant) {
     if (!BIOMES[i] || (i === S.biomeNext && !instant)) return;
@@ -353,6 +350,7 @@
     pressOnly('.scene-tile', (b) => +b.dataset.b === i);
     document.body.style.setProperty('--accent', BIOMES[i].edge);
     markCustom();
+    syncFrames();
     save();
   }
   // A ride file or saved visit is outside data: keep only values in range, and null for anything else.
@@ -474,11 +472,13 @@
   bind('dream', () => S.dream * 100, (v) => { S.dream = v / 100; }, (v) => `${Math.round(v)}%`, 'dream-v');
   bind('wild', () => S.wild * 100, (v) => { S.wild = v / 100; }, (v) => `${Math.round(v)}%`, 'wild-v');
   ['dream', 'wild'].forEach((id) => $(id).addEventListener('input', () => { S.look = null; pressOnly('[data-look]', () => false); save(); }));
-  const spaceLatCheck = $('space-lattice');
-  if (spaceLatCheck) {
-    spaceLatCheck.checked = !!S.spaceLattice;
-    spaceLatCheck.addEventListener('change', (e) => { S.spaceLattice = e.target.checked; save(); });
+  // Rainbow orbit's light frames: the switch shows only while that landscape is chosen.
+  function syncFrames() {
+    const b = $('frames-button'); if (!b) return;
+    b.hidden = BIOMES[S.biomeNext].id !== 'rainbow-orbit';
+    b.setAttribute('aria-pressed', String(!!S.spaceLattice));
   }
+  $('frames-button').addEventListener('click', () => { S.spaceLattice = !S.spaceLattice; syncFrames(); save(); });
   // A visit picks up where the last one left off.
   (() => {
     let v = null;
@@ -490,6 +490,7 @@
     if (LOOKS[v.look]) setLook(v.look, true);
     else if (typeof v.dream === 'number' && typeof v.wild === 'number') { setLook('dreamy', true); S.look = null; S.dream = clamp(v.dream, 0, 1); S.wild = clamp(v.wild, 0, 1); pressOnly('[data-look]', () => false); ['dream', 'wild'].forEach((id) => { const r = $(id); r.value = Math.round(S[id] * 100); shell.syncRange(r); $(`${id}-v`).textContent = `${r.value}%`; }); }
     if (typeof v.auto === 'boolean') setAuto(v.auto);
+    S.spaceLattice = v.frames === true; syncFrames();
   })();
   bind('m-idle', () => S.map.idle, (v) => { S.map.idle = v; }, (v) => `${v} rpm`, 'v-idle');
   bind('m-max', () => S.map.max, (v) => { S.map.max = v; }, (v) => `${v} rpm`, 'v-max');

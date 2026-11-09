@@ -51,7 +51,24 @@
 
   }
 
+  /* The held times of day: day, golden hour, sunset, dusk, night. Between two of them the look is a blend of exactly
+     those two, so a later time only ever sets the sun further and darkens the sky. The weights inside lookAt dip
+     between the held times, so reading it there directly lifted the sun back toward its daytime height (Golden coast,
+     dusk to night: 0.038, up to 0.396, back to 0.038), in the Moving cycle and whenever the time passed through. */
+  const TOD_ANCHORS = [0, 0.18, 0.36, 0.55, 1];
   function landAt(a, b, tb, dusk) {
+    const d = Math.max(0, Math.min(1, Number.isFinite(dusk) ? dusk : 0));
+    let i = 0;
+    while (i < TOD_ANCHORS.length - 2 && d > TOD_ANCHORS[i + 1]) i++;
+    const lo = TOD_ANCHORS[i], hi = TOD_ANCHORS[i + 1];
+    if (d === lo || d === hi) return lookAt(a, b, tb, d);
+    const u = (d - lo) / (hi - lo);
+    const out = blendLand(lookAt(a, b, tb, lo), lookAt(a, b, tb, hi), u * u * (3 - 2 * u));
+    out.uDusk = d;
+    return out;
+  }
+
+  function lookAt(a, b, tb, dusk) {
     const t = tb * tb * (3 - 2 * tb);
     const mix3 = (k) => a.c[k].map((v, i) => lerp(v, b.c[k][i], t));
     const mixN = (k) => lerp(a[k], b[k], t);

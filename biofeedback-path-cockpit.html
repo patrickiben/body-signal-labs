@@ -435,6 +435,7 @@ body[data-app="biofeedback-path-cockpit"] .intro { top: 37%; }
   #new-route { order: 2; }
   .scene-row > .seg:nth-child(2) { order: 3; }
   #auto-scene { order: 4; }
+  #frames-button { order: 6; }
   body[data-app="biofeedback-path-cockpit"] .intro .eyebrow { display: none; }
   body[data-app="biofeedback-path-cockpit"] .intro { top: 46%; }
   .route-caption { max-width: 95%; font-size: 10px; padding: 3px 9px; }
@@ -3998,7 +3999,24 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
 
   }
 
+  /* The held times of day: day, golden hour, sunset, dusk, night. Between two of them the look is a blend of exactly
+     those two, so a later time only ever sets the sun further and darkens the sky. The weights inside lookAt dip
+     between the held times, so reading it there directly lifted the sun back toward its daytime height (Golden coast,
+     dusk to night: 0.038, up to 0.396, back to 0.038), in the Moving cycle and whenever the time passed through. */
+  const TOD_ANCHORS = [0, 0.18, 0.36, 0.55, 1];
   function landAt(a, b, tb, dusk) {
+    const d = Math.max(0, Math.min(1, Number.isFinite(dusk) ? dusk : 0));
+    let i = 0;
+    while (i < TOD_ANCHORS.length - 2 && d > TOD_ANCHORS[i + 1]) i++;
+    const lo = TOD_ANCHORS[i], hi = TOD_ANCHORS[i + 1];
+    if (d === lo || d === hi) return lookAt(a, b, tb, d);
+    const u = (d - lo) / (hi - lo);
+    const out = blendLand(lookAt(a, b, tb, lo), lookAt(a, b, tb, hi), u * u * (3 - 2 * u));
+    out.uDusk = d;
+    return out;
+  }
+
+  function lookAt(a, b, tb, dusk) {
     const t = tb * tb * (3 - 2 * tb);
     const mix3 = (k) => a.c[k].map((v, i) => lerp(v, b.c[k][i], t));
     const mixN = (k) => lerp(a[k], b[k], t);
@@ -5812,10 +5830,6 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       <label class="field"><div class="row"><span>Wildness, warp and color split</span><b id="wild-v"></b></div><input type="range" id="wild" min="0" max="100"></label>
     </div></details>
 
-    <details><summary>Rainbow orbit</summary><div class="controls-grid" style="padding:10px 0 0">
-      <label class="check"><input type="checkbox" id="space-lattice"> Space corridor frames on Rainbow orbit</label>
-      <p class="note" style="margin:0">Echoes Autonomic Console's Rest light frames along the floating track. Off by default to keep the road calm.</p>
-    </div></details>
 
     <details id="mapping"><summary>Cadence to motion</summary><div class="controls-grid" style="padding:10px 0 0">
       <label class="field"><div class="row"><span>Idle cadence, no motion below</span><b id="v-idle"></b></div><input type="range" id="m-idle" min="0" max="60"></label>
@@ -5957,6 +5971,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
         <div class="seg" role="group" aria-label="Look">${Object.entries(LOOKS).map(([k, l]) => `<button data-look="${k}" aria-pressed="${k === 'clear'}" title="${l.title}">${l.label}</button>`).join('')}</div>
         <button class="seg-solo" id="auto-scene" aria-pressed="true" aria-label="Auto scenery: new scenery every mile" title="A new scene blends in after each mile you ride"><span class="long">New scenery every mile</span><span class="short">Auto scenery</span></button>
         <button class="seg-solo" id="new-route" title="Generate a new procedural road layout (Keys: R / B for next scene · Middle-click for random combo)">New route</button>
+        <button class="seg-solo" id="frames-button" aria-pressed="false" hidden title="Light frames along the Rainbow orbit track">Light frames</button>
       </div>
     </div>`;
 
@@ -6366,6 +6381,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       b.setAttribute('aria-pressed', String(on));
     });
     document.body.style.setProperty('--accent', currentBiome().edge);
+    syncFrames();
     if ($('scene-name')) $('scene-name').textContent = currentBiome().name;
     const desc = currentBiome().description || 'Original scene from this recording.';
     if ($('scene-description')) $('scene-description').textContent = desc;
@@ -6383,11 +6399,14 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   $('scene-description').textContent = currentBiome().description;
   $('tod').addEventListener('change', (e) => { S.lookFrom = S.lastLand; S.lookT = 0; S.duskSnap = true; S.duskHold = e.target.value === 'auto' ? null : +e.target.value; thumbAt = 0; });
   $('new-route').addEventListener('click', () => { S.seed = (Math.random() * 40) | 0; thumbAt = 0; bio.noteLane('seed', S.seed); shell.toast('New route'); });
-  const sl = $('space-lattice');
-  if (sl) {
-    sl.checked = !!S.spaceLattice;
-    sl.addEventListener('change', (e) => { S.spaceLattice = e.target.checked; });
+  // Rainbow orbit's light frames: the switch shows only while that landscape is chosen.
+  function syncFrames() {
+    const b = $('frames-button'); if (!b) return;
+    b.hidden = !currentBiome() || currentBiome().id !== 'rainbow-orbit';
+    b.setAttribute('aria-pressed', String(!!S.spaceLattice));
   }
+  $('frames-button').addEventListener('click', () => { S.spaceLattice = !S.spaceLattice; syncFrames(); });
+  syncFrames();
   document.body.style.setProperty('--accent', currentBiome().edge);
 
   function syncLookInputs() {
