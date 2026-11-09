@@ -28,6 +28,12 @@ jobs:
           mkdir -p _site/docs
           cp index.html endless-cockpit.html biofeedback-path-cockpit.html field-guide.html offline.html Body_Signal_Labs_Offline.html README.md _site/
           cp docs/*.md docs/*.jpg _site/docs/
+          # Autonomic Telemetry, moved here from its own repository: the same files its own deploy shipped
+          mkdir -p _site/autonomic/docs
+          cp autonomic/index.html autonomic/Autonomic_Telemetry_Console.html autonomic/Autonomic_Telemetry_Signal_Lab.html _site/autonomic/
+          cp autonomic/research-math.js autonomic/README.md _site/autonomic/
+          cp -R autonomic/examples _site/autonomic/examples
+          cp autonomic/docs/*.md autonomic/docs/*.png _site/autonomic/docs/
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

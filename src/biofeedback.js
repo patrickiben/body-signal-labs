@@ -247,7 +247,7 @@
       <p>The index is Autonomic Telemetry's own engine, <code>multivariate-1</code>, unchanged. It forms a personal reference from 120 seconds of quiet data, then scores your shift from it. 0 is your reference, and 25, 46 and 68 are its tier boundaries. These are engineering choices, not clinical cutoffs.</p>
       <p>Heart rate alone is an explicitly limited one-channel profile. If a channel in the reference goes missing, the number is withheld rather than rescaled. It has no validation against any outcome.</p>
       <p>Beat intervals outside 333 to 1500 ms, or more than 25% from the window's median, are dropped and never repaired. If more than a tenth drop, the window is rejected.</p>
-      <p class="note" style="margin-bottom:0"><a href="../autonomic-telemetry/docs/METHODS.md">Autonomic's methods</a> · <a href="docs/BIOFEEDBACK.md" rel="noopener">This page's methods</a></p>
+      <p class="note" style="margin-bottom:0"><a href="autonomic/docs/METHODS.md">Autonomic's methods</a> · <a href="docs/BIOFEEDBACK.md" rel="noopener">This page's methods</a></p>
     </details>
     <details id="safety"><summary>Safety and privacy</summary>
       <p>Changes in brightness are smoothed. If moving light troubles you, turn on your system's reduced-motion setting: the page then calms the camera and removes the pulse.</p>
@@ -732,7 +732,7 @@
   const autoSceneBtn = $('auto-scene');
   if (autoSceneBtn) autoSceneBtn.addEventListener('click', () => setAuto(!S.autoScene));
   $('scene-description').textContent = currentBiome().description;
-  $('tod').addEventListener('change', (e) => { S.duskHold = e.target.value === 'auto' ? null : +e.target.value; thumbAt = 0; });
+  $('tod').addEventListener('change', (e) => { S.lookFrom = S.lastLand; S.lookT = 0; S.duskSnap = true; S.duskHold = e.target.value === 'auto' ? null : +e.target.value; thumbAt = 0; });
   $('new-route').addEventListener('click', () => { S.seed = (Math.random() * 40) | 0; thumbAt = 0; bio.noteLane('seed', S.seed); shell.toast('New route'); });
   const sl = $('space-lattice');
   if (sl) {
@@ -754,6 +754,7 @@
   }
   let pThumb = null, thumbHDR = null, thumbLDR = null, thumbPx = null, thumbAt = 0, thumbDusk = -1;
   function setTod(i) {
+    S.lookFrom = S.lastLand; S.lookT = 0; S.duskSnap = true;   // blend from what is on screen (see CyclingScene.blendLand)
     S.tod = i; S.duskHold = TOD[i].v;
     document.querySelectorAll('[data-tod]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.tod === i)));
     if ($('tod')) $('tod').value = TOD[i].v == null ? 'auto' : String(TOD[i].v);
@@ -1435,7 +1436,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
   function render(now) {
     requestAnimationFrame(render);
     try {
-      const frameMs = now - last, dtMs = Math.min(100, frameMs), dt = dtMs / 1000;
+      const frameMs = now - last, dtMs = Math.max(0, Math.min(100, frameMs)), dt = dtMs / 1000;   // never negative: after the thumbnails redraw, `last` can be later than this frame's time
       last = now;
       bio.tick(now); updateEEG(dt);
       fpsN++; if (now - fpsT > 500) { fps = (fpsN * 1000) / (now - fpsT); fpsN = 0; fpsT = now; }
@@ -1518,10 +1519,17 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       const routeUniforms = blendedScene ? CyclingScene.routeUniforms(blendedScene) : {};
       const cycle = RM.matches ? 0.3 : 0.5 - 0.5 * Math.cos((now / 1000 / 240 + 0.14) * Math.PI * 2);
       const duskT = train ? lerp(0.94, 0.06, S.dawn) : isWatch ? (S.duskHold != null ? S.duskHold : 0.74) + S.load * DUSK_BIAS : (S.duskHold != null ? S.duskHold : cycle);
+      if (S.duskSnap) { if (!legacyScene()) S.dusk = clamp(duskT, 0, 1); S.duskSnap = false; }   // a chosen time jumps; its look is blended below
       S.dusk += (clamp(duskT, 0, 1) - S.dusk) * Math.min(1, dtMs / 1400);
       const dusk = S.dusk, night = dusk * dusk;
       const haze = train ? (1 - S.dawn) * (1 - 0.55 * S.clarity) : 0;
-      const land = legacyScene() ? null : CyclingScene.landAt(S.fromMix || currentBiome(S.biome), currentBiome(), S.biomeT, dusk);
+      let land = legacyScene() ? null : CyclingScene.landAt(S.fromMix || currentBiome(S.biome), currentBiome(), S.biomeT, dusk);
+      if (land && S.lookFrom && S.lookT < 1) {
+        S.lookT = Math.min(1, S.lookT + dtMs / 1500);
+        land = CyclingScene.blendLand(S.lookFrom, land, S.lookT * S.lookT * (3 - 2 * S.lookT));
+      }
+      if (land) S.lastLand = land;
+      const duskV = land ? land.uDusk : dusk;   // the blended time value, for the stars, nebula and exposure
       const skyTop = land ? land.uSkyTop : mix3('skyTop').map((v, i) => lerp(v, [0.004, 0.006, 0.024][i], dusk * 0.94));
       const skyHz = land ? land.uSkyHz : mix3('skyHz').map((v, i) => lerp(v, [0.1, 0.045, 0.11][i], dusk * 0.92));
       const fogBase = land ? land.uFog : mix3('fog').map((v) => v * (1 - dusk * 0.86));
@@ -1581,7 +1589,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       const m = brainRide() ? S.eegDrive : motion01(S.rpm);
       S.pulse *= Math.exp(-dt / 0.24);
       const br = bio.breath();
-      const nebulaAmt = smooth(0.26, 0.72, dusk) * (ride ? (S.look !== 'clear' ? 0.42 : 0) : train ? 0.32 * (1 - S.dawn) : 1);
+      const nebulaAmt = smooth(0.26, 0.72, duskV) * (ride ? (S.look !== 'clear' ? 0.42 : 0) : train ? 0.32 * (1 - S.dawn) : 1);
 
       /* scene */
       gl.disable(gl.BLEND);
@@ -1604,7 +1612,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
         uN: 0, uS: 1, uRes: [rw, rh], uT: now / 1000, uFocal: focal, uBeat: beatLen, uSeed: S.seed,
         uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd,
         uSkyTop: skyTop, uSkyHz: skyHz, uSunC: sunC, uGround: groundC, uRock: rockC, uFog: fogC, uEdge: mix3('edge'), uSunDir: sd,
-        uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: dusk, uFogK: mixN('fogK') * (1 + haze * 7),
+        uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: duskV, uFogK: mixN('fogK') * (1 + haze * 7),
         uSpark: 0.12, uShimmer: 0.1, uAurora: S.look === 'clear' ? 0 : S.load * S.load * 0.26, uTravelSpeed: S.speed,
         uRing: ringData,
         uHaze: haze, uWeather: S.load, uWarm: smooth(0.16, 0.74, S.load), uBreath: br.ee, uBreathOn: train ? 1 : 0, uNebula: nebulaAmt, uGhost: ghostU,
@@ -1637,7 +1645,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       const bloom = Post.bloom(dreamA.tex, 1.15);
       Post.finish(dreamA.tex, bloom, {
         uBloomK: S.look === 'clear' ? 0.22 : (0.22 + S.dream * 0.16 + S.load * 0.14),
-        uExposure: 0.98 + dusk * 0.25,
+        uExposure: 0.98 + duskV * 0.25,
         uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000,
         uVig: S.look === 'clear' ? 0.25 : (0.25 + S.load * 0.15),
         uSat: S.look === 'clear' ? 1.02 : (1.02 + wildEff * 0.22), rate: RM.matches ? 0.16 : 0.36, maxGain: 1,

@@ -9,6 +9,23 @@ permissions:
   contents: read
 
 jobs:
+  # The engine's known-answer suites need only Node and take several minutes, so they run beside the browser job.
+  engine-math:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Engine known-answer suites
+        run: |
+          node tests/autonomic_math_qc.cjs
+          node tests/autonomic_varx_qc.cjs
+          node tests/autonomic_device_rate_qc.cjs
+          node tests/autonomic_regime_qc.cjs
+          node tests/autonomic_regime_stretch_qc.cjs
+          node tests/autonomic_regime_momentum_qc.cjs
+          node tests/autonomic_switching_ar_qc.cjs
+          node tests/autonomic_fast_stretch_qc.cjs
+          node tests/autonomic_cadence_effort_qc.cjs
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -24,23 +41,20 @@ jobs:
       - name: Sensor freshness and session integrity
         run: |
           node tests/session_regressions.cjs
+          python3 autonomic/scripts/embed-guide-math.py --check
           node tests/eeg_drive.cjs
           node tests/cadence_motion.cjs
           node tests/route_shape.cjs
+          node tests/time_of_day.cjs
           node tests/midi_drive.cjs
           python3 tests/site_links.py
-          node tests/bsl-manuscript-math.test.mjs
-      - uses: actions/checkout@v7
-        with:
-          repository: patrickiben/autonomic-telemetry
-          ref: 6c3ce294a1623649593f2871b364a9053c719ec0
-          path: .ci-autonomic
+          node tests/bsl-math.test.mjs
       - name: Optional Muse bridge HTTP contract
         env:
-          AUTONOMIC_ROOT: ${{ github.workspace }}/.ci-autonomic
+          AUTONOMIC_ROOT: ${{ github.workspace }}/autonomic
         run: python3 -m unittest discover -s tests -p test_brainwave_bridge.py
       - run: pip install playwright && playwright install --with-deps chromium
       - run: python3 tests/smoke.py
       - run: python3 tests/workbench_ride.py
       - run: python3 tests/midi_ride.py
-      - run: python3 tests/bsl_manuscript_math_test.py
+      - run: python3 tests/bsl_math_test.py

@@ -21,7 +21,7 @@ const device = { name: 'Regression sensor', addEventListener() {}, gatt: {
 const context = { console, performance: { now: () => clock }, Date, Math, DataView, ArrayBuffer, Uint8Array, Float32Array, Float64Array,
   setInterval: () => 1, clearInterval() {}, navigator: { userAgent: 'Node regression', bluetooth: { async requestDevice() { return device; } } }, isSecureContext: true };
 context.window = context; vm.createContext(context);
-for (const file of ['src/vendor/autonomic/research-math.js', 'src/vendor/autonomic/multivariate-engine.js', 'src/cadence-motion.js', 'src/bio.js', 'src/ride.js']) vm.runInContext(read(file), context);
+for (const file of ['autonomic/research-math.js', 'autonomic/multivariate-engine.js', 'src/cadence-motion.js', 'src/bio.js', 'src/ride.js']) vm.runInContext(read(file), context);
 const test = (name, fn) => { fn(); console.log(`PASS ${name}`); checks++; };
 const packet = (id, bytes) => listeners[id]({ target: { value: new DataView(Uint8Array.from(bytes).buffer) } });
 const bioSession = (lanes = {}) => ({ schema: 'body-signal-labs/biofeedback-session@1', durationMs: 1000, synthetic: false, lanes });

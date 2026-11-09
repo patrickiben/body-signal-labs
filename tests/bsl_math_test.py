@@ -21,7 +21,7 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
 def main():
     # 1. Run Node mathematical unit test suite
     res = subprocess.run(
-        ["node", "--test", str(ROOT / "tests" / "bsl-manuscript-math.test.mjs")],
+        ["node", "--test", str(ROOT / "tests" / "bsl-math.test.mjs")],
         cwd=str(ROOT),
         capture_output=True,
         text=True,
@@ -66,58 +66,27 @@ def main():
             if len(pg.query_selector_all("nav.family a")) != 4:
                 bad.append(f"{page_name}: suite bar does not have 4 links")
 
+            # The workbench is the rider's own ride only (sample-ride tabs removed 2026-11-09): the engine must be
+            # loaded with what the ride tab uses, and no sample tab may come back.
             state_check = pg.evaluate("""() => {
-                const M = window.BSLManuscriptMath;
-                const C = window.BSLManuscriptController;
-                if (!M || !C) return { ok: false, reason: 'Missing BSLManuscriptMath or Controller' };
-                const st = C.getState();
+                const M = window.BSLMath;
+                if (!M) return { ok: false, reason: 'Missing BSLMath' };
+                const needs = ['fitVarNonneg', 'gfevd', 'cadenceEffortChanges', 'mean', 'sd'];
                 return {
-                    ok: Boolean(st && st.crt && st.lsa && st.anl && st.bio),
-                    version: M.version,
-                    anchorHash: st.anl.anchorHash,
-                    fullBoundEp: st.anl.m3Recurrence.fullBoundEpisode,
-                    dfaAlpha1: st.bio.hrvMastery.dfaAlpha1,
-                    hrr60Bpm: st.bio.hrvMastery.hrr60Bpm,
-                    hrvtZone: st.bio.hrvMastery.hrvtZone,
-                    svgCount: document.querySelectorAll('#manuscript-workbench svg').length,
-                    tableRows: document.querySelectorAll('#manuscript-workbench tbody tr').length
+                    ok: needs.every((n) => typeof M[n] === 'function'),
+                    missing: needs.filter((n) => typeof M[n] !== 'function'),
+                    samplePanes: ['crt', 'lsa', 'anl', 'bio'].filter((k) => document.getElementById('mw-pane-' + k)).length,
+                    tabs: document.querySelectorAll('.mw-tab-btn').length,
+                    ridePane: Boolean(document.getElementById('mw-pane-ride')),
+                    rideButton: Boolean(document.getElementById('mw-ride-btn'))
                 };
             }""")
-
             if not state_check.get("ok"):
-                bad.append(f"{page_name}: state check failed ({state_check})")
-            if state_check.get("anchorHash") != "5c29a381eb7e":
-                bad.append(f"{page_name}: wrong anchorHash {state_check.get('anchorHash')}")
-            if state_check.get("fullBoundEp") != 280:
-                bad.append(f"{page_name}: expected fullBoundEp 280, got {state_check.get('fullBoundEp')}")
-            if state_check.get("svgCount", 0) < 8:
-                bad.append(f"{page_name}: expected >= 8 SVGs, got {state_check.get('svgCount')}")
-            if state_check.get("tableRows", 0) < 40:
-                bad.append(f"{page_name}: expected >= 40 table rows, got {state_check.get('tableRows')}")
-
-            # Switch through all 4 tabs and test regime switching
-            for tab_key in ("lsa", "anl", "bio", "crt"):
-                pg.click(f'#manuscript-workbench [data-mw-tab="{tab_key}"]')
-                is_active = pg.evaluate(
-                    f"document.getElementById('mw-pane-{tab_key}').classList.contains('active')"
-                )
-                if not is_active:
-                    bad.append(f"{page_name}: tab {tab_key} did not activate")
-
-            pg.select_option("#mw-regime-select", "threshold_grade_climb")
-            pg.evaluate("document.getElementById('mw-regime-select').dispatchEvent(new Event('input'))")
-            thresh_zone = pg.evaluate("window.BSLManuscriptController.getState().bio.hrvMastery.hrvtZone")
-            if "Threshold Transition" not in thresh_zone:
-                bad.append(f"{page_name}: expected Threshold Transition zone, got {thresh_zone}")
-
-            pg.select_option("#mw-regime-select", "hiit_cadence_surge")
-            pg.evaluate("document.getElementById('mw-regime-select').dispatchEvent(new Event('input'))")
-            new_reg = pg.evaluate("window.BSLManuscriptController.getState().regimeKey")
-            hiit_zone = pg.evaluate("window.BSLManuscriptController.getState().bio.hrvMastery.hrvtZone")
-            if new_reg != "hiit_cadence_surge":
-                bad.append(f"{page_name}: regime did not update to hiit_cadence_surge")
-            if "Above HRVT2" not in hiit_zone:
-                bad.append(f"{page_name}: expected Above HRVT2 zone, got {hiit_zone}")
+                bad.append(f"{page_name}: engine missing {state_check.get('missing')} ({state_check.get('reason', '')})")
+            if state_check.get("samplePanes") or state_check.get("tabs"):
+                bad.append(f"{page_name}: sample-ride tabs are back ({state_check.get('samplePanes')} panes, {state_check.get('tabs')} tab buttons)")
+            if not (state_check.get("ridePane") and state_check.get("rideButton")):
+                bad.append(f"{page_name}: the ride card or its Open a ride button is missing")
 
             # Verify zero horizontal overflow at desktop (1440x900) and mobile (375x667)
             for vw, vh in ((1440, 900), (375, 667)):
@@ -135,24 +104,21 @@ def main():
                 bad.append(f"{page_name}: console/page errors: {errors[0]}")
 
             print(
-                f"{page_name}: {state_check.get('svgCount')} SVGs, "
-                f"{state_check.get('tableRows')} table rows, "
-                f"DFA alpha1={state_check.get('dfaAlpha1'):.2f}, "
-                f"HRR60={state_check.get('hrr60Bpm'):.1f} bpm, "
-                f"{len(external_reqs)} external reqs, {len(errors)} errors"
+                f"{page_name}: engine ready={state_check.get('ok')}, sample tabs {state_check.get('samplePanes')}, "
+                f"ride card {state_check.get('ridePane')}, {len(external_reqs)} external reqs, {len(errors)} errors"
             )
             pg.close()
 
-        # The cockpit never calls the manuscript engine, so it stays out of the cockpit page (phones would download
+        # The cockpit never calls the math engine, so it stays out of the cockpit page (phones would download
         # it for nothing). The engine lives in the offline workbench only; the cockpit must still load cleanly.
         pg = browser.new_page(viewport={"width": 1440, "height": 900})
         errors = []
         pg.on("pageerror", lambda e: errors.append(str(e)[:200]))
         pg.goto(f"{base_url}/biofeedback-path-cockpit.html", wait_until="domcontentloaded")
         pg.wait_for_timeout(600)
-        has_math = pg.evaluate("Boolean(window.BSLManuscriptMath)")
+        has_math = pg.evaluate("Boolean(window.BSLMath)")
         if has_math:
-            bad.append("biofeedback-path-cockpit.html: the manuscript engine is inlined but the cockpit never calls it")
+            bad.append("biofeedback-path-cockpit.html: the math engine is inlined but the cockpit never calls it")
         if errors:
             bad.append(f"biofeedback-path-cockpit.html: {errors[0]}")
         print(f"biofeedback-path-cockpit.html: engine kept out={not has_math}, {len(errors)} errors")
@@ -163,7 +129,7 @@ def main():
     if bad:
         print("\n".join(bad), file=sys.stderr)
         sys.exit(1)
-    print("All Body Signal Labs manuscript & biophysics E2E checks passed!")
+    print("All Body Signal Labs engine and workbench checks passed!")
 
 
 if __name__ == "__main__":
