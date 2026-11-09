@@ -131,6 +131,23 @@
     };
   }
 
+  /* Blend two looks from landAt, field by field (s = 0 gives `from`, 1 gives `to`). A new time of day blends
+     from what is on screen to the new time's look, so the sky never passes through the hours in between: easing
+     the time value itself from dusk to night used to lift the sun back toward its daytime height before it set. */
+  function blendLand(from, to, s) {
+    if (!from || s >= 1) return to;
+    const out = {};
+    for (const k of Object.keys(to)) {
+      const a = from[k], b = to[k];
+      if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) out[k] = b.map((v, i) => lerp(a[i], v, s));
+      else if (typeof a === 'number' && typeof b === 'number') out[k] = lerp(a, b, s);
+      else out[k] = b;
+    }
+    const l = Math.hypot(...out.uSunDir) || 1;
+    out.uSunDir = out.uSunDir.map((v) => v / l);
+    return out;
+  }
+
   const SCENE_FS = FS_HEAD + `
 uniform vec2 uRes; uniform float uT,uFocal,uBeat,uSeed;
 uniform vec3 uCam,uRight,uUp,uFwd;
@@ -1626,5 +1643,5 @@ void main(){
 in float vA;
 void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=vec4(vec3(.93,.92,1.)*g*vA,1.); }`;
 
-  global.CyclingScene = { BIOMES, WORLD_KEYS, NUMS, SCENE_FS, MOTE_VS, MOTE_FS, DREAM_FS, ORBIT_VS, ORBIT_FS, mixScene, routeWeights, routeUniforms, pathX, roadY, gradeAt, landAt };
+  global.CyclingScene = { BIOMES, WORLD_KEYS, NUMS, SCENE_FS, MOTE_VS, MOTE_FS, DREAM_FS, ORBIT_VS, ORBIT_FS, mixScene, routeWeights, routeUniforms, pathX, roadY, gradeAt, landAt, blendLand };
 })(window);

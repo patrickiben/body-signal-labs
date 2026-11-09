@@ -67,6 +67,7 @@
       <canvas class="sig-canvas" id="curve" width="880" height="170" role="img" aria-label="Transfer curve from cadence to zoom, with the live value"></canvas>
     </div></details>`;
 
+  const TOD_BLEND_MS = 1500;   // a change of time of day blends the whole look over this long
   const TOD = [
     { v: null, label: 'Moving', title: 'A four-minute cycle from golden hour to night (Key: T)' },
     { v: 0.18, label: 'Golden hour', short: 'Golden', title: 'Hold sky at golden hour (Key: T)' },
@@ -432,6 +433,7 @@
   $('cr-new').addEventListener('click', () => $('new-route').click());
   $('custom-button').addEventListener('click', () => shell.openSheet('custom'));
   function setTod(i, quiet) {
+    S.lookFrom = S.lastLand; S.lookT = 0;   // blend from what is on screen (see CyclingScene.blendLand)
     S.tod = i; S.duskHold = TOD[i].v;
     pressOnly('[data-tod]', (b) => +b.dataset.tod === i);
     ride.noteLane('tod', i);
@@ -897,7 +899,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
   function render(now) {
     requestAnimationFrame(render);
     try {
-      const frameMs = now - last, dtMs = Math.min(100, frameMs);
+      const frameMs = now - last, dtMs = Math.max(0, Math.min(100, frameMs));   // never negative: after the thumbnails redraw, `last` can be later than this frame's time
       last = now;
       ride.tick(now);
       pageFrame(now);
@@ -918,7 +920,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
         shell.toast(`New scenery · ${BIOMES[S.biomeNext].name} (Mile ${mi})`);
       }
       if (frameIdx > 2 && (!thumbAt || (!S.pedal && S.rpm < 5 && now - thumbAt > 4000 && Math.abs(S.dusk - thumbDusk) > 0.04 && !document.body.classList.contains('quiet')))) drawThumbs(now);
-      S.dusk = S.duskHold != null ? S.dusk + (S.duskHold - S.dusk) * Math.min(1, dtMs / 900) : RM.matches ? S.dusk : 0.5 - 0.5 * Math.cos((now / 1000 / 240 + 0.14) * Math.PI * 2);
+      S.dusk = S.duskHold != null ? S.duskHold : RM.matches ? S.dusk : 0.5 - 0.5 * Math.cos((now / 1000 / 240 + 0.14) * Math.PI * 2);
 
       // React to sustained stalls before waiting 90 expensive frames. This also
       // covers browsers that hide renderer metadata and genuinely weak GPUs.
@@ -937,7 +939,12 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       }
 
       /* uniforms */
-      const land = landAt(S.fromMix || sceneAt(S.biome), sceneAt(S.biomeNext), S.biomeT, S.dusk);
+      let land = landAt(S.fromMix || sceneAt(S.biome), sceneAt(S.biomeNext), S.biomeT, S.dusk);
+      if (S.lookFrom && S.lookT < 1) {
+        S.lookT = Math.min(1, S.lookT + dtMs / TOD_BLEND_MS);
+        land = CyclingScene.blendLand(S.lookFrom, land, S.lookT * S.lookT * (3 - 2 * S.lookT));
+      }
+      S.lastLand = land;
       const z = S.vis;
       const curveRoll = RM.matches ? 0 : clamp((pathX(z + 12) - 2 * pathX(z + 6) + pathX(z)) * (0.016 + 0.012 * motion01(S.rpm)), -0.075, 0.075);
       S.roll += (curveRoll - S.roll) * Math.min(1, dtMs / 200);
@@ -992,7 +999,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       /* bloom and grade */
       const bloom = Post.bloom(dreamA.tex, 1.15);
       Post.finish(dreamA.tex, bloom, {
-        uBloomK: 0.22 + S.dream * 0.16, uExposure: 0.98 + S.dusk * 0.25,
+        uBloomK: 0.22 + S.dream * 0.16, uExposure: 0.98 + land.uDusk * 0.25,
         uFlash: 0, uFlashC: [1, 0.93, 0.82], uGrain: 0.022, uT: now / 1000, uVig: 0.25,
         uSat: 1.02 + S.wild * 0.22, rate: RM.matches ? 0.16 : 0.36, maxGain: 1,
       }, dtMs / 1000);
