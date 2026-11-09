@@ -136,7 +136,7 @@ with sync_playwright() as p:
         r = pg.evaluate("""() => { const on = (e) => { if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.top >= 0 && r.bottom <= innerHeight && r.left >= -1 && r.right <= innerWidth + 1; };
           const need = ['#connect-button', '#route-button', '#session-button', '#about-button', '#pedal', '#source-badge', '#demo-button', '#fs-button'];
           return { missing: need.filter((s) => !on(document.querySelector(s))), tiles: [...document.querySelectorAll('.scene-tile')].filter(on).length, options: [...document.querySelectorAll('.scene-row button')].filter(on).length, sideways: document.documentElement.scrollWidth > innerWidth, sub: document.getElementById('intro-sub').textContent }; }""")
-        check(f'a phone {label} shows the dock, the pedal button, the status, all eight scenes and all ten scenery options, none cut off', not r['missing'] and r['tiles'] == len(SCENES) and r['options'] == 10 and not r['sideways'], json.dumps(r))
+        check(f'a phone {label} shows the dock, the pedal button, the status, all nine scenes and all eleven scenery options (Customize route included), none cut off', not r['missing'] and r['tiles'] == len(SCENES) and r['options'] == 11 and not r['sideways'], json.dumps(r))
         if label == 'upright':
             check('on a phone the intro says to hold the pedal button, not Space', 'pedal button' in r['sub'] and 'Space' not in r['sub'], r['sub'])
             pg.dispatch_event('#pedal', 'pointerdown', {'pointerType': 'touch', 'isPrimary': True}); pg.wait_for_timeout(2500)
