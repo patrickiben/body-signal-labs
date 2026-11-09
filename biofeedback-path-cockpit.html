@@ -28,7 +28,7 @@
   --warn: #f1cf8e;
   --bad: #f4a3a3;
   --demo: #e6c7a3;
-  --serif: Georgia, "Times New Roman", serif;
+  --serif: var(--sans);   /* headings use the interface sans-serif; the serif read like an essay */
   --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -3963,20 +3963,23 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     { id: 'misty-pines', name: 'Misty ridges', description: 'Original Biofeedback mountain road · misty ridges, teal edges and drifting lights', skyTop: '#1f3a50', skyHz: '#a7c9c2', sun: '#ffe8c6', ground: '#1e3a2f', rock: '#39494a', fog: '#b0d3cc', edge: '#7ff0dd', amp: 64, ridge: 0.22, trees: 1, sea: 0, snow: 0, strata: 0, grid: 0, fogK: 0.0062, sunAz: -0.3, sunEl: 0.16, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 0, misty: 1, width: 2.25, turn: 1, rise: 1, winding: 1 },
     { id: 'snake-way', name: 'Snake Way', description: 'Serpentine cloud road · pale lilac scales and raised spines above a golden cloud sea', skyTop: '#785093', skyHz: '#e5a1b5', sun: '#ffe1a1', ground: '#b5bfdc', rock: '#a6a3d1', fog: '#e9bb83', edge: '#d0ddf0', amp: 0, ridge: 0, trees: 0, sea: 0, snow: 0, strata: 0, grid: 0, fogK: .0014, sunAz: -.6, sunEl: .3, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 0, misty: 0, snake: 1, width: 2.4, turn: 7, rise: .65, winding: .75 },
     { id: 'tron-grid', name: 'Tron grid', description: 'Lightcycle grid · obsidian highway, neon cyan & orange light walls, recognizer arches and wireframe peaks', skyTop: '#040a18', skyHz: '#0b2844', sun: '#7cf3ff', ground: '#061526', rock: '#0d2e4c', fog: '#082138', edge: '#33f0ff', amp: 52, ridge: .85, trees: 0, sea: 0, snow: 0, strata: 0, grid: 1, fogK: .0016, sunAz: 0, sunEl: .22, coast: 0, forest: 0, meadow: 0, alpine: 0, canyon: 0, orbit: 0, misty: 0, snake: 0, tron: 1, width: 2.65, turn: 1.65, rise: .35, winding: .9 },
-  ].map((b) => ({ orbit: 0, misty: 0, snake: 0, tron: 0, ...b, c: { skyTop: srgb(b.skyTop), skyHz: srgb(b.skyHz), sun: srgb(b.sun), ground: srgb(b.ground), rock: srgb(b.rock), fog: srgb(b.fog), edge: srgb(b.edge) } }));
+  ].map((b) => ({ orbit: 0, misty: 0, snake: 0, tron: 0, bend: 1, climb: 1, ...b, c: { skyTop: srgb(b.skyTop), skyHz: srgb(b.skyHz), sun: srgb(b.sun), ground: srgb(b.ground), rock: srgb(b.rock), fog: srgb(b.fog), edge: srgb(b.edge) } }));
 
   const WORLD_KEYS = ['coast', 'forest', 'meadow', 'alpine', 'canyon', 'orbit', 'misty', 'snake', 'tron'];
-  const NUMS = ['amp', 'ridge', 'trees', 'sea', 'snow', 'strata', 'grid', 'fogK', 'sunAz', 'sunEl', 'coast', 'forest', 'meadow', 'alpine', 'canyon', 'orbit', 'misty', 'snake', 'tron', 'width', 'turn', 'rise', 'winding'];
+  const NUMS = ['amp', 'ridge', 'trees', 'sea', 'snow', 'strata', 'grid', 'fogK', 'sunAz', 'sunEl', 'coast', 'forest', 'meadow', 'alpine', 'canyon', 'orbit', 'misty', 'snake', 'tron', 'width', 'turn', 'rise', 'winding', 'bend', 'climb'];
+  // Bend and climb sizes scale the whole road; 1 is each landscape's own road, and a scene without them gets 1.
+  const numDefault = (k) => (k === 'bend' || k === 'climb' ? 1 : 0);
+  const routeScale = (scene, elevation) => { const v = Array.isArray(scene) ? 1 : scene[elevation ? 'climb' : 'bend']; return Number.isFinite(v) ? v : 1; };
   const routeWeights = (scene = BIOMES[0]) => WORLD_KEYS.map((k, i) => Array.isArray(scene) ? scene[i] || 0 : scene[k] || 0);
   function mixScene(a, b, t) {
     const m = { c: {} };
     Object.keys(b.c).forEach(k => { m.c[k] = a.c[k].map((v, i) => lerp(v, b.c[k][i], t)); });
-    NUMS.forEach(k => { m[k] = lerp(a[k] ?? 0, b[k] ?? 0, t); });
+    NUMS.forEach(k => { m[k] = lerp(a[k] ?? numDefault(k), b[k] ?? numDefault(k), t); });
     return m;
   }
   function routeBlend(z, seed, scene, elevation) {
     const weights = routeWeights(scene);
-    return BIOMES.reduce((sum, b, i) => {
+    return routeScale(scene, elevation) * BIOMES.reduce((sum, b, i) => {
       if (weights[i] < .000001) return sum;
       const q = z * b.winding;
       const v = elevation ? b.rise * (7*Math.sin(q*.0071+.4+seed)+3.4*Math.sin(q*.0193+1.9+seed*2.3)+1.1*Math.sin(q*.0471+3.1)) : b.turn * (14*Math.sin(q*.0113+1+seed)+6.5*Math.sin(q*.0271+2.2+seed*1.7));
@@ -3989,7 +3992,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
   const gradeAt = (z, seed = 0, scene = BIOMES[0]) => (roadY(z + 3, seed, scene) - roadY(z - 3, seed, scene)) / 6;
   function routeUniforms(scene) {
     const w = routeWeights(scene);
-    return { uRouteA: w.slice(0, 4), uRouteB: w[4], uRouteC: w[5], uRouteD: w[6], uRouteE: w[7], uRouteF: w[8],
+    return { uRouteA: w.slice(0, 4), uRouteB: w[4], uRouteC: w[5], uRouteD: w[6], uRouteE: w[7], uRouteF: w[8], uBendD: routeScale(scene, false) - 1, uClimbD: routeScale(scene, true) - 1,
       uCoast: w[0], uForest: w[1], uMeadow: w[2], uAlpine: w[3], uCanyon: w[4], uOrbit: w[5], uMisty: w[6], uSnake: w[7], uTron: w[8],
       uWidth: Array.isArray(scene) ? BIOMES.reduce((v, b, i) => v + b.width * w[i], 0) : scene.width };
 
@@ -3999,6 +4002,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
     const t = tb * tb * (3 - 2 * tb);
     const mix3 = (k) => a.c[k].map((v, i) => lerp(v, b.c[k][i], t));
     const mixN = (k) => lerp(a[k], b[k], t);
+    const mixK = (k) => lerp(a[k] ?? 1, b[k] ?? 1, t);      // bend and climb: 1 when a scene does not carry them
     const d = Math.max(0, Math.min(1, Number.isFinite(dusk) ? dusk : 0));
 
     // Golden hour (peaks around 0.18): radiant amber sun, warm apricot horizon, golden illuminated mist and ground.
@@ -4070,7 +4074,7 @@ void main(){ vec2 q=gl_PointCoord-.5; float g=smoothstep(.5,.12,length(q)); o=ve
       uGround: ground, uRock: rock, uFog: fog, uEdge: mix3('edge'),
       uSunDir: [sx / sl, sunEl / sl, sz / sl],
       uCoast: mixN('coast'), uForest: mixN('forest'), uMeadow: mixN('meadow'), uAlpine: mixN('alpine'), uCanyon: mixN('canyon'), uOrbit: mixN('orbit'), uMisty: mixN('misty'), uSnake: mixN('snake'), uTron: tr, uWidth: mixN('width'), uRouteA: ['coast','forest','meadow','alpine'].map(mixN), uRouteB: mixN('canyon'), uRouteC: mixN('orbit'), uRouteD: mixN('misty'), uRouteE: mixN('snake'), uRouteF: tr,
-      uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: d, uFogK: mixN('fogK'), uLattice: 0.0,
+      uAmp: mixN('amp'), uRidge: mixN('ridge'), uSea: mixN('sea'), uSnow: mixN('snow'), uStrata: mixN('strata'), uGrid: mixN('grid'), uTrees: mixN('trees'), uDusk: d, uFogK: mixN('fogK'), uLattice: 0.0, uBendD: mixK('bend') - 1, uClimbD: mixK('climb') - 1,
     };
   }
 
@@ -4083,11 +4087,11 @@ uniform float uAmp,uRidge,uSea,uSnow,uStrata,uGrid,uTrees,uDusk,uFogK;
 uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uOrbit,uMisty,uSnake,uTron,uWidth,uTravelSpeed,uLattice;
 uniform float uShimmer,uAurora,uHaze,uWeather,uWarm,uBreath,uBreathOn,uNebula;
 uniform vec4 uGhost;
-uniform vec4 uRouteA; uniform float uRouteB,uRouteC,uRouteD,uRouteE,uRouteF;
+uniform vec4 uRouteA; uniform float uRouteB,uRouteC,uRouteD,uRouteE,uRouteF; uniform float uBendD,uClimbD;
 float routeX(float z,float turn,float winding){z*=winding;return turn*(14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7));}
 float routeY(float z,float rise,float winding){z*=winding;return rise*(7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1));}
-float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);if(uRouteD>.000001)v+=uRouteD*routeX(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeX(z,7.,.75);if(uRouteF>.000001)v+=uRouteF*routeX(z,1.65,.9);return v;}
-float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);if(uRouteD>.000001)v+=uRouteD*routeY(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeY(z,.65,.75);if(uRouteF>.000001)v+=uRouteF*routeY(z,.35,.9);return v;}
+float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);if(uRouteD>.000001)v+=uRouteD*routeX(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeX(z,7.,.75);if(uRouteF>.000001)v+=uRouteF*routeX(z,1.65,.9);return v*(1.+uBendD);}
+float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);if(uRouteD>.000001)v+=uRouteD*routeY(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeY(z,.65,.75);if(uRouteF>.000001)v+=uRouteF*routeY(z,.35,.9);return v*(1.+uClimbD);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return textureLod(uN,(i+f+.5)/256.,0.).r;}
 const mat2 R=mat2(.8,.6,-.6,.8);
 float fbm2(vec2 p){return (vn(p)+.5*vn(R*p*2.03+3.1))/1.5;}
@@ -4616,7 +4620,7 @@ vec4 mistyWorld(vec3 ro,vec3 rd,vec2 sv){
     }
     // the road
     float aaRoad=max(.18,t/(uRes.y*uFocal));
-    float rm=1.-smoothstep(2.25-aaRoad,2.25+aaRoad,d);
+    float rm=1.-smoothstep(uWidth-aaRoad,uWidth+aaRoad,d);
     if(!water){
       vec3 asphalt=mix(vec3(.022,.023,.03),uFog*.05,.4)+alb*.04;
       c=mix(c,asphalt*(uSunC*dif*1.2+amb),rm);
@@ -4631,7 +4635,7 @@ vec4 mistyWorld(vec3 ro,vec3 rd,vec2 sv){
     }
     if(uGhost.w>0.)emC+=mix(uEdge,vec3(1.),.45)*exp(-dot(p.xz-uGhost.xz,p.xz-uGhost.xz)/9.)*.75*uGhost.w;
     float aaSide=max(.02,t/(uRes.y*uFocal));
-    float side=foliageBand(d-2.25,.07,aaSide);
+    float side=foliageBand(d-uWidth,.07,aaSide);
     float spark=pow(vn(vec2(p.z*.3,uT*1.3)),2.5)*1.8*(1.-smoothstep(35.,140.,t));
     emC+=uEdge*side*(.055+uSpark*spark*.03)*smoothstep(2.2,10.,t);
     float fog=1.-exp(-pow(t*uFogK,1.55));
@@ -5498,11 +5502,11 @@ precision highp float;
 uniform vec3 uCam,uRight,uUp,uFwd; uniform float uFocal,uAsp,uZ,uPx,uSeed,uSpeedN,uSpark,uShimmer;
 out float vA;
 float h(float n){return fract(sin(n)*43758.5453);}
-uniform vec4 uRouteA; uniform float uRouteB,uRouteC,uRouteD,uRouteE,uRouteF;
+uniform vec4 uRouteA; uniform float uRouteB,uRouteC,uRouteD,uRouteE,uRouteF; uniform float uBendD,uClimbD;
 float routeX(float z,float turn,float winding){z*=winding;return turn*(14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7));}
 float routeY(float z,float rise,float winding){z*=winding;return rise*(7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1));}
-float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);if(uRouteD>.000001)v+=uRouteD*routeX(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeX(z,7.,.75);if(uRouteF>.000001)v+=uRouteF*routeX(z,1.65,.9);return v;}
-float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);if(uRouteD>.000001)v+=uRouteD*routeY(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeY(z,.65,.75);if(uRouteF>.000001)v+=uRouteF*routeY(z,.35,.9);return v;}
+float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);if(uRouteD>.000001)v+=uRouteD*routeX(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeX(z,7.,.75);if(uRouteF>.000001)v+=uRouteF*routeX(z,1.65,.9);return v*(1.+uBendD);}
+float roadY(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeY(z,.4,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeY(z,.3,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeY(z,.5,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeY(z,.7,.65);if(uRouteB>.000001)v+=uRouteB*routeY(z,.25,1.45);if(uRouteC>.000001)v+=uRouteC*routeY(z,1.05,.55);if(uRouteD>.000001)v+=uRouteD*routeY(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeY(z,.65,.75);if(uRouteF>.000001)v+=uRouteF*routeY(z,.35,.9);return v*(1.+uClimbD);}
 void main(){
   float i=float(gl_VertexID);
   float a=h(i*1.13),b=h(i*2.71),c=h(i*4.33);

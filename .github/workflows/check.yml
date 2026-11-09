@@ -26,6 +26,7 @@ jobs:
           node tests/session_regressions.cjs
           node tests/eeg_drive.cjs
           node tests/cadence_motion.cjs
+          node tests/route_shape.cjs
           node tests/midi_drive.cjs
           python3 tests/site_links.py
           node tests/bsl-manuscript-math.test.mjs

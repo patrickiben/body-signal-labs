@@ -45,6 +45,7 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
   #new-route { order: 2; }
   .scene-row > .seg:nth-child(2) { order: 3; }
   #auto-scene { order: 4; }
+  #custom-button { order: 5; }
   body[data-app="endless-cockpit"] .intro .eyebrow { display: none; }
   body[data-app="endless-cockpit"] .intro { top: 46%; }
 }
@@ -84,3 +85,14 @@ body[data-app="endless-cockpit"] .intro { top: 37%; }
 /* Readouts stay legible over the bright cloud sea without covering the route. */
 body[data-app="endless-cockpit"] #hud { position: relative; isolation: isolate; }
 body[data-app="endless-cockpit"] #hud::before { content: ""; position: absolute; inset: -8px -14px; z-index: -1; pointer-events: none; border-radius: 16px; border: 1px solid rgba(191, 194, 236, 0.14); background: linear-gradient(180deg, rgba(14, 19, 34, 0.72), rgba(8, 12, 23, 0.84)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 12px 32px rgba(2, 6, 19, 0.45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+
+/* Customize route: the button shows a lit dot while a custom route is on; the panel's sliders mark each landscape's own value */
+#custom-button::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--faint); vertical-align: 1px; }
+#custom-button[data-active="true"] { color: var(--ink); }
+#custom-button[data-active="true"]::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+#custom-sheet h2 { font-family: var(--sans); font-weight: 500; letter-spacing: -0.4px; }
+.custom-grid { display: grid; gap: 16px; }
+.custom-field b { font-size: 13px; }
+.custom-track { position: relative; display: block; }
+.own-tick { position: absolute; bottom: -3px; width: 2px; height: 9px; margin-left: -1px; border-radius: 1px; background: var(--muted); pointer-events: none; }
+.custom-field small { color: var(--faint); font-size: 10.5px; }
