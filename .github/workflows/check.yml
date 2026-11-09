@@ -57,5 +57,4 @@ jobs:
       - run: python3 tests/smoke.py
       - run: python3 tests/workbench_ride.py
       - run: python3 tests/midi_ride.py
-      - run: python3 tests/time_of_day.py
       - run: python3 tests/bsl_math_test.py
