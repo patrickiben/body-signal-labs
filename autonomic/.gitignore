@@ -1,0 +1,34 @@
+.DS_Store
+node_modules/
+.venv-bridge/
+__pycache__/
+*.pyc
+playwright-report/
+test-results/
+coverage/
+*.log
+
+# Keep personal recordings out of version control. Examples are synthetic.
+private-data/
+local-data/
+personal-data/
+imports/
+exports/
+apple_health_export/
+export.xml
+export.zip
+HealthExport*.zip
+
+# Local editor and environment files.
+.vscode/
+.idea/
+.env
+.env.*
+!.env.example
+
+# JSON files downloaded by this app may contain personal context.
+autonomic-session*.json
+_site/
+
+# Explicit personal reference downloads
+autonomic-reference*.json

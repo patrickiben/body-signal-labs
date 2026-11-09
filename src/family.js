@@ -4,7 +4,7 @@
   'use strict';
   const MEMBERS = [
     { id: 'home', label: 'Body Signal Labs', href: 'index.html' },
-    { id: 'autonomic-telemetry', label: 'Autonomic Telemetry', href: '../autonomic-telemetry/Autonomic_Telemetry_Console.html' },
+    { id: 'autonomic-telemetry', label: 'Autonomic Telemetry', href: 'autonomic/Autonomic_Telemetry_Console.html' },
     { id: 'endless-cockpit', label: 'Endless Cockpit', href: 'endless-cockpit.html' },
     { id: 'biofeedback-path-cockpit', label: 'Biofeedback Path Cockpit', href: 'biofeedback-path-cockpit.html' },
   ];

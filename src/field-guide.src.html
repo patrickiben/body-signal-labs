@@ -4,7 +4,7 @@
     <a class="site-brand" href="index.html"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M3 15h5l2-5 3.5 9 2-4H21"/></svg>__SITE_NAME__</a>
     <nav class="site-nav" aria-label="Pages"><a href="index.html">Home</a><a href="Body_Signal_Labs_Offline.html">Offline Workbench</a><a href="__REPO_URL__" rel="noopener">Source</a></nav>
   </header>
-  <nav class="family" aria-label="Body Signal Labs"><a href="index.html">Body Signal Labs</a><a href="../autonomic-telemetry/Autonomic_Telemetry_Console.html">Autonomic Telemetry</a><a href="endless-cockpit.html">Endless Cockpit</a><a href="biofeedback-path-cockpit.html">Biofeedback Path Cockpit</a></nav>
+  <nav class="family" aria-label="Body Signal Labs"><a href="index.html">Body Signal Labs</a><a href="autonomic/Autonomic_Telemetry_Console.html">Autonomic Telemetry</a><a href="endless-cockpit.html">Endless Cockpit</a><a href="biofeedback-path-cockpit.html">Biofeedback Path Cockpit</a></nav>
   <main class="guide">
     <div class="hero-title">
       <p class="eyebrow">Field guide</p>
@@ -14,7 +14,7 @@
 
     <section id="status">
       <h2>Where this stands</h2>
-      <p>Endless Cockpit and Biofeedback Path Cockpit were tested in Chrome on a Mac with simulated Bluetooth sensors that send real packet bytes. <b>No real cadence sensor or heart-rate strap has been connected to either yet.</b> Autonomic Telemetry has its own <a href="../autonomic-telemetry/Autonomic_Telemetry_Field_Guide.html">field guide</a>.</p>
+      <p>Endless Cockpit and Biofeedback Path Cockpit were tested in Chrome on a Mac with simulated Bluetooth sensors that send real packet bytes. <b>No real cadence sensor or heart-rate strap has been connected to either yet.</b> Autonomic Telemetry's setup and limits are <a href="#autonomic">below</a>.</p>
     </section>
 
     <section id="endless">
@@ -35,13 +35,46 @@
       <p>Watch and Train keep their weather, breathing and fog controls, with the same signal calculations as before. Older Biofeedback recordings use their original scene catalog and renderer, so their saved scene numbers still refer to the environments they recorded.</p>
       <p><b>Brainwaves drive:</b> connect your Muse S, then calibrate with your eyes open while looking at the scene. A lower EEG beta/alpha ratio relative to your reference increases speed and steadiness. The score is an experimental game mapping, not a measurement of mental clarity. Invalid or stale EEG makes the ride coast to a stop; its quality message explains why. The demo and recordings keep their source labels.</p>
       <p><b>MIDI input:</b> in Ride, any MIDI instrument connected to the computer can move the bike, whether drums, pads or a keyboard. Open Connect and press Connect under MIDI input. Every note pushes the bike forward, harder notes push more, and when you stop playing it coasts down. While you play, the heart shift waits, as it does while you pedal. MIDI works in Chrome or Edge on a computer or on Android; iPhone browsers have no MIDI.</p>
-      <p><b>Your rides in the offline workbench:</b> with a heart-rate strap connected, open Session and press Start recording before you ride, then Export TCX when you finish. Open that file in the <a href="offline.html">offline workbench</a>. It runs the parts of the three manuscripts that work on heart rate and cadence, and lists the parts that stay on built-in sample rides.</p>
+      <p><b>Your rides in the offline workbench:</b> with a heart-rate strap connected, open Session and press Start recording before you ride, then Export TCX when you finish. Open that file in the <a href="offline.html">offline workbench</a>. It shows which led, your pedaling or your heart rate; how fast your heart rate recovered after your hardest effort; and each change of cadence with your heart rate's answer.</p>
       <p>Each sensor says whether it is not connected, waiting for you to choose, refused, missing, connected with no reading, live, or disconnected. Inferred values are never measured, and none of it is medical. It is not therapy.</p>
     </section>
 
     <section id="autonomic">
       <h2>Autonomic Telemetry</h2>
-      <p>A labeled synthetic demo runs in any browser. Live heart, pulse and brain signals reach it through a small bridge that runs on a Mac and handles Bluetooth, and an iPhone on the same Wi-Fi can show the picture. Its <a href="../autonomic-telemetry/Autonomic_Telemetry_Field_Guide.html">field guide</a> covers the setup, the estimate and its limits.</p>
+      <p>A labeled synthetic demo runs in any browser. Live heart, pulse and brain signals reach it through a small bridge that runs on a Mac and handles Bluetooth, and an iPhone on the same Wi-Fi can show the picture.</p>
+
+      <h3>The experience</h3>
+      <p>Work opens as a slow spiral galaxy: lower estimates are smaller and cooler aqua, middle values are lavender, and higher estimates spread farther with brighter coral/peach light. The dotted orbit marks the zero-reference origin; About explains the mapping.</p>
+      <p>Rest turns the session into a lattice of light seen through a gravitational lens. Each layer is 10 seconds of the session, newest nearest; a higher estimate makes its layer warmer and denser. After a few seconds the controls withdraw, leaving Record and Leave at the edge. Moving the pointer, a tap, or Tab brings them back; Esc leaves Rest.</p>
+      <p>The initial source is Ambient: decorative movement with no device connected. Choose Try a demo to see explicitly synthetic variation, or Connect for real wearable input. No timer starts automatically.</p>
+
+      <h3>Your personal estimate</h3>
+      <p>The shift reading uses heart rate, pulse RMSSD, actual pulse SDNN, EEG beta/alpha, supplied breathing, and covariance distance, with bounded temporal modifiers. Let a fixed two-minute personal reference form. Zero is its origin on the one-sided 0–100 scale. The available channels and their weights freeze with the reference. The current Muse/Hume bridge can supply four physiological channels; breathing remains unavailable. A missing required channel holds the estimate. Newly available channels require a new reference. HR-only use is explicitly limited. Weights and thresholds are experimental.</p>
+      <p>Tap the number to inspect the reference, contributions and model details. An unavailable estimate shows a dash, not zero. A low value means little response under this model, not proof of calmness. This is an inference from physiological patterns, not a mental-state diagnosis or a validated stress, attention, meditation, or health score. A change does not identify its cause. <a href="autonomic/docs/METHODS.md">Formula, reference, and uncertainty</a></p>
+
+      <h3 id="autonomic-devices">Muse and Hume</h3>
+      <p>The bridge can extract eligible pulse-interval RMSSD and actual SDNN from Muse optical data. This is PRV—pulse rate variability—not ECG-derived HRV. Motion, contact, breathing, and peak detection can affect it. Hume's reported rate does not supply individual pulse intervals or RMSSD. When Hume is absent, accepted Muse pulse intervals can provide rate after two optical channels agree; rate and PRV then share one sensor and are not independent confirmations. A changed rate source rebuilds the personal reference.</p>
+      <p>Open Connect to choose a device. The Mac bridge detects Classic or newer Athena Muse transports. Direct Web Bluetooth on supported desktop Chromium or Chrome on Android is Classic-only; use the Mac for an updated Athena Muse S and for iPhone. Bounded physical tests passed on one Athena headband and one Hume band; this does not establish every firmware's compatibility, indefinite operation, or physiological accuracy. <a href="autonomic/docs/DEVICES.md">Device guide</a> · <a href="autonomic/docs/BIOREACTIVITY.md">Visual mappings</a></p>
+      <p id="autonomic-apple-watch">Apple Watch data stays separate Health context: a web page has no native HealthKit access or direct Watch Bluetooth feed here. The Signal Lab can load an Apple Health export as retrospective context, never a live Watch feed or reference seed.</p>
+
+      <h3>On your iPhone</h3>
+      <p>On the Mac, open the repository's Start-iPhone-Bridge.command in Terminal; the first run installs the bridge dependencies. Keep the Mac awake, with both devices on the same trusted Wi-Fi. In Connect on the Mac, scan the phone QR code with your iPhone camera and open the link in Safari. The Mac does the Bluetooth work; the phone receives signals from the local bridge. The local bridge uses unencrypted HTTP: use trusted private Wi-Fi, keep the link and QR code private, and do not expose its port to the internet. <a href="autonomic/docs/BRIDGE.md">Full setup and troubleshooting</a></p>
+
+      <h3>Autonomic's badges</h3>
+      <table>
+        <tbody>
+          <tr><th>Live · Muse / Hume</th><td>Accepted recent packets from the named device.</td></tr>
+          <tr><th>Ambient · waiting for device</th><td>Connecting or waiting for the first usable data.</td></tr>
+          <tr><th>Ambient · signal paused</th><td>The stream has become stale or interrupted.</td></tr>
+        </tbody>
+      </table>
+      <p>Waiting, held, or stale estimates remove the score-encoded halo and show a distinct ambient sky. Unavailable input is never shown as a return to the reference. A Live badge can coexist with feature warm-up or reference collection.</p>
+
+      <h3>Make it yours</h3>
+      <p>Space offers less on-screen copy, gentler movement, a still image, richer or softer color, and full screen where supported. Rest starts a four-second inhale and six-second exhale cue, which you can turn off; it guides timing and does not measure breathing or promise a response. Work's Elevation cue starts off; switch it on in Space. If enabled, a gentle message appears after the estimate remains at least 68 for 60 seconds of valid data. Rest shows change since entering that mode and a 60-second trend. Timer offers 10, 25, or 50 minutes, or a custom duration from 1 to 360 minutes; when time is up, the space stays open.</p>
+
+      <h3>Signal Lab</h3>
+      <p><a href="autonomic/Autonomic_Telemetry_Signal_Lab.html">Signal Lab</a> runs the same integrated model as the main visual. Open an exported live analysis session to replay its exact features, sources, reference, calculation, and events. The Lab also keeps the earlier three-signal comparison score, separate research lenses, markers, and recording import/export. <a href="autonomic/docs/SIGNAL_LAB_METHODS.md">Lab formulas, input contract, and limits</a> · <a href="autonomic/docs/RESEARCH_ENGINE.md">Research engine</a></p>
     </section>
 
     <section id="browsers">
@@ -75,6 +108,7 @@
       <h2>Safety and privacy</h2>
       <p>A regional brightness limiter moderates changes, and reduced motion tightens it and calms the camera. <a href="docs/VALIDATION.md">Validation</a> records the measured motion cases and their limits; results from an earlier scene or speed do not cover every later combination. If flashing or moving light affects you, use your system's reduced-motion setting.</p>
       <p>Heart and cadence readings are handled in your browser. Optional EEG features travel from your Mac bridge to the cockpit on your private local connection. A session file stays on your computer unless you share it. No page here is a medical device.</p>
+      <p>In Autonomic Telemetry, raw packets, derived features, personal references, and visual settings stay in memory. There is no account, recording database, automatic browser saving, or cloud upload of readings; session and reference downloads are explicit local actions. Software tests and simulation check code behavior; bounded physical tests establish transport on the tested devices and do not validate feature extraction or the shift model. <a href="autonomic/docs/VALIDATION.md">Autonomic validation</a></p>
     </section>
 
     <section id="credits">

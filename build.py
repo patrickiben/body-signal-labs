@@ -11,8 +11,8 @@ REPO_URL = "https://github.com/patrickiben/body-signal-labs"
 
 def fill(text):
     out = text.replace("__SITE_NAME__", SITE_NAME).replace("__REPO_URL__", REPO_URL)
-    if "__BSL_MANUSCRIPT_MATH_JS__" in out:
-        out = out.replace("__BSL_MANUSCRIPT_MATH_JS__", (SRC / "bsl-manuscript-math.js").read_text())
+    if "__BSL_MATH_JS__" in out:
+        out = out.replace("__BSL_MATH_JS__", (SRC / "bsl-math.js").read_text())
     return out
 
 
@@ -69,8 +69,8 @@ def static(out, src, title, description):
 
 if __name__ == "__main__":
     page("endless-cockpit.html", "Endless Cockpit", "Nine procedural cycling routes: Golden coast, Tropical, Meadow lanes, Autumn Lake, Red canyon, Rainbow orbit, Misty ridges, Snake Way above golden clouds and Tron grid, moving at your cadence.", ["ride.js", "cadence-motion.js", "cyclingscene.js", "route-shape.js", "endless.js"], extra_css=(SRC / "endless.css").read_text())
-    page("biofeedback-path-cockpit.html", "Biofeedback Path Cockpit", "Nine cycling scenes whose weather, grade and fog follow your body, with cadence-powered riding or an optional Muse S Athena EEG balance game control. Not a medical device.", ["vendor/autonomic/research-math.js", "vendor/autonomic/multivariate-engine.js", "bio.js", "eeg-drive.js", "cadence-motion.js", "pathscene.js", "cyclingscene.js", "midi-drive.js", "biofeedback.js"], extra_css=(SRC / "biofeedback.css").read_text())
+    page("biofeedback-path-cockpit.html", "Biofeedback Path Cockpit", "Nine cycling scenes whose weather, grade and fog follow your body, with cadence-powered riding or an optional Muse S Athena EEG balance game control. Not a medical device.", ["../autonomic/research-math.js", "../autonomic/multivariate-engine.js", "bio.js", "eeg-drive.js", "cadence-motion.js", "pathscene.js", "cyclingscene.js", "midi-drive.js", "biofeedback.js"], extra_css=(SRC / "biofeedback.css").read_text())
     static("index.html", "index.src.html", "Body Signal Labs", "Autonomic Telemetry, Endless Cockpit and Biofeedback Path Cockpit: immersive scenes that follow signals from your body, in the browser.")
     static("field-guide.html", "field-guide.src.html", "Field Guide", "How to connect a cadence or heart-rate sensor to these pages, what each status means, and what is measured or inferred.")
-    static("Body_Signal_Labs_Offline.html", "offline.src.html", "Workbench · Body Signal Labs", "The math from three research papers, run in your browser on sample rides and on a ride you export from the Biofeedback Path Cockpit.")
-    static("offline.html", "offline.src.html", "Workbench · Body Signal Labs", "The math from three research papers, run in your browser on sample rides and on a ride you export from the Biofeedback Path Cockpit.")
+    static("Body_Signal_Labs_Offline.html", "offline.src.html", "Workbench · Body Signal Labs", "Open a ride you recorded in the Biofeedback Path Cockpit and see how your heart rate followed your pedaling. Runs in your browser; nothing is sent.")
+    static("offline.html", "offline.src.html", "Workbench · Body Signal Labs", "Open a ride you recorded in the Biofeedback Path Cockpit and see how your heart rate followed your pedaling. Runs in your browser; nothing is sent.")

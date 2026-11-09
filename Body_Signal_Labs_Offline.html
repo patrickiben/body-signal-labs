@@ -9,7 +9,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#101525">
 <title>Workbench · Body Signal Labs</title>
-<meta name="description" content="The math from three research papers, run in your browser on sample rides and on a ride you export from the Biofeedback Path Cockpit.">
+<meta name="description" content="Open a ride you recorded in the Biofeedback Path Cockpit and see how your heart rate followed your pedaling. Runs in your browser; nothing is sent.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101525'/%3E%3Cpath d='M5 17h6l2.5-6 4 11 2.5-5H27' fill='none' stroke='%23b8b7ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
 :root {
@@ -327,14 +327,14 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
     <a class="site-brand" href="index.html"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M3 15h5l2-5 3.5 9 2-4H21"/></svg>Body Signal Labs</a>
     <nav class="site-nav" aria-label="Pages"><a href="index.html">Home</a><a href="field-guide.html">Field guide</a><a href="https://github.com/patrickiben/body-signal-labs" rel="noopener">Source</a></nav>
   </header>
-  <nav class="family" aria-label="Body Signal Labs"><a href="index.html">Body Signal Labs</a><a href="../autonomic-telemetry/Autonomic_Telemetry_Console.html">Autonomic Telemetry</a><a href="endless-cockpit.html">Endless Cockpit</a><a href="biofeedback-path-cockpit.html">Biofeedback Path Cockpit</a></nav>
+  <nav class="family" aria-label="Body Signal Labs"><a href="index.html">Body Signal Labs</a><a href="autonomic/Autonomic_Telemetry_Console.html">Autonomic Telemetry</a><a href="endless-cockpit.html">Endless Cockpit</a><a href="biofeedback-path-cockpit.html">Biofeedback Path Cockpit</a></nav>
 
   <style>
-    #manuscript-workbench,
-    #manuscript-workbench * {
+    #workbench,
+    #workbench * {
       box-sizing: border-box;
     }
-    #manuscript-workbench {
+    #workbench {
       margin: 22px auto;
       max-width: 1180px;
       width: 100%;
@@ -347,7 +347,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
         rgba(17, 20, 32, 0.94);
       color: var(--ink, #f4f1ea);
     }
-    #manuscript-workbench .mw-header {
+    #workbench .mw-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
@@ -356,31 +356,31 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       padding-bottom: 14px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     }
-    #manuscript-workbench .mw-header > div {
+    #workbench .mw-header > div {
       min-width: 0;
       max-width: 100%;
     }
-    #manuscript-workbench h1 {
-      font-family: var(--serif, Georgia, serif);
+    #workbench h1 {
+      font-family: var(--serif);
       font-weight: 400;
       font-size: clamp(24px, 3.2vw, 34px);
       line-height: 1.15;
       margin: 4px 0 8px 0;
     }
-    #manuscript-workbench .mw-sub {
+    #workbench .mw-sub {
       color: var(--muted, #b5b2bd);
       font-size: 14px;
       line-height: 1.55;
       max-width: 82ch;
       margin: 0;
     }
-    #manuscript-workbench .mw-badges {
+    #workbench .mw-badges {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
       margin-top: 10px;
     }
-    #manuscript-workbench .mw-badge {
+    #workbench .mw-badge {
       font: 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
       padding: 4px 9px;
       border-radius: 999px;
@@ -388,7 +388,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       background: rgba(12, 16, 26, 0.85);
       color: #bfe8a6;
     }
-    #manuscript-workbench .mw-btn {
+    #workbench .mw-btn {
       padding: 8px 13px;
       border-radius: 10px;
       font-size: 12px;
@@ -398,12 +398,12 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       color: var(--ink, #f4f1ea);
       cursor: pointer;
     }
-    #manuscript-workbench .mw-btn.primary {
+    #workbench .mw-btn.primary {
       background: #bfe8a6;
       color: #0b1612;
       border-color: #bfe8a6;
     }
-    #manuscript-workbench .mw-controls {
+    #workbench .mw-controls {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -414,7 +414,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       background: rgba(11, 14, 24, 0.82);
       border: 1px solid rgba(255, 255, 255, 0.10);
     }
-    #manuscript-workbench .mw-controls label {
+    #workbench .mw-controls label {
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -423,8 +423,8 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       min-width: 145px;
       flex: 1 1 160px;
     }
-    #manuscript-workbench .mw-controls select,
-    #manuscript-workbench .mw-controls input[type="range"] {
+    #workbench .mw-controls select,
+    #workbench .mw-controls input[type="range"] {
       width: 100%;
       background: #141829;
       color: var(--ink, #f4f1ea);
@@ -433,13 +433,13 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       padding: 6px 8px;
       font-size: 12px;
     }
-    #manuscript-workbench .mw-tabs {
+    #workbench .mw-tabs {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       margin: 14px 0;
     }
-    #manuscript-workbench .mw-tab-btn {
+    #workbench .mw-tab-btn {
       padding: 8px 13px;
       border-radius: 10px;
       font-size: 12px;
@@ -449,115 +449,115 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       color: var(--muted, #b5b2bd);
       cursor: pointer;
     }
-    #manuscript-workbench .mw-tab-btn[aria-selected="true"] {
+    #workbench .mw-tab-btn[aria-selected="true"] {
       background: #bfe8a6;
       color: #0b1612;
       border-color: #bfe8a6;
     }
-    #manuscript-workbench .mw-pane {
+    #workbench .mw-pane {
       display: none;
     }
-    #manuscript-workbench .mw-pane.active {
+    #workbench .mw-pane.active {
       display: block;
     }
-    #manuscript-workbench .mw-source { margin: 12px 0 0; max-width: 72ch; font-size: 13px; line-height: 1.5; color: #cfd3df; }
-    #manuscript-workbench .mw-source strong { color: #f1cf8e; }
-    #manuscript-workbench .mw-note { font-size: 12.5px; line-height: 1.5; color: #b5b2bd; margin: 6px 0 10px; }
-    #manuscript-workbench .mw-ride-chart { display: block; width: 100%; height: auto; margin: 6px 0 4px; }
-    #manuscript-workbench #mw-pane-ride h4 { margin: 18px 0 4px; font-size: 13px; color: #e8e4f0; font-weight: 600; }
-    #manuscript-workbench .mw-list { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.55; color: #b5b2bd; }
-    #manuscript-workbench .mw-list strong { color: #e8e4f0; }
-    #manuscript-workbench .mw-lead { margin: 10px 0 8px; max-width: 72ch; font-size: 15px; line-height: 1.55; color: #ece9f3; }
-    #manuscript-workbench .mw-plain { margin: 6px 0 12px; }
-    #manuscript-workbench .mw-plain ul { margin: 6px 0 8px; padding-left: 18px; }
-    #manuscript-workbench .mw-plain li { margin: 7px 0; font-size: 15px; line-height: 1.5; color: #ece9f3; }
-    #manuscript-workbench .mw-plain-foot { font-size: 12.5px; color: #b5b2bd; margin: 4px 0 0; }
-    #manuscript-workbench details.mw-math > summary { cursor: pointer; margin: 16px 0 4px; font-weight: 600; color: #f1cf8e; }
-    #manuscript-workbench .mw-kpi-grid {
+    #workbench .mw-source { margin: 12px 0 0; max-width: 72ch; font-size: 13px; line-height: 1.5; color: #cfd3df; }
+    #workbench .mw-source strong { color: #f1cf8e; }
+    #workbench .mw-note { font-size: 12.5px; line-height: 1.5; color: #b5b2bd; margin: 6px 0 10px; }
+    #workbench .mw-ride-chart { display: block; width: 100%; height: auto; margin: 6px 0 4px; }
+    #workbench #mw-pane-ride h4 { margin: 18px 0 4px; font-size: 13px; color: #e8e4f0; font-weight: 600; }
+    #workbench .mw-list { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.55; color: #b5b2bd; }
+    #workbench .mw-list strong { color: #e8e4f0; }
+    #workbench .mw-lead { margin: 10px 0 8px; max-width: 72ch; font-size: 15px; line-height: 1.55; color: #ece9f3; }
+    #workbench .mw-plain { margin: 6px 0 12px; }
+    #workbench .mw-plain ul { margin: 6px 0 8px; padding-left: 18px; }
+    #workbench .mw-plain li { margin: 7px 0; font-size: 15px; line-height: 1.5; color: #ece9f3; }
+    #workbench .mw-plain-foot { font-size: 12.5px; color: #b5b2bd; margin: 4px 0 0; }
+    #workbench details.mw-math > summary { cursor: pointer; margin: 16px 0 4px; font-weight: 600; color: #f1cf8e; }
+    #workbench .mw-kpi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
       gap: 10px;
       margin: 12px 0;
     }
-    #manuscript-workbench .mw-kpi {
+    #workbench .mw-kpi {
       padding: 12px;
       border-radius: 12px;
       background: rgba(11, 14, 24, 0.78);
       border: 1px solid rgba(255, 255, 255, 0.11);
     }
-    #manuscript-workbench .mw-kpi .mw-kpi-label {
+    #workbench .mw-kpi .mw-kpi-label {
       font-size: 11px;
       color: var(--muted, #b5b2bd);
       text-transform: uppercase;
       letter-spacing: 0.6px;
     }
-    #manuscript-workbench .mw-kpi .mw-kpi-val {
+    #workbench .mw-kpi .mw-kpi-val {
       font: 650 19px/1.25 ui-monospace, SFMono-Regular, Menlo, monospace;
       color: #bfe8a6;
       margin-top: 4px;
     }
-    #manuscript-workbench .mw-kpi .mw-kpi-sub {
+    #workbench .mw-kpi .mw-kpi-sub {
       font-size: 11px;
       color: #9693a6;
       margin-top: 3px;
     }
-    #manuscript-workbench .mw-two-col {
+    #workbench .mw-two-col {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
       gap: 14px;
       margin: 14px 0;
     }
-    #manuscript-workbench .mw-card {
+    #workbench .mw-card {
       padding: 14px;
       border-radius: 14px;
       background: rgba(13, 17, 29, 0.86);
       border: 1px solid rgba(255, 255, 255, 0.11);
       min-width: 0;
     }
-    #manuscript-workbench .mw-card h3 {
+    #workbench .mw-card h3 {
       font-size: 13px;
       color: #bfe8a6;
       margin: 0 0 8px 0;
     }
-    #manuscript-workbench .mw-card p.small {
+    #workbench .mw-card p.small {
       font-size: 12px;
       color: var(--muted, #b5b2bd);
       line-height: 1.45;
       margin: 6px 0 0 0;
     }
-    #manuscript-workbench .mw-svg-wrap {
+    #workbench .mw-svg-wrap {
       width: 100%;
       overflow: hidden;
       border-radius: 10px;
       background: #080b14;
       border: 1px solid rgba(191, 232, 166, 0.16);
     }
-    #manuscript-workbench .mw-svg-wrap svg {
+    #workbench .mw-svg-wrap svg {
       display: block;
       width: 100%;
       height: auto;
     }
-    #manuscript-workbench .mw-table-wrap {
+    #workbench .mw-table-wrap {
       width: 100%;
       overflow-x: auto;
       margin-top: 8px;
       border-radius: 10px;
       border: 1px solid rgba(255, 255, 255, 0.12);
     }
-    #manuscript-workbench table.mw-table {
+    #workbench table.mw-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
       font-variant-numeric: tabular-nums;
     }
-    #manuscript-workbench table.mw-table th,
-    #manuscript-workbench table.mw-table td {
+    #workbench table.mw-table th,
+    #workbench table.mw-table td {
       padding: 7px 9px;
       text-align: left;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       white-space: nowrap;
     }
-    #manuscript-workbench table.mw-table th {
+    #workbench table.mw-table th {
       background: rgba(18, 23, 38, 0.96);
       color: var(--muted, #b5b2bd);
       font-weight: 600;
@@ -565,10 +565,10 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    #manuscript-workbench .mono {
+    #workbench .mono {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     }
-    #manuscript-workbench .mw-pill-ok {
+    #workbench .mw-pill-ok {
       display: inline-block;
       padding: 2px 7px;
       border-radius: 999px;
@@ -576,7 +576,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       background: rgba(191, 232, 166, 0.16);
       color: #bfe8a6;
     }
-    #manuscript-workbench .mw-pill-warn {
+    #workbench .mw-pill-warn {
       display: inline-block;
       padding: 2px 7px;
       border-radius: 999px;
@@ -585,411 +585,52 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       color: #f1cf8e;
     }
     @media (max-width: 520px) {
-      #manuscript-workbench {
+      #workbench {
         padding: 12px;
         margin: 14px auto;
       }
-      #manuscript-workbench .mw-two-col {
+      #workbench .mw-two-col {
         grid-template-columns: 1fr;
       }
     }
   </style>
 
   <main>
-    <section id="manuscript-workbench" aria-labelledby="mw-title">
+    <section id="workbench" aria-labelledby="mw-title">
       <div class="mw-header">
         <div>
           <p class="eyebrow" style="margin:0;color:#f1cf8e;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;">Works offline · nothing leaves your browser</p>
-          <h1 id="mw-title">The math behind Body Signal Labs</h1>
-          <p class="mw-lead">This page runs the math from three research papers on built-in sample rides, in your browser, with nothing sent anywhere. Tabs 1–4 show what each method finds in those sample rides. To see what it says about your own ride, open one in tab 5.</p>
-          <p class="mw-source" id="mw-source"><strong>Sample rides.</strong> Every number in tabs 1–4 comes from a built-in simulated ride, not from your body.</p>
-          <details class="mw-math"><summary>Which papers and methods</summary>
-          <p class="mw-sub">
-            Complete in-browser mathematical engine uniting <strong>Manuscript 1</strong> (10-Metric CRT Spatial &amp; Topological Engine across 20 exercise/biofeedback epochs, <code>doi:10.5281/zenodo.23486177</code>),
-            <strong>Manuscript 2</strong> (Non-Negative VAR+(1), Diebold–Yılmaz GFEVD, 3 Directedness Nulls &amp; ARRO JEPA-CEM Cockpit Pacing Interdiction, <code>doi:10.5281/zenodo.21211653</code>),
-            <strong>Manuscript 3</strong> (Anchored Nested Learning <code>L0</code>–<code>L7</code> under W3C &lt;3 Hz Flicker-Safe &amp; Peak-HR Frozen Vetoes, <code>anchor 5c29a381eb7e</code>), and
-            <strong>4-Pillar Exercise &amp; Cardiorespiratory Biophysics Mastery</strong> (DFA α1 Thresholds HRVT1/HRVT2, Mono-Exponential HRR60 &amp; τ_off Recovery, Hilbert Cadence-HR PLV, RMT Marčenko–Pastur Denoising, 6-Architecture Sensor-Fusion Shootout &amp; Hamilton 2-State Fast-Change Filter).
-          </p>
-          <div class="mw-badges">
-            <span class="mw-badge" id="mw-badge-m1">M1 CRT: Ready</span>
-            <span class="mw-badge" id="mw-badge-m2">M2 GFEVD/JEPA: Ready</span>
-            <span class="mw-badge" id="mw-badge-m3">M3 ANL (5c29a381eb7e): Ready</span>
-            <span class="mw-badge" id="mw-badge-bio">Exercise Biophysics: Ready</span>
-          </div>
-          </details>
+          <h1 id="mw-title">Workbench</h1>
+          <p class="mw-lead">Open a ride you recorded to see how your heart rate followed your pedaling.</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
           <a class="mw-btn" href="biofeedback-path-cockpit.html" style="text-decoration:none;">Open Biofeedback Path Cockpit</a>
-          <button type="button" id="mw-ride-btn" class="mw-btn">Open a ride (.tcx)</button>
+          <button type="button" id="mw-ride-btn" class="mw-btn primary">Open a ride (.tcx)</button>
           <input type="file" id="mw-ride-file" accept=".tcx,application/vnd.garmin.tcx+xml,application/xml,text/xml" hidden />
-          <button type="button" id="mw-recompute-btn" class="mw-btn primary">Run again</button>
         </div>
       </div>
 
-            <details class="mw-math"><summary>Change the sample ride</summary>
-<div class="mw-controls" role="group" aria-label="Workbench Parameters">
-        <label>
-          <span>Sample ride</span>
-          <select id="mw-regime-select">
-            <option value="fog_clearing_resonance">Slow breathing at an easy pace</option>
-            <option value="steady_endurance_cruising">Steady, easy ride</option>
-            <option value="threshold_grade_climb">Long, hard climb</option>
-            <option value="hiit_cadence_surge">Hard intervals</option>
-            <option value="post_sprint_hrr_cooldown">Cooling down after a sprint</option>
-          </select>
-        </label>
-        <label>
-          <span>How the segments are split into groups (paper 1)</span>
-          <select id="mw-crt-design-select">
-            <option value="CRR">Balanced clusters (CRR)</option>
-            <option value="CR">Random clusters (CR)</option>
-            <option value="SR">Random segments (SR)</option>
-          </select>
-        </label>
-        <label>
-          <span>Carryover between segments: <strong id="mw-spill-val">0.35</strong></span>
-          <input type="range" id="mw-spill-slider" min="0.00" max="0.70" step="0.05" value="0.35" />
-        </label>
-        <label>
-          <span>How much the planner may adjust: <strong id="mw-budget-val">1.50</strong></span>
-          <input type="range" id="mw-budget-slider" min="0.50" max="3.00" step="0.25" value="1.50" />
-        </label>
-        <label>
-          <span>How far learning may nudge a choice: <strong id="mw-anl-b-val">0.050</strong></span>
-          <input type="range" id="mw-anl-b-slider" min="0.020" max="0.100" step="0.005" value="0.050" />
-        </label>
-      </div>
-      </details>
-
-      <div class="mw-tabs" role="tablist" aria-label="Manuscript &amp; Biophysics Tabs">
-        <button type="button" class="mw-tab-btn" role="tab" id="mw-tabbtn-crt" aria-selected="true" aria-controls="mw-pane-crt" data-mw-tab="crt">
-          1. Fair test groups (paper 1)
-        </button>
-        <button type="button" class="mw-tab-btn" role="tab" id="mw-tabbtn-lsa" aria-selected="false" aria-controls="mw-pane-lsa" data-mw-tab="lsa">
-          2. What drives what (paper 2)
-        </button>
-        <button type="button" class="mw-tab-btn" role="tab" id="mw-tabbtn-anl" aria-selected="false" aria-controls="mw-pane-anl" data-mw-tab="anl">
-          3. Learning within safe limits (paper 3)
-        </button>
-        <button type="button" class="mw-tab-btn" role="tab" id="mw-tabbtn-bio" aria-selected="false" aria-controls="mw-pane-bio" data-mw-tab="bio">
-          4. Heart and breathing measures
-        </button>
-        <button type="button" class="mw-tab-btn" role="tab" id="mw-tabbtn-ride" aria-selected="false" aria-controls="mw-pane-ride" data-mw-tab="ride">
-          5. Your ride
-        </button>
-      </div>
-
-      <!-- TAB 1: MANUSCRIPT 1 (CRT SPATIAL & TOPOLOGICAL ENGINE) -->
-      <div id="mw-pane-crt" class="mw-pane active" role="tabpanel" aria-labelledby="mw-tabbtn-crt">
-        <p class="mw-lead">When you compare two ways of training, the comparison is only fair if the groups start out alike and don't affect each other. This tab shows how the first paper's method splits the sample ride's segments into balanced groups, and how much one group could leak into another.</p>
-        <details class="mw-math mw-tab-math"><summary>The math behind it</summary>
-        <div class="mw-kpi-grid" id="mw-crt-kpis"></div>
-        <div class="mw-two-col">
-          <div class="mw-card">
-            <h3>Exercise &amp; Biofeedback Epoch Manifold Voronoi Tessellation &amp; Vietoris–Rips 1-Skeleton</h3>
-            <div class="mw-svg-wrap" id="mw-svg-voronoi"></div>
-            <p class="small">
-              20 workout &amp; biofeedback epochs (<code>E01_WARM_SPIN</code>–<code>E20_PEAK_EXERT</code>) projected onto their top 2 principal components with exact Sutherland–Hodgman Voronoi cells and Rips filtration edges.
-            </p>
-          </div>
-          <div class="mw-card">
-            <h3>3D Persistence Diagram (H0, H1) &amp; Hungarian Wasserstein-2 Matching</h3>
-            <div class="mw-svg-wrap" id="mw-svg-pd"></div>
-            <p class="small">
-              Simplicial boundary matrix reduction over the 3D physiological state cloud; Hungarian optimal matching quantifies topological divergence between arms.
-            </p>
-          </div>
-        </div>
-        <div class="mw-two-col">
-          <div class="mw-card">
-            <h3>10-Metric CRT Scorecard (M1–M10) &amp; Leave-One-Out (LOO) Ablation</h3>
-            <div class="mw-table-wrap">
-              <table class="mw-table" id="mw-table-crt-metrics">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Metric</th>
-                    <th>Raw Value</th>
-                    <th>Fused Wt</th>
-                    <th>LOO Spearman ρ</th>
-                    <th>Max Rank Shift</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="mw-card">
-            <h3>3×3 Design × Estimator Inference Ladder Under Fatigue &amp; Vagal Carryover</h3>
-            <div class="mw-table-wrap">
-              <table class="mw-table" id="mw-table-crt-ladder">
-                <thead>
-                  <tr>
-                    <th>Design</th>
-                    <th>Estimator</th>
-                    <th>Bias</th>
-                    <th>RMSE</th>
-                    <th>95% Cov</th>
-                    <th>Power</th>
-                    <th>Type I</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        </details>
-      </div>
-
-      <!-- TAB 2: MANUSCRIPT 2 (DIRECTED NETWORK CRITICALITY & JEPA INTERDICTION) -->
-      <div id="mw-pane-lsa" class="mw-pane" role="tabpanel" aria-labelledby="mw-tabbtn-lsa">
-        <p class="mw-lead">When several signals move together, it helps to know which one is pushing the others. This tab shows, for the sample ride, which signal drives which, and where a nudge would settle the rest fastest.</p>
-        <details class="mw-math mw-tab-math"><summary>The math behind it</summary>
-        <div class="mw-kpi-grid" id="mw-lsa-kpis"></div>
-        <div class="mw-two-col">
-          <div class="mw-card">
-            <h3>Rolling Spectral Criticality ρ(Φ̂_t) &amp; Locomotor-Cardiorespiratory Coupling</h3>
-            <div class="mw-svg-wrap" id="mw-svg-criticality"></div>
-            <p class="small">
-              Projected coordinate descent VAR+(1) spectral radius tracks proximity to self-sustaining anaerobic/cardiorespiratory cascade criticality across the 10-channel cockpit network.
-            </p>
-          </div>
-          <div class="mw-card">
-            <h3>24-Step Closed-Loop Cockpit Pacing Interdiction (JEPA-CEM vs Baselines)</h3>
-            <div class="mw-svg-wrap" id="mw-svg-interdiction"></div>
-            <p class="small">
-              Targeting upstream net transmitters (NET &gt; 0) via 2-layer tanh JEPA + Cross-Entropy Method MPC outperforms greedy symptom-chasing.
-            </p>
-          </div>
-        </div>
-        <div class="mw-two-col">
-          <div class="mw-card">
-            <h3>10-Channel Diebold–Yılmaz GFEVD Directional Spillover Table</h3>
-            <div class="mw-table-wrap">
-              <table class="mw-table" id="mw-table-gfevd">
-                <thead>
-                  <tr>
-                    <th>Cockpit Channel</th>
-                    <th>TO %</th>
-                    <th>FROM %</th>
-                    <th>NET %</th>
-                    <th>Horizon AUC</th>
-                    <th>Role</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="mw-card">
-            <h3>3 Spectral-Radius-Matched Directedness Nulls &amp; Policy Shootout</h3>
-            <div class="mw-table-wrap">
-              <table class="mw-table" id="mw-table-nulls">
-                <thead>
-                  <tr>
-                    <th>Null / Control Model</th>
-                    <th>ρ Matched</th>
-                    <th>Null Mean Max-NET</th>
-                    <th>z-Score</th>
-                    <th>p-Value</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-            <div class="mw-table-wrap" style="margin-top:10px;">
-              <table class="mw-table" id="mw-table-interdiction">
-                <thead>
-                  <tr>
-                    <th>Cockpit Pacing Policy</th>
-                    <th>Mean Load</th>
-                    <th>95% CI</th>
-                    <th>Load Reduction vs None</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        </details>
-      </div>
-
-      <!-- TAB 3: MANUSCRIPT 3 (ANCHORED NESTED LEARNING L0-L7) -->
-      <div id="mw-pane-anl" class="mw-pane" role="tabpanel" aria-labelledby="mw-tabbtn-anl">
-        <p class="mw-lead">An app that learns from you should never be able to override fixed safety limits, such as a heart-rate ceiling or the flash limit. This tab shows the third paper's way of letting the app adjust only inside limits that learning can't move.</p>
-        <details class="mw-math mw-tab-math"><summary>The math behind it</summary>
-        <div class="mw-kpi-grid" id="mw-anl-kpis"></div>
-        <div class="mw-two-col">
-          <div class="mw-card">
-            <h3>Proposition 1: Unclipped Centered Readout vs Clipped Boundary Collapse</h3>
-            <div class="mw-svg-wrap" id="mw-svg-anl-prop1"></div>
-            <p class="small">
-              Centering raw shifts before uniform contraction preserves strict candidate ordering inside ±B, whereas post-hoc clipping collapses top cockpit protocols at 1.00.
-            </p>
-          </div>
-          <div class="mw-card">
-            <h3>Proposition 2: Coupled 4×4 M3 Recurrence (Repaired vs Shipped Defect)</h3>
-            <div class="mw-svg-wrap" id="mw-svg-anl-m3"></div>
-            <p class="small">
-              Repaired single-retention M3 reaches 26.9% of bound at ep 100, 66.5% at ep 200, and 100% by ep 280 (ρ(A_M3) = 0.99876), vs 0.87% at ep 1,500 under shipped double-decay.
-            </p>
-          </div>
-        </div>
-        <div class="mw-two-col">
-          <div class="mw-card">
-            <h3>Proposition 1 Cockpit Protocols &amp; Level 2 Active Inference EFE Probes</h3>
-            <div class="mw-table-wrap">
-              <table class="mw-table" id="mw-table-anl-prop1">
-                <thead>
-                  <tr>
-                    <th>Cockpit Biofeedback Protocol</th>
-                    <th>Base p</th>
-                    <th>Raw Shift</th>
-                    <th>Centered Shift</th>
-                    <th>Uncentered</th>
-                    <th>Centered Score</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-            <div class="mw-table-wrap" style="margin-top:10px;">
-              <table class="mw-table" id="mw-table-anl-efe">
-                <thead>
-                  <tr>
-                    <th>Diagnostic Probe</th>
-                    <th>Noise</th>
-                    <th>Info Gain</th>
-                    <th>Risk</th>
-                    <th>Ambiguity</th>
-                    <th>EFE G(q)</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="mw-card">
-            <h3>Level 4 Sinkhorn Sensor-to-Cockpit Plan &amp; Level 7 4-Gate CAP</h3>
-            <div class="mw-table-wrap">
-              <table class="mw-table" id="mw-table-anl-sinkhorn">
-                <thead>
-                  <tr>
-                    <th>Sensor Supply \ Visual Target</th>
-                    <th>Fog Clear (Crit)</th>
-                    <th>Speed Ring (Crit)</th>
-                    <th>Grade Relief</th>
-                    <th>Sky Palette</th>
-                    <th>Unused Slack</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-            <div class="mw-table-wrap" style="margin-top:10px;">
-              <table class="mw-table" id="mw-table-anl-cap">
-                <thead>
-                  <tr>
-                    <th>Candidate Adapter</th>
-                    <th>Δ Brier</th>
-                    <th>95% LOO CI</th>
-                    <th>Teeth Drop</th>
-                    <th>Power@331</th>
-                    <th>CAP Verdict</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        </details>
-      </div>
-
-      <!-- TAB 4: EXERCISE & CARDIORESPIRATORY BIOPHYSICS MASTERY -->
-      <div id="mw-pane-bio" class="mw-pane" role="tabpanel" aria-labelledby="mw-tabbtn-bio">
-        <p class="mw-lead">Standard measures from heart and breathing on the sample ride: how much heartbeats vary, how fast heart rate recovers after effort, and how breathing and heart rate move together. They come from the built-in sample because a ride file doesn't store beat-to-beat data or breathing.</p>
-        <details class="mw-math mw-tab-math"><summary>The math behind it</summary>
-        <div class="mw-kpi-grid" id="mw-bio-kpis"></div>
-        <div class="mw-two-col">
-          <div class="mw-card">
-            <h3>Poincaré RR_n vs RR_{n+1} Attractor (SD1, SD2), DFA α1 Thresholds &amp; Lomb–Scargle PSD</h3>
-            <div class="mw-svg-wrap" id="mw-svg-poincare"></div>
-            <p class="small">
-              Beat-to-beat vagal short-axis SD1 vs sympathetic-baroreflex long-axis SD2 ellipse alongside unevenly-sampled Lomb–Scargle spectral density and DFA α1 threshold zone.
-            </p>
-          </div>
-          <div class="mw-card">
-            <h3>RMT Marčenko–Pastur Eigenvalue Spectrum &amp; Hamilton Fast-Change Filter ξ_{t|t}(1)</h3>
-            <div class="mw-svg-wrap" id="mw-svg-rmt-hamilton"></div>
-            <p class="small">
-              Left: 10-channel correlation eigenvalues vs Marčenko–Pastur noise bulk λ+. Right: Hamilton 2-state Markov-switching sympathetic surge probability.
-            </p>
-          </div>
-        </div>
-        <div class="mw-two-col">
-          <div class="mw-card">
-            <h3>6-Architecture Sensor-Fusion &amp; Biofeedback Weighting Shootout</h3>
-            <div class="mw-table-wrap">
-              <table class="mw-table" id="mw-table-bio-shootout">
-                <thead>
-                  <tr>
-                    <th>Fusion Architecture</th>
-                    <th>Ann. Strain Vol</th>
-                    <th>Div. Ratio</th>
-                    <th>Effective Bets</th>
-                    <th>Max Channel RC %</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="mw-card">
-            <h3>Hamilton 3-Regime Cockpit Biofeedback Playbook</h3>
-            <div class="mw-table-wrap">
-              <table class="mw-table" id="mw-table-bio-playbook">
-                <thead>
-                  <tr>
-                    <th>Physiological State Regime</th>
-                    <th>Sensor-Fusion &amp; Pacing Rule</th>
-                    <th>Vagal Gain</th>
-                    <th>Biophysical Rationale</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        </details>
-      </div>
-      <!-- TAB 5: YOUR RIDE (only what a ride's own heart rate and cadence support) -->
-      <div id="mw-pane-ride" class="mw-pane" role="tabpanel" aria-labelledby="mw-tabbtn-ride">
+      <!-- YOUR RIDE (only what a ride's own heart rate and cadence support) -->
+      <div id="mw-pane-ride" class="mw-pane active">
         <div class="mw-card">
           <h3>Your ride</h3>
           <p class="mw-note" id="mw-ride-head">Ride the Biofeedback Path Cockpit with a heart-rate strap connected, open Session, press Start recording, and when you finish press Export TCX. Then open that file here with "Open a ride (.tcx)". A TCX file from another app works too if it has heart rate and cadence. Nothing leaves this browser.</p>
           <div class="mw-plain" id="mw-ride-plain"></div>
           <div id="mw-ride-chart"></div>
-          <details class="mw-math" id="mw-ride-math">
+          <details class="mw-math" id="mw-ride-math" hidden>
           <summary>The math behind it</summary>
           <p class="mw-note">Worked on 5-second steps of the ride. Signals that move together share credit in both directions here, so the first two percentages overlap. The net leader, the difference between them, is the part that says which one led.</p>
-          <h4>Manuscript 2 · Directed spillover between cadence and heart rate</h4>
+          <h4>Which led: cadence or heart rate</h4>
           <div class="mw-kpi-grid" id="mw-ride-m2"></div>
           <h4>Heart-rate recovery after your hardest effort</h4>
           <div class="mw-kpi-grid" id="mw-ride-hrr"></div>
-          <h4>Steady and fast-change periods</h4>
+          <h4>Cadence changes and your heart rate's answer</h4>
           <div class="mw-kpi-grid" id="mw-ride-states"></div>
-          <p class="mw-note" id="mw-ride-states-note"></p>
+          <div id="mw-ride-states-note"></div>
           <h4>Not computed from your ride</h4>
           <ul class="mw-list">
-            <li><strong>Manuscript 1 (CRT)</strong> needs breathing, EEG, skin conductance and beat-to-beat data across epochs. A TCX ride has heart rate and cadence only.</li>
             <li><strong>Heart-rate variability</strong> (DFA α1, RMSSD, SDNN, Lomb power, sample entropy) needs beat-to-beat intervals, which a TCX file doesn't store.</li>
             <li><strong>Breathing coupling</strong> needs a breathing signal, and nothing you connect measures breathing.</li>
-            <li><strong>The JEPA pacing planner</strong> in Manuscript 2 runs on the ten-signal sample network, not on two signals.</li>
-            <li><strong>Manuscript 3</strong>: its recurrence and readout curves are properties of the model and come out the same for any ride (tab 3).</li>
           </ul>
           </details>
         </div>
@@ -1000,39 +641,32 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
 </div>
 <script>
 /**
- * Autonomic Telemetry — Complete Three-Manuscript Mathematical Engine &
- * Autonomic / Cardiorespiratory Biophysics Mastery Workbench
+ * Autonomic Telemetry — mathematical engine for heart, breathing and sensor signals
  *
  * Implements:
- * 1. Manuscript 1 (doi:10.5281/zenodo.23486177):
- *    - 10-Metric Contamination-Resilient CRT Spatial & Topological Suite adapted
- *      to multi-sensor physiological state manifolds (bounded 2D Voronoi tessellation,
- *      Vietoris-Rips 2-skeleton Euler/Betti filtration chi = V - E + F = beta0 - beta1 + beta2,
- *      3D Rips H0/H1 persistence diagrams with p=2 l_inf Hungarian Wasserstein matching,
- *      Mean-Field Potts Variational Free Energy F(q), CRITIC x Shannon Entropy x Bootstrap
- *      Stability cube-root weights, Leave-One-Out ablation, and 3-Design x 3-Estimator
- *      Cross-Epoch Spillover Inference Ladder).
- * 2. Manuscript 2 (doi:10.5281/zenodo.21211653):
- *    - Constrained Non-Negative VAR+(1) via projected coordinate descent vs Ridge VAR(1)
- *      across the 10-node cardiorespiratory-autonomic network (HR/SA-Node, Vagal RMSSD,
- *      Pulse SDNN, Respiratory RSA, EEG Beta/Alpha, Baroreflex Gain, EDA Phasic, EDA Tonic,
- *      Pulse Transit Time, Peripheral Thermal), rolling spectral radius rho(Phi(t)) = kappa_B(t),
- *      Pesaran-Shin / Diebold-Yilmaz 10x10 GFEVD connectedness (TO%, FROM%, NET%, TCI%,
- *      horizon-integrated AUC), 3 spectral-radius-matched structural directedness nulls
- *      (Symmetrization, Direction-Flip, Weight-Permutation) + Time-Reversal null, and
- *      ARRO JEPA Latent World-Model + CEM Learned-MPC Biofeedback / Paced-Breathing
- *      Interdiction with Directed vs Symmetrized Twin Advantage.
- * 3. Manuscript 3 (Anchored Nested Learning, PLOS ONE submission / macgyver-bot):
- *    - 8-Level Nested Hierarchy (L0_constitution .. L7_meta, pinned anchor hash 5c29a381eb7e,
- *      bound B = +/-0.05) enforcing frozen physiological safety red lines, Proposition 1
- *      rank preservation (s(a) - s(b) > 2B = 0.10 => S(a) > S(b)) & Experiment J unclipped
- *      centered-and-contracted protocol readout, Proposition 2 incremental contraction &
- *      4x4 coupled M3 recurrence (Faddeev-LeVerrier + Durand-Kerner complex eigenvalues,
- *      rho(A_M3) = 0.9987567254 -> 0.99876, CorrectedFullAt = 280 vs shipped double-retention
- *      defect 0.87% at ep 1,500), Level 2 Active Inference EFE diagnostic physiological probe
- *      selection, Level 4 Entropic Sinkhorn sensor-to-recovery optimal transport with MISSING
- *      slack & 5-pass critical-gap refinement, and the 4-Gate Component Admission Protocol (CAP)
- *      + Experiment K 9-rate sensitivity grid.
+ * 1. Spatial and topological metrics of physiological state manifolds:
+ *    - bounded 2D Voronoi tessellation, Vietoris-Rips 2-skeleton Euler/Betti filtration
+ *      chi = V - E + F = beta0 - beta1 + beta2, 3D Rips H0/H1 persistence diagrams with p=2 l_inf
+ *      Hungarian Wasserstein matching, mean-field Potts variational free energy F(q), CRITIC x
+ *      Shannon entropy x bootstrap stability cube-root weights, leave-one-out ablation, and a
+ *      3-design x 3-estimator cross-epoch spillover inference ladder.
+ * 2. Directed networks of signals:
+ *    - constrained non-negative VAR+(1) by projected coordinate descent vs ridge VAR(1) across a
+ *      10-node cardiorespiratory-autonomic network (HR/SA node, vagal RMSSD, pulse SDNN, respiratory
+ *      RSA, EEG beta/alpha, baroreflex gain, EDA phasic, EDA tonic, pulse transit time, peripheral
+ *      thermal), rolling spectral radius rho(Phi(t)), Pesaran-Shin / Diebold-Yilmaz 10x10 GFEVD
+ *      connectedness (TO%, FROM%, NET%, TCI%, horizon-integrated AUC), 3 spectral-radius-matched
+ *      directedness nulls (symmetrization, direction flip, weight permutation) plus a time-reversal
+ *      null, and a latent world-model with a cross-entropy-method planner for paced-breathing
+ *      interdiction.
+ * 3. Learning within fixed safety limits:
+ *    - an 8-level nested hierarchy (L0 constitution .. L7 meta, pinned anchor hash 5c29a381eb7e,
+ *      bound B = +/-0.05) enforcing frozen physiological safety limits; rank preservation
+ *      (s(a) - s(b) > 2B = 0.10 => S(a) > S(b)) with an unclipped centered-and-contracted readout;
+ *      incremental contraction and the 4x4 coupled recurrence (Faddeev-LeVerrier + Durand-Kerner
+ *      complex eigenvalues, rho = 0.9987567254); active-inference EFE probe selection; entropic
+ *      Sinkhorn sensor-to-recovery optimal transport with MISSING slack and 5-pass critical-gap
+ *      refinement; and a 4-gate component admission protocol with a 9-rate sensitivity grid.
  * 4. Autonomic & Cardiorespiratory Biophysics Mastery Workbench:
  *    - Pillar 1: Non-Gaussian HRV, Poincare (SD1, SD2, SD1/SD2, ellipse area), Detrended
  *      Fluctuation Analysis (DFA alpha1, alpha2), Sample & Multiscale Entropy, Lomb-Scargle
@@ -1283,7 +917,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
   }
 
   /* =========================================================================
-   * SECTION 2: MANUSCRIPT 1 — 10-METRIC CRT SPATIAL & TOPOLOGICAL ENGINE
+   * SECTION 2: 10-METRIC SPATIAL & TOPOLOGICAL ENGINE
    *            APPLIED TO MULTI-SENSOR PHYSIOLOGICAL STATE MANIFOLDS
    * ========================================================================= */
   function ensembleWeights(M, seed = 20260614, nBoot = 80) {
@@ -2283,8 +1917,8 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
   }
 
   /* =========================================================================
-   * SECTION 3: MANUSCRIPT 2 — NON-NEGATIVE VAR+(1), DIEBOLD-YILMAZ GFEVD,
-   *            3 DIRECTEDNESS NULLS, AND ARRO JEPA BIOFEEDBACK INTERDICTION
+   * SECTION 3: NON-NEGATIVE VAR+(1), DIEBOLD-YILMAZ GFEVD,
+   *            3 DIRECTEDNESS NULLS, AND LATENT-PLANNER BIOFEEDBACK INTERDICTION
    * ========================================================================= */
   function powerIterationSpectralRadius(Phi) {
     const n = Phi.length;
@@ -3982,9 +3616,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
 
 
   /* ============================================================================
-   * SECTION 5: MANUSCRIPT 3 — ANCHORED NESTED LEARNING (ANL)
-   * ("Adaptive decision support under frozen rules: guarantees, failure modes,
-   *  and component admission", PLOS ONE submission; macgyver-bot)
+   * SECTION 5: LEARNING WITHIN FIXED SAFETY LIMITS (L0-L7)
    * Applied to Body Signal Labs Biofeedback Path Cockpit & Endless Cockpit
    * ============================================================================ */
 
@@ -4037,8 +3669,8 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
     const epsUlp = 1e-15;
     const cap = boundB * (1.0 - epsUlp);
     const active = candidates.filter(c => !c.fallback && c.approved !== false);
-    /* In macgyver/meta.py:662 (ranking_biases), raw combined biases are centered BEFORE clipping,
-       whereas legacy ranking_bias (meta.py:642) clips each candidate individually to [-B, B]. */
+    /* Raw combined biases are centered BEFORE clipping; the older per-candidate form clipped each candidate
+       on its own to [-B, B]. */
     const rawUnclipped = active.map(c => (c.nativeBias || 0) + (c.memoryBias || 0) + (c.elasticBias || 0));
     const meanRaw = rawUnclipped.length ? rawUnclipped.reduce((a, b) => a + b, 0) / rawUnclipped.length : 0;
     const centered = rawUnclipped.map(r => r - meanRaw);
@@ -4552,7 +4184,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       { policy: 'Unconstrained Naive', anchor: false, adaptation: false, escapePct: 14.3, fatalPct: 85.7, timeoutPct: 0.0, meanTurns: 19.4, vetoesPerRun: 0.00 },
       { policy: 'Frozen Rules Static (SOP Only)', anchor: true, adaptation: false, escapePct: 50.0, fatalPct: 0.0, timeoutPct: 50.0, meanTurns: 9.0, vetoesPerRun: 0.00 },
       { policy: 'Adaptive Unanchored', anchor: false, adaptation: true, escapePct: 14.3, fatalPct: 85.7, timeoutPct: 0.0, meanTurns: 10.7, vetoesPerRun: 0.00 },
-      { policy: 'MacGyver Anchored (Full L0 Veto + Bounded Adapt)', anchor: true, adaptation: true, escapePct: 100.0, fatalPct: 0.0, timeoutPct: 0.0, meanTurns: 11.8, vetoesPerRun: 0.17 }
+      { policy: 'Anchored (Full L0 Veto + Bounded Adapt)', anchor: true, adaptation: true, escapePct: 100.0, fatalPct: 0.0, timeoutPct: 0.0, meanTurns: 11.8, vetoesPerRun: 0.17 }
     ];
 
     return {
@@ -4601,8 +4233,76 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
     };
   }
 
+  /**
+   * 4.5j Effort changes read from cadence, and how heart rate answered. For rides that carry cadence: the effort change is
+   *   observed, not inferred, so this is change detection on a measured signal.
+   *   rows: [{ hr, cad }] per bin (5-s bin means, binRide). Cadence noise s = 1.4826 x the median absolute deviation of the
+   *   bin-to-bin cadence changes, over sqrt 2. At each bin k: the mean cadence over the next `after` bins (6 = 30 s) against
+   *   the previous `before` bins (6), z = (after - before) / (s sqrt(1/n_before + 1/n_after)). A change is a peak of |z|
+   *   (the largest within `before` bins either side) over `threshold` (6) with |after - before| at least minRpm (5).
+   *   Heart rate's answer, measured: the mean over the 30 s before against the mean from 60 to 120 s after (cut at the next
+   *   change; if that leaves under 30 s, the last 30 s before the next change); secondsTo90: the first bin where the
+   *   3-bin running mean of heart rate has covered 90% of that change.
+   *   Limit: an effort change without a cadence change (a climb in a harder gear) is invisible to cadence.
+   */
+  function cadenceEffortChanges(rows, options = {}) {
+    const binS = options.binS ?? 5, nb = options.before ?? 6, na = options.after ?? 6;
+    const threshold = options.threshold ?? 6, minRpm = options.minRpm ?? 5, T = rows.length;
+    const cad = rows.map(r => r.cad), hr = rows.map(r => r.hr);
+    const dc = [];
+    for (let i = 1; i < T; i++) if (Number.isFinite(cad[i]) && Number.isFinite(cad[i - 1])) dc.push(cad[i] - cad[i - 1]);
+    if (dc.length < 60) return { valid: false, reason: 'needs at least 5 minutes of cadence' };
+    const md = median(dc), noise = Math.max(0.25, 1.4826 * median(dc.map(v => Math.abs(v - md))) / Math.SQRT2);
+    const meanOf = (arr, a, b) => {
+      let sum = 0, n = 0;
+      for (let i = Math.max(0, a); i < Math.min(T, b); i++) if (Number.isFinite(arr[i])) { sum += arr[i]; n++; }
+      return n ? { m: sum / n, n } : null;
+    };
+    const z = new Array(T).fill(0), diff = new Array(T).fill(0);
+    for (let k = nb; k <= T - na; k++) {
+      const b = meanOf(cad, k - nb, k), a = meanOf(cad, k, k + na);
+      if (!b || !a || b.n < nb / 2 || a.n < na / 2) continue;
+      diff[k] = a.m - b.m;
+      z[k] = diff[k] / (noise * Math.sqrt(1 / b.n + 1 / a.n));
+    }
+    const at = [];
+    for (let k = 0; k < T; k++) {
+      if (!(Math.abs(z[k]) > threshold && Math.abs(diff[k]) >= minRpm)) continue;
+      let peak = true;
+      for (let j = Math.max(0, k - nb); j <= Math.min(T - 1, k + nb) && peak; j++) if (j !== k && Math.abs(z[j]) > Math.abs(z[k])) peak = false;
+      if (peak) at.push(k);
+    }
+    const bins = s => Math.round(s / binS);
+    const changes = at.map((k, i) => {
+      const next = i + 1 < at.length ? at[i + 1] : T;
+      const pre = meanOf(hr, k - bins(30), k);
+      let from = k + bins(60), to = Math.min(next, k + bins(120));
+      if (to - from < bins(30)) { to = next; from = Math.max(k + 1, next - bins(30)); }
+      const post = to > from ? meanOf(hr, from, to) : null;
+      const change = pre && post ? post.m - pre.m : NaN;
+      let secondsTo90 = null;
+      if (Number.isFinite(change) && change !== 0) {
+        for (let j = k; j < to; j++) {
+          const run = meanOf(hr, j - 1, j + 2);
+          if (run && (run.m - pre.m) / change >= 0.9) { secondsTo90 = (j - k) * binS; break; }
+        }
+      }
+      return {
+        at: k,
+        direction: diff[k] > 0 ? 'up' : 'down',
+        cadenceChange: diff[k],
+        z: z[k],
+        heartRateBefore: pre ? pre.m : NaN,
+        heartRateChange: change,
+        secondsTo90,
+        shadeTo: secondsTo90 === null ? Math.min(T - 1, to - 1) : k + Math.round(secondsTo90 / binS)
+      };
+    });
+    return { valid: true, noise, changes };
+  }
+
   const API = {
-    version: '2.1.0-offline-bsl-manuscript-biophysics-anl',
+    version: '2.1.0-offline-bsl-biophysics',
     /* Section 1 */
     makeRng,
     makeNormal,
@@ -4614,7 +4314,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
     solveLinearSystem,
     invertMatrix,
     jacobiEigenSymmetric,
-    /* Section 2 (Manuscript 1) */
+    /* Section 2 */
     ensembleWeights,
     computeVoronoiTessellation,
     vietorisRipsComplex,
@@ -4630,7 +4330,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
     scoreCRTDesign,
     looAblation,
     runCRTDesignAndInference,
-    /* Section 3 (Manuscript 2) */
+    /* Section 3 */
     spectralRadius: powerIterationSpectralRadius,
     powerIterationSpectralRadius,
     ridgeVar1,
@@ -4653,9 +4353,10 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
     computeAllocationShootout,
     computeAutonomicRegimeFilter,
     computeMacroRegimeFilter,
+    cadenceEffortChanges,
     runAutonomicBiophysicsMastery,
     runFinancialRiskMastery,
-    /* Section 5 (Manuscript 3 — Anchored Nested Learning) */
+    /* Section 5 */
     ANL_PINNED_ANCHOR_HASH,
     ANL_BOUND_B,
     ANL_LEVELS,
@@ -4672,9 +4373,9 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
     runAnchoredNestedLearning
   };
 
-  root.BSLManuscriptMath = API;
-  root.ATManuscriptMath = API;
-  root.RTManuscriptMath = API;
+  root.BSLMath = API;
+  root.ATMath = API;
+  root.RTMath = API;
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = API;
   }
@@ -4684,11 +4385,10 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
 <script>
 (() => {
   'use strict';
-  const M = window.BSLManuscriptMath || window.ATManuscriptMath;
+  const M = window.BSLMath || window.ATMath;
   if (!M) return;
 
   const $ = id => document.getElementById(id);
-  let latestState = null;
 
   function renderKpis(containerId, items) {
     const el = $(containerId);
@@ -4702,554 +4402,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
     )).join('');
   }
 
-  function renderVoronoiSvg(crt) {
-    const wrap = $('mw-svg-voronoi');
-    if (!wrap || !crt || !crt.foundation) return;
-    const W = 460, H = 250, pad = 24;
-    const coords = crt.foundation.coords;
-    const cells = crt.foundation.voronoi.cells;
-    const arm = crt.activeScore.armUsed || crt.foundation.arm;
-    const xs = coords.map(p => p[0]), ys = coords.map(p => p[1]);
-    const minX = Math.min(...xs) - 0.8, maxX = Math.max(...xs) + 0.8;
-    const minY = Math.min(...ys) - 0.8, maxY = Math.max(...ys) + 0.8;
-    const sx = x => pad + ((x - minX) / Math.max(maxX - minX, 1e-6)) * (W - 2 * pad);
-    const sy = y => H - pad - ((y - minY) / Math.max(maxY - minY, 1e-6)) * (H - 2 * pad);
-
-    let polys = '';
-    cells.forEach((poly, i) => {
-      if (!poly || poly.length < 3) return;
-      const pts = poly.map(p => sx(p[0]).toFixed(1) + ',' + sy(p[1]).toFixed(1)).join(' ');
-      const fill = arm[i] === 1 ? 'rgba(191,232,166,0.16)' : 'rgba(168,198,244,0.14)';
-      const stroke = arm[i] === 1 ? 'rgba(191,232,166,0.45)' : 'rgba(168,198,244,0.40)';
-      polys += '<polygon points="' + pts + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1"/>';
-    });
-
-    let edges = '';
-    const dMat = crt.foundation.distMatrix;
-    for (let i = 0; i < coords.length; i++) {
-      for (let j = i + 1; j < coords.length; j++) {
-        if (dMat[i][j] <= 1.85) {
-          const cross = arm[i] !== arm[j];
-          edges += '<line x1="' + sx(coords[i][0]).toFixed(1) + '" y1="' + sy(coords[i][1]).toFixed(1) +
-            '" x2="' + sx(coords[j][0]).toFixed(1) + '" y2="' + sy(coords[j][1]).toFixed(1) +
-            '" stroke="' + (cross ? 'rgba(244,163,163,0.52)' : 'rgba(168,198,244,0.35)') +
-            '" stroke-width="' + (cross ? '1.3' : '0.9') + '" stroke-dasharray="' + (cross ? '3,2' : 'none') + '"/>';
-        }
-      }
-    }
-
-    let nodes = '';
-    coords.forEach((p, i) => {
-      const cx = sx(p[0]).toFixed(1), cy = sy(p[1]).toFixed(1);
-      const col = arm[i] === 1 ? '#bfe8a6' : '#a8c6f4';
-      nodes += '<circle cx="' + cx + '" cy="' + cy + '" r="4.2" fill="' + col + '" stroke="#080b14" stroke-width="1.2"/>';
-    });
-
-    wrap.innerHTML =
-      '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Voronoi and Vietoris-Rips State Manifold">' +
-        polys + edges + nodes +
-        '<text x="12" y="16" fill="#b5b2bd" font-size="12" font-family="monospace">Green: Biofeedback Paced Arm (1) · Blue: Control Arm (0) · Dashed: Cross-Arm Boundary</text>' +
-      '</svg>';
-  }
-
-  function renderPersistenceSvg(crt) {
-    const wrap = $('mw-svg-pd');
-    if (!wrap || !crt || !crt.foundation) return;
-    const W = 460, H = 250, pad = 32;
-    const pts3 = crt.foundation.coords.map((c, i) => [c[0], c[1], crt.foundation.Z[i][0] || 0]);
-    const pd = M.ripsPersistenceDiagram3D(pts3);
-    const all = [].concat(pd.h0 || [], pd.h1 || []);
-    const maxVal = Math.max(2.5, ...all.map(p => p[1]));
-    const sc = v => pad + (v / maxVal) * (W - 2 * pad);
-    const sy = v => H - pad - (v / maxVal) * (H - 2 * pad);
-
-    let dots = '';
-    (pd.h0 || []).forEach(p => {
-      dots += '<circle cx="' + sc(p[0]).toFixed(1) + '" cy="' + sy(p[1]).toFixed(1) + '" r="4" fill="#bfe8a6" opacity="0.88"/>';
-    });
-    (pd.h1 || []).forEach(p => {
-      dots += '<rect x="' + (sc(p[0]) - 3.5).toFixed(1) + '" y="' + (sy(p[1]) - 3.5).toFixed(1) + '" width="7" height="7" fill="#f1cf8e" opacity="0.92"/>';
-    });
-
-    wrap.innerHTML =
-      '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Persistence Diagram H0 and H1">' +
-        '<line x1="' + pad + '" y1="' + (H - pad) + '" x2="' + (W - pad) + '" y2="' + pad + '" stroke="#3b4362" stroke-dasharray="4,3"/>' +
-        '<line x1="' + pad + '" y1="' + (H - pad) + '" x2="' + (W - pad) + '" y2="' + (H - pad) + '" stroke="#283048"/>' +
-        '<line x1="' + pad + '" y1="' + (H - pad) + '" x2="' + pad + '" y2="' + pad + '" stroke="#283048"/>' +
-        dots +
-        '<text x="14" y="18" fill="#b5b2bd" font-size="12" font-family="monospace">Circles: H0 Connected Components (' + (pd.h0 ? pd.h0.length : 0) + ') · Squares: H1 Loops (' + (pd.h1 ? pd.h1.length : 0) + ') · W2=' + crt.activeScore.rawMetrics[9].toFixed(3) + '</text>' +
-      '</svg>';
-  }
-
-  function renderCriticalitySvg(lsa) {
-    const wrap = $('mw-svg-criticality');
-    if (!wrap || !lsa) return;
-    const W = 460, H = 250, pad = 32;
-    const rc = lsa.rollingCriticality || [];
-    if (!rc.length) return;
-    const rhos = rc.map(r => r.rho);
-    const minY = Math.min(0.45, ...rhos), maxY = Math.max(1.12, ...rhos);
-    const sx = i => pad + (i / Math.max(1, rc.length - 1)) * (W - 2 * pad);
-    const sy = v => H - pad - ((v - minY) / Math.max(maxY - minY, 1e-6)) * (H - 2 * pad);
-    const pts = rc.map((r, i) => sx(i).toFixed(1) + ',' + sy(r.rho).toFixed(1)).join(' ');
-    const yCrit = sy(1.0).toFixed(1);
-
-    wrap.innerHTML =
-      '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Rolling VAR+(1) Spectral Criticality">' +
-        '<line x1="' + pad + '" y1="' + yCrit + '" x2="' + (W - pad) + '" y2="' + yCrit + '" stroke="#f4a3a3" stroke-dasharray="4,3" stroke-width="1.2"/>' +
-        '<polyline fill="none" stroke="#bfe8a6" stroke-width="2.2" points="' + pts + '"/>' +
-        rc.map((r, i) => '<circle cx="' + sx(i).toFixed(1) + '" cy="' + sy(r.rho).toFixed(1) + '" r="2.6" fill="#a8c6f4"/>').join('') +
-        '<text x="14" y="18" fill="#b5b2bd" font-size="12" font-family="monospace">Full-Sample ρ(Φ̂)=' + lsa.varFit.spectralRadius.toFixed(3) + ' · Top Transmitter: ' + lsa.gfevd.topTransmitterName + '</text>' +
-        '<text x="' + (W - 145) + '" y="' + (Number(yCrit) - 5) + '" fill="#f4a3a3" font-size="12" font-family="monospace">Criticality ρ = 1.00</text>' +
-      '</svg>';
-  }
-
-  function renderInterdictionSvg(lsa) {
-    const wrap = $('mw-svg-interdiction');
-    if (!wrap || !lsa || !lsa.interdiction) return;
-    const W = 460, H = 250, pad = 32;
-    const traj = lsa.interdiction.meanTraj;
-    const pols = [
-      { key: 'none', color: '#f4a3a3', label: 'none' },
-      { key: 'greedy', color: '#f1cf8e', label: 'greedy' },
-      { key: 'transmitter', color: '#a8c6f4', label: 'transmitter' },
-      { key: 'learned-MPC', color: '#bfe8a6', label: 'learned-MPC (JEPA)' },
-      { key: 'oracle-MPC', color: '#d2b8f4', label: 'oracle-MPC' }
-    ];
-    const allVals = [].concat(...pols.map(p => traj[p.key] || []));
-    const minV = Math.min(...allVals) * 0.92;
-    const maxV = Math.max(...allVals) * 1.04;
-    const Tsteps = (traj['none'] || []).length;
-    const sx = t => pad + (t / Math.max(1, Tsteps - 1)) * (W - 2 * pad);
-    const sy = v => H - pad - ((v - minV) / Math.max(maxV - minV, 1e-6)) * (H - 2 * pad);
-
-    let lines = '';
-    pols.forEach(p => {
-      const arr = traj[p.key] || [];
-      if (!arr.length) return;
-      const pts = arr.map((v, t) => sx(t).toFixed(1) + ',' + sy(v).toFixed(1)).join(' ');
-      lines += '<polyline fill="none" stroke="' + p.color + '" stroke-width="' + (p.key === 'learned-MPC' ? '2.6' : '1.6') + '" points="' + pts + '"/>';
-    });
-
-    const adv = lsa.interdiction.directedVsSymmetricAdvantage;
-    wrap.innerHTML =
-      '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="24-Step Biofeedback Interdiction Trajectories">' +
-        lines +
-        '<text x="14" y="18" fill="#bfe8a6" font-size="12" font-family="monospace">JEPA-MPC: ' + lsa.interdiction.summary['learned-MPC'].mean.toFixed(1) + ' vs Greedy: ' + lsa.interdiction.summary['greedy'].mean.toFixed(1) + ' · Directed Twin Gain: +' + adv.advantageGainPts.toFixed(2) + ' pts</text>' +
-      '</svg>';
-  }
-
-  function renderAnlProp1Svg(anl) {
-    const wrap = $('mw-svg-anl-prop1');
-    if (!wrap || !anl || !anl.prop1AndReadout) return;
-    const W = 460, H = 250, pad = 32;
-    const cands = anl.prop1AndReadout.candidates;
-    const rowH = (H - 2 * pad) / Math.max(1, cands.length);
-    const sx = v => pad + 125 + clampVal(v, 0.2, 1.02) * ((W - pad - 165) / 0.85);
-    function clampVal(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) - lo; }
-
-    let rows = '';
-    cands.forEach((c, idx) => {
-      const y = pad + idx * rowH + rowH * 0.5;
-      const xLo = sx(c.intervalLow), xHi = sx(c.intervalHigh);
-      const xBase = sx(c.baseScore), xCen = sx(c.centeredScore), xUnc = sx(c.uncenteredScore);
-      rows +=
-        '<text x="10" y="' + (y + 3).toFixed(1) + '" fill="#b5b2bd" font-size="9.5" font-family="monospace">' + c.id.slice(0, 16) + '</text>' +
-        '<line x1="' + xLo.toFixed(1) + '" y1="' + y.toFixed(1) + '" x2="' + xHi.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="#3b4362" stroke-width="4" stroke-linecap="round"/>' +
-        '<circle cx="' + xBase.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3.5" fill="#a8c6f4"/>' +
-        '<circle cx="' + xUnc.toFixed(1) + '" cy="' + (y - 4).toFixed(1) + '" r="3.2" fill="#f4a3a3"/>' +
-        '<circle cx="' + xCen.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="4.5" fill="#bfe8a6" stroke="#080b14" stroke-width="1"/>';
-    });
-
-    wrap.innerHTML =
-      '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Proposition 1 Centered Readout Intervals">' +
-        rows +
-        '<text x="12" y="16" fill="#bfe8a6" font-size="12" font-family="monospace">Blue: Base p · Green: Centered c (0 inversions) · Red: Uncentered · Scale=' + anl.prop1AndReadout.contractionScale.toFixed(3) + '</text>' +
-      '</svg>';
-  }
-
-  function renderAnlM3Svg(anl) {
-    const wrap = $('mw-svg-anl-m3');
-    if (!wrap || !anl || !anl.m3Recurrence) return;
-    const W = 460, H = 250, pad = 32;
-    const tr = anl.m3Recurrence.trajectory || [];
-    const sx = ep => pad + (ep / 1500) * (W - 2 * pad);
-    const sy = pct => H - pad - (Math.max(0, Math.min(105, pct)) / 105) * (H - 2 * pad);
-
-    const ptsCorr = tr.map(r => sx(r.episode).toFixed(1) + ',' + sy(r.correctedSharePct).toFixed(1)).join(' ');
-    const ptsShip = tr.map(r => sx(r.episode).toFixed(1) + ',' + sy(r.shippedSharePct).toFixed(1)).join(' ');
-
-    wrap.innerHTML =
-      '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Proposition 2 M3 Recurrence Trajectory">' +
-        '<line x1="' + pad + '" y1="' + sy(100).toFixed(1) + '" x2="' + (W - pad) + '" y2="' + sy(100).toFixed(1) + '" stroke="#3b4362" stroke-dasharray="3,3"/>' +
-        '<polyline fill="none" stroke="#bfe8a6" stroke-width="2.5" points="' + ptsCorr + '"/>' +
-        '<polyline fill="none" stroke="#f4a3a3" stroke-width="2.0" stroke-dasharray="4,2" points="' + ptsShip + '"/>' +
-        '<text x="12" y="16" fill="#bfe8a6" font-size="12" font-family="monospace">Green: Repaired M3 (ep100=' + anl.m3Recurrence.shareAt100Pct.toFixed(1) + '%, ep200=' + anl.m3Recurrence.shareAt200Pct.toFixed(1) + '%, full=ep' + anl.m3Recurrence.fullBoundEpisode + ')</text>' +
-        '<text x="12" y="30" fill="#f4a3a3" font-size="12" font-family="monospace">Red Dashed: Shipped Double-Retention Defect (ep1500=' + anl.m3Recurrence.shippedAt1500SharePct.toFixed(2) + '%)</text>' +
-      '</svg>';
-  }
-
-  function renderBioPoincareSvg(bio) {
-    const wrap = $('mw-svg-poincare');
-    if (!wrap || !bio || !bio.hrvMastery) return;
-    const W = 460, H = 250, pad = 28;
-    const hrv = bio.hrvMastery;
-    const pts = hrv.poincarePoints || [];
-    const allRR = pts.flatMap(p => [p[0], p[1]]);
-    const minR = Math.min(...allRR, 550) - 25;
-    const maxR = Math.max(...allRR, 1150) + 25;
-    const halfW = W * 0.52;
-    const sx = v => pad + ((v - minR) / Math.max(maxR - minR, 1)) * (halfW - 1.5 * pad);
-    const sy = v => H - pad - ((v - minR) / Math.max(maxR - minR, 1)) * (H - 2 * pad);
-
-    const dots = pts.slice(0, 120).map(p =>
-      '<circle cx="' + sx(p[0]).toFixed(1) + '" cy="' + sy(p[1]).toFixed(1) + '" r="2.3" fill="#bfe8a6" opacity="0.74"/>'
-    ).join('');
-
-    const spec = hrv.psdSpectrum || [];
-    const maxP = Math.max(...spec.map(s => s.power), 1e-3);
-    const sxF = f => halfW + 18 + ((f - 0.04) / 0.36) * (W - halfW - 34);
-    const syP = p => H - pad - (p / maxP) * (H - 2 * pad - 20);
-    const psdPts = spec.map(s => sxF(s.f).toFixed(1) + ',' + syP(s.power).toFixed(1)).join(' ');
-
-    wrap.innerHTML =
-      '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Poincare Plot and Lomb-Scargle PSD">' +
-        '<line x1="' + pad + '" y1="' + (H - pad) + '" x2="' + (halfW - 10) + '" y2="' + pad + '" stroke="#3b4362" stroke-dasharray="3,2"/>' +
-        dots +
-        '<polyline fill="none" stroke="#f1cf8e" stroke-width="2" points="' + psdPts + '"/>' +
-        '<text x="12" y="16" fill="#bfe8a6" font-size="12" font-family="monospace">Poincaré SD1=' + hrv.sd1Ms.toFixed(1) + 'ms · SD2=' + hrv.sd2Ms.toFixed(1) + 'ms · DFA α1=' + hrv.dfaAlpha1.toFixed(2) + '</text>' +
-        '<text x="' + (halfW + 16) + '" y="16" fill="#f1cf8e" font-size="12" font-family="monospace">Lomb-Scargle LF/HF=' + hrv.lfHfRatio.toFixed(2) + '</text>' +
-      '</svg>';
-  }
-
-  function renderBioRmtHamiltonSvg(bio) {
-    const wrap = $('mw-svg-rmt-hamilton');
-    if (!wrap || !bio || !bio.rmt || !bio.regimeFilter) return;
-    const W = 460, H = 250, pad = 28;
-    const halfW = W * 0.48;
-    const eigs = bio.rmt.eigenvaluesRaw || [];
-    const maxEig = Math.max(...eigs, bio.rmt.lambdaPlus * 1.2, 2.5);
-    const barW = (halfW - 2 * pad) / Math.max(1, eigs.length);
-    const syE = v => H - pad - (v / maxEig) * (H - 2 * pad - 16);
-    const yMp = syE(bio.rmt.lambdaPlus).toFixed(1);
-
-    const bars = eigs.map((v, i) => {
-      const x = pad + i * barW + 2;
-      const y = syE(v);
-      const col = v > bio.rmt.lambdaPlus ? '#bfe8a6' : '#3b4362';
-      return '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + Math.max(4, barW - 4).toFixed(1) + '" height="' + Math.max(2, H - pad - y).toFixed(1) + '" fill="' + col + '"/>';
-    }).join('');
-
-    const probs = bio.regimeFilter.filteredProbCrisis || [];
-    const sxH = i => halfW + 14 + (i / Math.max(1, probs.length - 1)) * (W - halfW - 30);
-    const syH = p => H - pad - p * (H - 2 * pad - 16);
-    const hPts = probs.map((p, i) => sxH(i).toFixed(1) + ',' + syH(p).toFixed(1)).join(' ');
-
-    wrap.innerHTML =
-      '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="RMT Spectrum and Hamilton Regime Filter">' +
-        bars +
-        '<line x1="' + pad + '" y1="' + yMp + '" x2="' + (halfW - 10) + '" y2="' + yMp + '" stroke="#f4a3a3" stroke-dasharray="3,2"/>' +
-        '<polyline fill="none" stroke="#a8c6f4" stroke-width="2" points="' + hPts + '"/>' +
-        '<text x="12" y="16" fill="#bfe8a6" font-size="12" font-family="monospace">RMT λ+=' + bio.rmt.lambdaPlus.toFixed(2) + ' · Eff.DOF=' + bio.rmt.effectiveDegreesOfFreedom.toFixed(2) + '</text>' +
-        '<text x="' + (halfW + 14) + '" y="16" fill="#a8c6f4" font-size="12" font-family="monospace">Hamilton P(fast change)=' + bio.regimeFilter.latestCrisisProbPct.toFixed(1) + '%</text>' +
-      '</svg>';
-  }
-
-  function recompute() {
-    const regimeKey = $('mw-regime-select') ? $('mw-regime-select').value : 'fog_clearing_resonance';
-    const crtDesign = $('mw-crt-design-select') ? $('mw-crt-design-select').value : 'CRR';
-    const cSpill = $('mw-spill-slider') ? Number($('mw-spill-slider').value) : 0.35;
-    const budget = $('mw-budget-slider') ? Number($('mw-budget-slider').value) : 1.50;
-    const boundB = $('mw-anl-b-slider') ? Number($('mw-anl-b-slider').value) : 0.05;
-
-    if ($('mw-spill-val')) $('mw-spill-val').textContent = cSpill.toFixed(2);
-    if ($('mw-budget-val')) $('mw-budget-val').textContent = budget.toFixed(2);
-    if ($('mw-anl-b-val')) $('mw-anl-b-val').textContent = boundB.toFixed(3);
-
-    /* 1. Run Manuscript 1 */
-    const fnd = M.buildPhysiologicalFoundation(M.DEFAULT_PHYSIOLOGICAL_NODES);
-    let armCustom = fnd.arm.slice();
-    if (crtDesign === 'SR') {
-      armCustom = fnd.arm.map((_, i) => i % 2);
-    } else if (crtDesign === 'CR') {
-      armCustom = fnd.clusters.map(c => (c === 0 || c === 2 ? 1 : 0));
-    }
-    const crt = M.runCRTDesignAndInference(M.DEFAULT_PHYSIOLOGICAL_NODES, {
-      arm: armCustom,
-      nPerm: 28,
-      nSimRep: 24,
-      spilloverStrength: cSpill,
-      deltaTrue: -0.45
-    });
-
-    /* 2. Run Manuscript 2 */
-    const lsa = M.runFullLSAAnalysis(regimeKey, {
-      nullDraws: 20,
-      budget,
-      seeds: 4
-    });
-
-    /* 3. Run Manuscript 3 (Anchored Nested Learning) */
-    const anl = M.runAnchoredNestedLearning({ boundB });
-
-    /* 4. Run 4-Pillar Exercise & Cardiorespiratory Biophysics Mastery */
-    const bio = M.runAutonomicBiophysicsMastery(regimeKey);
-
-    latestState = { crt, lsa, anl, bio, regimeKey, crtDesign, cSpill, budget, boundB };
-
-    /* Update Header Badges */
-    if ($('mw-badge-m1')) $('mw-badge-m1').textContent = 'M1 CRT: C=' + crt.compositeScore.toFixed(2) + ' (' + crt.optimalityIndex.toFixed(0) + '% Opt)';
-    if ($('mw-badge-m2')) $('mw-badge-m2').textContent = 'M2 GFEVD: TCI=' + lsa.gfevd.TCI.toFixed(1) + '% · ρ=' + lsa.varFit.spectralRadius.toFixed(3);
-    if ($('mw-badge-m3')) $('mw-badge-m3').textContent = 'M3 ANL: ρ(A)=' + anl.m3Recurrence.spectralRadiusA.toFixed(5) + ' · Ep ' + anl.m3Recurrence.fullBoundEpisode;
-    if ($('mw-badge-bio')) $('mw-badge-bio').textContent = 'Biophysics: DFA α1=' + bio.hrvMastery.dfaAlpha1.toFixed(2) + ' · HRR60=' + bio.hrvMastery.hrr60Bpm.toFixed(0) + ' bpm';
-
-    /* Render Tab 1 (CRT) */
-    renderKpis('mw-crt-kpis', [
-      { label: 'CRT Composite Score', value: crt.compositeScore.toFixed(3), sub: '10-Metric Fused (CRITIC×Ent×Stab)' },
-      { label: 'Design Optimality Index', value: crt.optimalityIndex.toFixed(1) + '%', sub: 'Percentile across permutation pool' },
-      { label: 'Carryover-Adjusted Δ̂', value: crt.activeAdjustedEstimate.est.toFixed(3), sub: '95% CI [' + crt.activeAdjustedEstimate.lo.toFixed(2) + ', ' + crt.activeAdjustedEstimate.hi.toFixed(2) + ']' },
-      { label: 'Mean Cross-Arm Leakage', value: crt.designPoolsSummary.CRR.meanLeakage.toFixed(1) + '%', sub: 'vs SR ' + crt.designPoolsSummary.SR.meanLeakage.toFixed(1) + '% leakage' },
-      { label: 'Potts Mean-Field VFE', value: crt.activeScore.rawMetrics[7].toFixed(3), sub: 'Variational Free Energy F(q)' },
-      { label: 'Min LOO Spearman ρ', value: Math.min(...crt.looAblation.map(a => a.spearmanRho)).toFixed(3), sub: '10-metric rank stability' }
-    ]);
-    renderVoronoiSvg(crt);
-    renderPersistenceSvg(crt);
-
-    const crtMetricsBody = document.querySelector('#mw-table-crt-metrics tbody');
-    if (crtMetricsBody) {
-      crtMetricsBody.innerHTML = crt.looAblation.map((row, idx) => (
-        '<tr>' +
-          '<td class="mono">' + row.metricId + '</td>' +
-          '<td>' + row.metricName + '</td>' +
-          '<td class="mono">' + crt.activeScore.rawMetrics[idx].toFixed(4) + '</td>' +
-          '<td class="mono">' + (100 * row.weightFused).toFixed(1) + '%</td>' +
-          '<td class="mono">' + row.spearmanRho.toFixed(4) + '</td>' +
-          '<td class="mono">' + row.maxRankShift.toFixed(1) + '</td>' +
-        '</tr>'
-      )).join('');
-    }
-    const crtLadderBody = document.querySelector('#mw-table-crt-ladder tbody');
-    if (crtLadderBody) {
-      crtLadderBody.innerHTML = crt.operatingCharacteristics.map(r => (
-        '<tr>' +
-          '<td class="mono"><strong>' + r.design + '</strong></td>' +
-          '<td>' + r.estimator + '</td>' +
-          '<td class="mono">' + r.bias.toFixed(3) + '</td>' +
-          '<td class="mono">' + r.rmse.toFixed(3) + '</td>' +
-          '<td class="mono">' + (100 * r.coverage).toFixed(1) + '%</td>' +
-          '<td class="mono">' + (100 * r.power).toFixed(1) + '%</td>' +
-          '<td class="mono">' + (100 * r.typeI).toFixed(1) + '%</td>' +
-        '</tr>'
-      )).join('');
-    }
-
-    /* Render Tab 2 (LSA / GFEVD / JEPA) */
-    const adv = lsa.interdiction.directedVsSymmetricAdvantage;
-    renderKpis('mw-lsa-kpis', [
-      { label: 'Total Connectedness TCI', value: lsa.gfevd.TCI.toFixed(2) + '%', sub: '10-channel Pesaran–Shin GFEVD' },
-      { label: 'Top Net Transmitter', value: lsa.gfevd.topTransmitterName.split(' ')[0], sub: 'NET = +' + lsa.gfevd.NET[lsa.gfevd.topTransmitterIdx].toFixed(2) + '%' },
-      { label: 'VAR+(1) Spectral Radius', value: lsa.varFit.spectralRadius.toFixed(3), sub: 'Projected non-negative VAR+(1)' },
-      { label: 'Directedness Skew Index', value: lsa.directednessNulls.frobSkewAsymmetry.toFixed(3), sub: '||Φ_skew||_F / ||Φ||_F' },
-      { label: 'JEPA Learned-MPC Load', value: lsa.interdiction.summary['learned-MPC'].mean.toFixed(1), sub: 'Beats Greedy (' + lsa.interdiction.summary['greedy'].mean.toFixed(1) + ')' },
-      { label: 'Directed vs Sym Twin Gain', value: '+' + adv.advantageGainPts.toFixed(2) + ' pts', sub: 'Vanishes on symmetrized twin' }
-    ]);
-    renderCriticalitySvg(lsa);
-    renderInterdictionSvg(lsa);
-
-    const gfevdBody = document.querySelector('#mw-table-gfevd tbody');
-    if (gfevdBody) {
-      gfevdBody.innerHTML = lsa.scenario.names.map((name, i) => {
-        const net = lsa.gfevd.NET[i];
-        return (
-          '<tr>' +
-            '<td>' + name + '</td>' +
-            '<td class="mono">' + lsa.gfevd.TO[i].toFixed(2) + '%</td>' +
-            '<td class="mono">' + lsa.gfevd.FROM[i].toFixed(2) + '%</td>' +
-            '<td class="mono" style="color:' + (net >= 0 ? '#bfe8a6' : '#f4a3a3') + ';">' + (net >= 0 ? '+' : '') + net.toFixed(2) + '%</td>' +
-            '<td class="mono">' + lsa.gfevd.horizonAUC.horizonMeanNET[i].toFixed(2) + '</td>' +
-            '<td><span class="' + (net >= 0 ? 'mw-pill-ok' : 'mw-pill-warn') + '">' + (net >= 0 ? 'NET TRANSMITTER' : 'NET RECEIVER') + '</span></td>' +
-          '</tr>'
-        );
-      }).join('');
-    }
-
-    const nullsBody = document.querySelector('#mw-table-nulls tbody');
-    if (nullsBody) {
-      const dn = lsa.directednessNulls;
-      const rows = [
-        { name: '1. Symmetrization Null (Φ + Φᵀ)/2', rho: dn.rhoObs.toFixed(3), mean: dn.nulls.symmetrized.maxNet, z: 'Deterministic', p: 'NET ≡ 0.00%' },
-        { name: '2. Random Direction-Flip Null', rho: dn.rhoObs.toFixed(3), mean: dn.nulls.directionFlip.meanMaxNet, z: dn.nulls.directionFlip.zMaxNet.toFixed(2), p: dn.nulls.directionFlip.pMaxNet.toFixed(3) },
-        { name: '3. Off-Diagonal Weight-Permutation Null', rho: dn.rhoObs.toFixed(3), mean: dn.nulls.weightPermutation.meanMaxNet, z: dn.nulls.weightPermutation.zMaxNet.toFixed(2), p: dn.nulls.weightPermutation.pMaxNet.toFixed(3) }
-      ];
-      if (dn.nulls.timeReversal) {
-        rows.push({
-          name: '4. Time-Reversal Control (Y_t ← Y_{T-t})',
-          rho: dn.nulls.timeReversal.rhoRev.toFixed(3),
-          mean: dn.nulls.timeReversal.maxNet,
-          z: 'r(NET)=' + dn.nulls.timeReversal.corrWithForwardNet.toFixed(2),
-          p: dn.nulls.timeReversal.topTransmitterChanged ? 'Flip Verified' : 'Shift Verified'
-        });
-      }
-      nullsBody.innerHTML = rows.map(r => (
-        '<tr>' +
-          '<td>' + r.name + '</td>' +
-          '<td class="mono">' + r.rho + '</td>' +
-          '<td class="mono">' + Number(r.mean).toFixed(2) + '%</td>' +
-          '<td class="mono">' + r.z + '</td>' +
-          '<td class="mono">' + r.p + '</td>' +
-        '</tr>'
-      )).join('');
-    }
-
-    const interBody = document.querySelector('#mw-table-interdiction tbody');
-    if (interBody) {
-      const baseMean = lsa.interdiction.summary['none'].mean;
-      interBody.innerHTML = lsa.interdiction.order.map(pol => {
-        const s = lsa.interdiction.summary[pol];
-        const red = 100 * (baseMean - s.mean) / Math.max(baseMean, 1e-6);
-        return (
-          '<tr>' +
-            '<td class="mono"><strong>' + pol + '</strong></td>' +
-            '<td class="mono">' + s.mean.toFixed(2) + '</td>' +
-            '<td class="mono">[' + s.ci95[0].toFixed(1) + ', ' + s.ci95[1].toFixed(1) + ']</td>' +
-            '<td class="mono" style="color:' + (red > 0 ? '#bfe8a6' : '#b5b2bd') + ';">' + (red >= 0 ? '-' : '+') + Math.abs(red).toFixed(1) + '%</td>' +
-          '</tr>'
-        );
-      }).join('');
-    }
-
-    /* Render Tab 3 (Manuscript 3 — Anchored Nested Learning) */
-    renderKpis('mw-anl-kpis', [
-      { label: 'Pinned L0 Anchor Hash', value: anl.anchorHash, sub: 'W3C <3 Hz flicker & peak-HR vetoes' },
-      { label: 'Prop. 1 Contraction Scale', value: anl.prop1AndReadout.contractionScale.toFixed(3), sub: 'Mean bias removed: ' + anl.prop1AndReadout.meanRawBiasRemoved.toFixed(4) },
-      { label: 'Prop. 2 Spectral Radius', value: anl.m3Recurrence.spectralRadiusA.toFixed(6), sub: '4×4 coupled M3 matrix ρ(A_M3) < 1' },
-      { label: 'M3 Bound Reach Episode', value: 'Ep ' + anl.m3Recurrence.fullBoundEpisode, sub: '26.9% @ ep100 · 66.5% @ ep200' },
-      { label: 'Shipped Defect @ Ep 1500', value: anl.m3Recurrence.shippedAt1500SharePct.toFixed(2) + '%', sub: 'Double-retention starvation bug' },
-      { label: 'Sinkhorn Critical Unmet', value: anl.sinkhornTransport.criticalUnmet.toFixed(4), sub: '0.0000 forbidden flow' }
-    ]);
-    renderAnlProp1Svg(anl);
-    renderAnlM3Svg(anl);
-
-    const prop1Body = document.querySelector('#mw-table-anl-prop1 tbody');
-    if (prop1Body) {
-      prop1Body.innerHTML = anl.prop1AndReadout.candidates.map(c => (
-        '<tr>' +
-          '<td>' + c.name + '</td>' +
-          '<td class="mono">' + c.baseScore.toFixed(3) + '</td>' +
-          '<td class="mono">' + (c.rawCombinedU >= 0 ? '+' : '') + c.rawCombinedU.toFixed(4) + '</td>' +
-          '<td class="mono">' + (c.centeredBias >= 0 ? '+' : '') + c.centeredBias.toFixed(4) + '</td>' +
-          '<td class="mono">' + c.uncenteredScore.toFixed(4) + '</td>' +
-          '<td class="mono"><strong>' + c.centeredScore.toFixed(4) + '</strong></td>' +
-        '</tr>'
-      )).join('');
-    }
-
-    const efeBody = document.querySelector('#mw-table-anl-efe tbody');
-    if (efeBody) {
-      efeBody.innerHTML = anl.efeEvaluation.questions.map(q => (
-        '<tr>' +
-          '<td>' + q.label + '</td>' +
-          '<td class="mono">' + q.noise.toFixed(2) + '</td>' +
-          '<td class="mono">' + q.informationGain.toFixed(3) + '</td>' +
-          '<td class="mono">' + q.risk.toFixed(3) + '</td>' +
-          '<td class="mono">' + q.ambiguity.toFixed(3) + '</td>' +
-          '<td class="mono" style="color:' + (q.beatsStop ? '#bfe8a6' : '#f1cf8e') + ';">' + q.G.toFixed(4) + '</td>' +
-        '</tr>'
-      )).join('');
-    }
-
-    const sinkBody = document.querySelector('#mw-table-anl-sinkhorn tbody');
-    if (sinkBody) {
-      const st = anl.sinkhornTransport;
-      const rows = st.supplyUnits.map((unit, i) => (
-        '<tr>' +
-          '<td>' + unit + '</td>' +
-          st.plan[i].map(v => '<td class="mono">' + v.toFixed(3) + '</td>').join('') +
-        '</tr>'
-      ));
-      rows.push(
-        '<tr>' +
-          '<td><strong>MISSING (Unmet Demand)</strong></td>' +
-          st.plan[st.supplyUnits.length].map(v => '<td class="mono">' + v.toFixed(3) + '</td>').join('') +
-        '</tr>'
-      );
-      sinkBody.innerHTML = rows.join('');
-    }
-
-    const capBody = document.querySelector('#mw-table-anl-cap tbody');
-    if (capBody) {
-      capBody.innerHTML = anl.capProtocol.candidates.map(c => (
-        '<tr>' +
-          '<td>' + c.name + '</td>' +
-          '<td class="mono">+' + c.deltaBrier.toFixed(4) + '</td>' +
-          '<td class="mono">[' + c.ciLow.toFixed(4) + ', +' + c.ciHigh.toFixed(4) + ']</td>' +
-          '<td class="mono">+' + c.teethInversionDrop.toFixed(4) + '</td>' +
-          '<td class="mono">' + c.admissionPowerAt331Pct.toFixed(1) + '%</td>' +
-          '<td><span class="mw-pill-warn">' + c.verdict.split('(')[0].trim() + '</span></td>' +
-        '</tr>'
-      )).join('');
-    }
-
-    /* Render Tab 4 (Exercise & Cardiorespiratory Biophysics Mastery) */
-    renderKpis('mw-bio-kpis', [
-      { label: 'Poincaré SD1 / SD2', value: bio.hrvMastery.sd1Ms.toFixed(1) + ' / ' + bio.hrvMastery.sd2Ms.toFixed(1) + ' ms', sub: 'Ratio SD1/SD2 = ' + bio.hrvMastery.sd1Sd2Ratio.toFixed(3) },
-      { label: 'DFA α1 & HRVT Zone', value: bio.hrvMastery.dfaAlpha1.toFixed(2) + ' (' + bio.hrvMastery.dfaAlpha2.toFixed(2) + ')', sub: bio.hrvMastery.hrvtZone },
-      { label: 'Post-Exertion HRR60 / τ', value: bio.hrvMastery.hrr60Bpm.toFixed(1) + ' bpm / ' + bio.hrvMastery.hrrTauOffSec.toFixed(0) + 's', sub: 'Vagal reactivation: ' + bio.hrvMastery.parasympatheticReactivationScore.toFixed(0) + '/100' },
-      { label: 'Cardio-Locomotor PLV', value: bio.coupling.phaseLockingValuePLV.toFixed(3), sub: 'Net TE(Resp→HR) = ' + (bio.coupling.netRespDriverBits >= 0 ? '+' : '') + bio.coupling.netRespDriverBits.toFixed(3) + ' bits' },
-      { label: 'RMT Effective DOF', value: bio.rmt.effectiveDegreesOfFreedom.toFixed(2) + ' / 10', sub: 'Cond. ' + bio.rmt.conditionNumberRaw.toFixed(1) + ' → ' + bio.rmt.conditionNumberDenoised.toFixed(1) },
-      { label: 'Hamilton fast-change prob', value: bio.regimeFilter.latestCrisisProbPct.toFixed(1) + '%', sub: bio.regimeFilter.activeRegime }
-    ]);
-    renderBioPoincareSvg(bio);
-    renderBioRmtHamiltonSvg(bio);
-
-    const shootBody = document.querySelector('#mw-table-bio-shootout tbody');
-    if (shootBody) {
-      shootBody.innerHTML = bio.shootout.strategies.map(s => (
-        '<tr>' +
-          '<td><strong>' + s.name + '</strong></td>' +
-          '<td class="mono">' + s.annVolPct.toFixed(2) + '%</td>' +
-          '<td class="mono">' + s.diversificationRatio.toFixed(3) + 'x</td>' +
-          '<td class="mono">' + s.effectiveRiskBets.toFixed(2) + ' / 10</td>' +
-          '<td class="mono">' + s.maxRiskContributionPct.toFixed(1) + '%</td>' +
-        '</tr>'
-      )).join('');
-    }
-
-    const playBody = document.querySelector('#mw-table-bio-playbook tbody');
-    if (playBody) {
-      playBody.innerHTML = bio.regimeFilter.playbook.map(p => (
-        '<tr>' +
-          '<td><strong>' + p.regime + '</strong></td>' +
-          '<td>' + p.allocationRule + '</td>' +
-          '<td class="mono">' + p.kellyMultiplier + '</td>' +
-          '<td>' + p.rationale + '</td>' +
-        '</tr>'
-      )).join('');
-    }
-
-    return latestState;
-  }
-
-  /* Wire Tab Buttons */
-  const tabBtns = document.querySelectorAll('#manuscript-workbench .mw-tab-btn');
-  const tabPanes = {
-    crt: $('mw-pane-crt'),
-    lsa: $('mw-pane-lsa'),
-    anl: $('mw-pane-anl'),
-    bio: $('mw-pane-bio'),
-    ride: $('mw-pane-ride')
-  };
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.getAttribute('data-mw-tab');
-      tabBtns.forEach(b => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
-      Object.entries(tabPanes).forEach(([k, pane]) => {
-        if (pane) pane.classList.toggle('active', k === target);
-      });
-    });
-  });
-
-  /* ---- Tab 5 · Your ride ----
+  /* ---- Your ride ----
      Runs only what a ride's own signals support. A cockpit TCX export holds time, cadence, heart rate, speed,
      distance and altitude, one point per second. It has no beat-to-beat intervals, breathing, EEG or skin
      conductance, so nothing below invents them. (The engine's sessionSamples path fills missing channels with
@@ -5291,7 +4444,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       }));
     }
 
-    /* Manuscript 2 on two measured signals: non-negative VAR(1), then generalized FEVD at a 10-step horizon.
+    /* Which led, on two measured signals: non-negative VAR(1), then generalized FEVD at a 10-step horizon.
        theta[i][j] is the share of i's forecast variance that comes from shocks to j. */
     function rideSpillover(rows) {
       if (rows.length < 60) return { why: 'Needs at least 5 minutes with both heart rate and cadence.' };
@@ -5301,17 +4454,24 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       return { cadToHr: 100 * g.theta[0][1], hrToCad: 100 * g.theta[1][0], netCad: g.NET[1], tci: g.TCI, rho: fit.spectralRadius, n: rows.length };
     }
 
-    /* The engine's two-state Hamilton filter, on 5-second changes in heart rate and in its cadence-heart blend
-       (the same weights the engine uses on its sample rides). */
-    function rideStates(rows) {
-      if (rows.length < 40) return { why: 'Needs at least about 3 minutes with both heart rate and cadence.' };
-      const blend = (r) => Math.max(0.05, 0.6 * rideCad(r.cad) + 0.4 * Math.max(0, (r.hr - 60) / 15));
-      const d = [];
-      for (let i = 1; i < rows.length; i++) d.push((rideHr(rows[i].hr) - rideHr(rows[i - 1].hr)) * 0.04 + (blend(rows[i]) - blend(rows[i - 1])) * 0.03);
-      const rf = M.computeAutonomicRegimeFilter(d, []);
-      const p = rf.filteredProbCrisis;
-      const pct = (f) => 100 * p.filter(f).length / p.length;
-      return { p, steady: pct((x) => x < 0.3), transition: pct((x) => x >= 0.3 && x <= 0.6), fast: pct((x) => x > 0.6), last: String(rf.activeRegime).replace(/^State \d+:\s*/, '') };
+    /* Where cadence changed by 5 rpm or more, and heart rate's measured answer: the engine's cadenceEffortChanges on the
+       ride's own 5-second bins. A climb in a harder gear can raise effort without raising cadence; the page says so. */
+    function rideCadenceChanges(pts) {
+      const bins = binRide(pts);
+      if (!bins.some((r) => Number.isFinite(r.cad))) return { why: 'This ride has no cadence, so cadence changes can\u2019t be read.' };
+      const r = M.cadenceEffortChanges(bins, { binS: RIDE_BIN_S });
+      if (!r.valid) return { why: 'Cadence changes need at least 5 minutes of cadence.' };
+      const half = Math.round(30 / RIDE_BIN_S);
+      const meanCad = (a, b) => {
+        let sum = 0, n = 0;
+        for (let i = Math.max(0, a); i < Math.min(bins.length, b); i++) if (Number.isFinite(bins[i].cad)) { sum += bins[i].cad; n++; }
+        return n ? sum / n : NaN;
+      };
+      const changes = r.changes.filter((c) => Number.isFinite(c.heartRateChange)).map((c) => ({
+        ...c, atS: bins[c.at].s, toS: bins[Math.min(c.shadeTo, bins.length - 1)].s + RIDE_BIN_S,
+        cadBefore: meanCad(c.at - half, c.at), cadAfter: meanCad(c.at, c.at + half)
+      }));
+      return { changes };
     }
 
     /* Heart-rate recovery measured on the ride itself: the hardest 30 seconds, then the next 2 minutes,
@@ -5358,7 +4518,7 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       return { at: peak.s, peak: peak.hr, hrr60, tau: fit.tau, r2: sst > 0 ? 1 - fit.sse / sst : 0, hrInf: fit.a };
     }
 
-    function rideChartSvg(rows, states) {
+    function rideChartSvg(rows, changes) {
       const W = 760, H = 190, L = 44, R = 44, T = 14, B = 26;
       const span = Math.max(rows[rows.length - 1].s, 1);
       const x = (s) => L + (W - L - R) * (s / span);
@@ -5367,14 +4527,13 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       const yh = (v) => T + (H - T - B) * (1 - (v - hMin) / Math.max(hMax - hMin, 1));
       const yc = (v) => T + (H - T - B) * (1 - v / cMax);
       let shade = '';
-      if (states && states.p) states.p.forEach((pv, i) => {
-        if (pv > 0.6 && rows[i + 1]) {
-          const a = x(rows[i].s), b = x(rows[i + 1].s);
-          shade += '<rect x="' + a.toFixed(1) + '" y="' + T + '" width="' + Math.max(1, b - a).toFixed(1) + '" height="' + (H - T - B) + '" fill="rgba(241,207,142,0.24)"/>';
-        }
+      if (changes) changes.forEach((c) => {
+        const a = x(Math.min(c.atS, span)), b = x(Math.min(c.toS, span));
+        shade += '<rect x="' + a.toFixed(1) + '" y="' + T + '" width="' + Math.max(1.5, b - a).toFixed(1) + '" height="' + (H - T - B) + '" fill="rgba(241,207,142,0.24)"/>' +
+          '<text x="' + a.toFixed(1) + '" y="' + (T + 10) + '" fill="#f1cf8e" font-size="11" text-anchor="middle">' + (c.cadenceChange > 0 ? '\u25B2' : '\u25BC') + '</text>';
       });
       const line = (f) => rows.map((r) => x(r.s).toFixed(1) + ',' + f(r).toFixed(1)).join(' ');
-      return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="mw-ride-chart" role="img" aria-label="Heart rate (red) and cadence (blue) over the ride, shaded where the filter marks fast change">' + shade +
+      return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="mw-ride-chart" role="img" aria-label="Heart rate (red) and cadence (blue) over the ride, shaded from each cadence change until heart rate had mostly answered">' + shade +
         '<polyline points="' + line((r) => yc(r.cad)) + '" fill="none" stroke="#a8c6f4" stroke-width="1.4" opacity="0.85"/>' +
         '<polyline points="' + line((r) => yh(r.hr)) + '" fill="none" stroke="#f08a8a" stroke-width="1.8"/>' +
         '<text x="' + L + '" y="' + (H - 8) + '" fill="#9693a6" font-size="12">0:00</text>' +
@@ -5397,12 +4556,14 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       if (!withHr) {
         $('mw-ride-head').innerHTML = head + ' This ride has no heart rate, and everything in this tab needs it. Ride the Biofeedback Path Cockpit with a heart-rate strap connected, then export again.';
         ['mw-ride-plain', 'mw-ride-chart', 'mw-ride-m2', 'mw-ride-hrr', 'mw-ride-states'].forEach((id) => { $(id).innerHTML = ''; });
+        if ($('mw-ride-math')) $('mw-ride-math').hidden = true;
         $('mw-ride-states-note').textContent = '';
         return;
       }
       $('mw-ride-head').innerHTML = head;
       const rows = binRide(pts).filter((r) => Number.isFinite(r.hr) && Number.isFinite(r.cad));
-      const sp = rideSpillover(rows), st = rideStates(rows), rc = rideRecovery(pts);
+      const sp = rideSpillover(rows), cc = rideCadenceChanges(pts), rc = rideRecovery(pts);
+      const signed = (v, unit) => (v > 0 ? '+' : '\u2212') + Math.abs(v).toFixed(0) + ' ' + unit;
       const plain = [];
       if (sp.why) plain.push(sp.why);
       else {
@@ -5414,13 +4575,23 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
       }
       if (rc.why) plain.push(rc.why + (/^Your heart rate never fell/.test(rc.why) ? ' Stop pedaling for a minute after a hard effort, and the next ride will show one.' : ''));
       else plain.push('After your hardest effort, ' + rideClock(rc.at) + ' into the ride, your heart rate fell ' + rc.hrr60.toFixed(0) + ' bpm in one minute, and closed half of the remaining gap to ' + rc.hrInf.toFixed(0) + ' bpm about every ' + Math.round(rc.tau * Math.LN2) + ' seconds.');
-      if (st.why) plain.push(st.why);
-      else plain.push('You rode steady ' + st.steady.toFixed(0) + '% of the time. Your heart rate and pedaling changed fast ' + st.fast.toFixed(0) + '% of the time: the shaded parts of the chart.');
+      if (cc.why) plain.push(cc.why);
+      else if (!cc.changes.length) plain.push('Your cadence held steady: it never changed by 5 rpm or more for half a minute.');
+      else {
+        const big = cc.changes.reduce((a, b) => (Math.abs(b.heartRateChange) > Math.abs(a.heartRateChange) ? b : a));
+        const n = cc.changes.length;
+        const how = big.cadAfter < 10 && big.cadBefore >= 30 ? 'you stopped pedaling'
+          : big.cadBefore < 10 && big.cadAfter >= 30 ? 'you started pedaling again'
+          : 'your cadence ' + (big.cadenceChange > 0 ? 'rose ' : 'fell ') + Math.abs(big.cadenceChange).toFixed(0) + ' rpm';
+        plain.push('You changed cadence by 5 rpm or more ' + (n === 1 ? 'once' : n + ' times') + ': the shaded parts of the chart. The biggest answer came ' +
+          rideClock(big.atS) + ' into the ride: ' + how + ' and your heart rate ' + (big.heartRateChange > 0 ? 'rose ' : 'fell ') + Math.abs(big.heartRateChange).toFixed(0) + ' bpm' +
+          (big.secondsTo90 !== null ? ', 90% of the way there after ' + big.secondsTo90 + ' seconds.' : '.'));
+      }
       $('mw-ride-plain').innerHTML = '<h4>In plain words</h4><ul>' + plain.map((t) => '<li>' + rideEsc(t) + '</li>').join('') +
         '</ul><p class="mw-plain-foot">Compare these with your own earlier rides, not with other people\u2019s. None of this is a medical measurement.</p>';
-      if ($('mw-ride-math')) $('mw-ride-math').open = window.matchMedia('(min-width: 900px)').matches;
-      $('mw-ride-chart').innerHTML = rows.length > 2 ? rideChartSvg(rows, st.p ? st : null) +
-        '<p class="mw-note">Red: heart rate (left scale) · blue: cadence (right scale) · shaded: fast-change periods.</p>' : '';
+      if ($('mw-ride-math')) { $('mw-ride-math').hidden = false; $('mw-ride-math').open = window.matchMedia('(min-width: 900px)').matches; }
+      $('mw-ride-chart').innerHTML = rows.length > 2 ? rideChartSvg(rows, cc.changes || null) +
+        '<p class="mw-note">Red: heart rate (left scale) · blue: cadence (right scale) · shaded: from each cadence change (\u25B2 up, \u25BC down) until your heart rate was 90% of the way to its new level.</p>' : '';
       if (sp.why) why('mw-ride-m2', sp.why); else renderKpis('mw-ride-m2', [
         { label: 'Cadence → heart rate', value: sp.cadToHr.toFixed(1) + '%', sub: "share of heart rate's 10-step forecast variance from cadence" },
         { label: 'Heart rate → cadence', value: sp.hrToCad.toFixed(1) + '%', sub: "share of cadence's forecast variance from heart rate" },
@@ -5434,19 +4605,21 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
         { label: 'Recovery time constant', value: rc.tau + ' s', sub: 'τ_off in HR(t) = HR∞ + ΔHR·e^(−t/τ), fit over 2 min' },
         { label: 'Fit R²', value: rc.r2.toFixed(3), sub: 'HR∞ ' + rc.hrInf.toFixed(0) + ' bpm' }
       ]);
-      if (st.why) { why('mw-ride-states', st.why); $('mw-ride-states-note').textContent = ''; } else {
-        renderKpis('mw-ride-states', [
-          { label: 'Steady', value: st.steady.toFixed(0) + '%', sub: 'of the ride' },
-          { label: 'Transition', value: st.transition.toFixed(0) + '%', sub: 'of the ride' },
-          { label: 'Fast change', value: st.fast.toFixed(0) + '%', sub: 'of the ride · shaded in the chart' },
-          { label: 'At the end', value: st.last, sub: 'last 5-second step' }
-        ]);
-        $('mw-ride-states-note').textContent = "The engine's two-state Hamilton filter, run on 5-second changes in heart rate and cadence. Its thresholds come from this ride's own changes, and rises and drops both count, so it shows when you changed fastest compared with the rest of the ride, not an absolute intensity.";
+      if (cc.why) { why('mw-ride-states', cc.why); $('mw-ride-states-note').innerHTML = ''; } else {
+        const rises = cc.changes.filter((c) => c.heartRateChange > 0), drops = cc.changes.filter((c) => c.heartRateChange < 0);
+        const most = (arr, f) => arr.reduce((a, b) => (f(b) > f(a) ? b : a));
+        const t90 = cc.changes.map((c) => c.secondsTo90).filter((v) => v !== null).sort((a, b) => a - b);
+        const kp = [{ label: 'Cadence changes', value: String(cc.changes.length), sub: '5 rpm or more, held for 30 s' }];
+        if (rises.length) { const b = most(rises, (c) => c.heartRateChange); kp.push({ label: 'Biggest heart-rate rise', value: signed(b.heartRateChange, 'bpm'), sub: 'at ' + rideClock(b.atS) + ' · cadence ' + signed(b.cadenceChange, 'rpm') }); }
+        if (drops.length) { const b = most(drops, (c) => -c.heartRateChange); kp.push({ label: 'Biggest heart-rate drop', value: signed(b.heartRateChange, 'bpm'), sub: 'at ' + rideClock(b.atS) + ' · cadence ' + signed(b.cadenceChange, 'rpm') }); }
+        if (t90.length) kp.push({ label: 'Time to 90%', value: (t90.length % 2 ? t90[t90.length >> 1] : (t90[t90.length / 2 - 1] + t90[t90.length / 2]) / 2).toFixed(0) + ' s', sub: 'median: heart rate to 90% of its new level' });
+        renderKpis('mw-ride-states', kp);
+        $('mw-ride-states-note').innerHTML = (cc.changes.length ? '<ul class="mw-list">' + cc.changes.map((c) => '<li>' + rideEsc(rideClock(c.atS) + ' · cadence ' + signed(c.cadenceChange, 'rpm') + ' · heart rate ' + signed(c.heartRateChange, 'bpm') + (c.secondsTo90 !== null ? ' · 90% after ' + c.secondsTo90 + ' s' : '')) + '</li>').join('') + '</ul>' : '') +
+          '<p class="mw-note">A climb in a harder gear can raise your effort while your cadence stays the same or drops, so it shows here only if your cadence changed.</p>';
       }
-      $('mw-source').innerHTML = '<strong>Your ride is in tab 5.</strong> Tabs 1–4 still run on the built-in sample rides, not on you.';
     }
 
-    window.__bslRide = { parseTcx, binRide, rideSpillover, rideStates, rideRecovery, renderRide };
+    window.__bslRide = { parseTcx, binRide, rideSpillover, rideCadenceChanges, rideRecovery, renderRide };
     if ($('mw-ride-btn') && $('mw-ride-file')) {
       $('mw-ride-btn').addEventListener('click', () => $('mw-ride-file').click());
       $('mw-ride-file').addEventListener('change', async (e) => {
@@ -5459,27 +4632,11 @@ body.site { overflow: auto; background: radial-gradient(1400px 800px at 72% -10%
         } catch (err) {
           $('mw-ride-head').textContent = 'Could not read ' + f.name + ': ' + err.message + '.';
         }
-        if ($('mw-tabbtn-ride')) $('mw-tabbtn-ride').click();
         e.target.value = '';
       });
     }
   }
 
-  document.querySelectorAll('#manuscript-workbench details.mw-math').forEach((d) => { if (d.id !== 'mw-ride-math') d.open = window.matchMedia('(min-width: 900px)').matches; });
-  ['mw-regime-select', 'mw-crt-design-select', 'mw-spill-slider', 'mw-budget-slider', 'mw-anl-b-slider'].forEach(id => {
-    const el = $(id);
-    if (el) el.addEventListener('input', () => recompute());
-  });
-  if ($('mw-recompute-btn')) $('mw-recompute-btn').addEventListener('click', () => recompute());
-
-  const ctrl = Object.freeze({
-    recompute,
-    getState: () => latestState
-  });
-  window.BSLManuscriptController = ctrl;
-  window.ATManuscriptController = ctrl;
-
-  recompute();
 })();
 </script>
 </body>
