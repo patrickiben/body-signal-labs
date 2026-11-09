@@ -1,6 +1,8 @@
 """Time of day, on real frames in both cockpits: a step to a later time only lowers the sun and darkens the sky,
 a step back only raises and brightens them, nothing passes through other hours on the way, each step lands
-exactly on the chosen time's look, and changing your mind halfway does not jump. Run: python3 tests/time_of_day.py"""
+exactly on the chosen time's look, and changing your mind halfway does not jump. Run: python3 tests/time_of_day.py
+It waits for each blend to finish rather than a fixed time, but it needs a renderer of a few frames a second, so it
+runs locally like the other browser state checks; CI runs the math in tests/time_of_day.cjs."""
 import pathlib, sys, time
 from playwright.sync_api import sync_playwright
 
@@ -32,9 +34,10 @@ with sync_playwright() as p:
         errs = []; pg.on("pageerror", lambda e: errs.append(str(e)))
         pg.goto((ROOT / page_name).as_uri()); time.sleep(5)
         for i in (1, 4, 1):   # warm up: the first changes also compile and redraw the scene thumbnails
-            pg.evaluate("(i) => __app.setTod(i, true)", i); time.sleep(2.5)
+            pg.evaluate("(i) => __app.setTod(i, true)", i); pg.wait_for_function("__app.S.lookT >= 1", timeout=60000)
         for a, z in STEPS:
-            pg.evaluate("(i) => __app.setTod(i, true)", a); time.sleep(2.2)
+            pg.evaluate("(i) => __app.setTod(i, true)", a)
+            pg.wait_for_function("__app.S.lookT >= 1", timeout=60000); time.sleep(0.3)
             start = pg.evaluate("() => { const l = __app.S.lastLand; const lum = (c) => 0.2126*c[0]+0.7152*c[1]+0.0722*c[2]; return [l.uSunDir[1], lum(l.uSkyTop), lum(l.uSkyHz)]; }")
             frames = pg.evaluate(SAMPLE, [z, 2400, None, 0])
             end = frames[-1][1:]
@@ -45,7 +48,7 @@ with sync_playwright() as p:
             check(ok_range and ok_one_way and len(frames) > 8,
                   f"{label}: {NAMES[a]} to {NAMES[z]} ({'later' if later else 'earlier'}): sun {start[0]:.3f} to {end[0]:.3f}, highest on the way {max(seq):.3f}, {len(frames)} frames")
         # change of mind: Dusk to Night, then back to Dusk 0.6 s in
-        pg.evaluate("(i) => __app.setTod(i, true)", 3); time.sleep(2.2)
+        pg.evaluate("(i) => __app.setTod(i, true)", 3); pg.wait_for_function("__app.S.lookT >= 1", timeout=60000); time.sleep(0.3)
         frames = pg.evaluate(SAMPLE, [4, 2600, 3, 600])
         jump = max(max(abs(y[k] - x[k]) for k in (1, 2, 3)) for x, y in zip(frames, frames[1:]))
         check(jump < 0.06, f"{label}: changing your mind halfway does not jump (largest step between frames {jump:.4f})")
