@@ -175,6 +175,7 @@ uniform float uSpark,uCoast,uForest,uMeadow,uAlpine,uCanyon,uOrbit,uMisty,uSnake
 uniform float uShimmer,uAurora,uHaze,uWeather,uWarm,uBreath,uBreathOn,uNebula;
 uniform vec4 uGhost;
 uniform vec4 uRouteA; uniform float uRouteB,uRouteC,uRouteD,uRouteE,uRouteF; uniform float uBendD,uClimbD;
+uniform sampler2D uBack; uniform float uBackOn,uBackDim,uBackHz;
 float routeX(float z,float turn,float winding){z*=winding;return turn*(14.*sin(z*.0113+1.+uSeed)+6.5*sin(z*.0271+2.2+uSeed*1.7));}
 float routeY(float z,float rise,float winding){z*=winding;return rise*(7.*sin(z*.0071+.4+uSeed)+3.4*sin(z*.0193+1.9+uSeed*2.3)+1.1*sin(z*.0471+3.1));}
 float pathX(float z){float v=0.;if(uRouteA.x>.000001)v+=uRouteA.x*routeX(z,1.25,.8);if(uRouteA.y>.000001)v+=uRouteA.y*routeX(z,.75,1.15);if(uRouteA.z>.000001)v+=uRouteA.z*routeX(z,.95,.7);if(uRouteA.w>.000001)v+=uRouteA.w*routeX(z,1.4,.65);if(uRouteB>.000001)v+=uRouteB*routeX(z,.75,1.45);if(uRouteC>.000001)v+=uRouteC*routeX(z,2.1,.55);if(uRouteD>.000001)v+=uRouteD*routeX(z,1.,1.);if(uRouteE>.000001)v+=uRouteE*routeX(z,7.,.75);if(uRouteF>.000001)v+=uRouteF*routeX(z,1.65,.9);return v*(1.+uBendD);}
@@ -611,6 +612,14 @@ float mistyMarch(vec3 ro,vec3 rd,out float last){
   return t;
 }
 float mistySkyTrail=0.;
+// the rider's own scenery, painted on this Mac: a wide painting around the road's heading, 2.2 rad across and,
+// at the same scale, 0.917 rad tall, its horizon row (uBackHz) on the horizon, mirrored past its edges so a bend
+// never shows a seam; linear light like the rest of the scene, dimmed with the time of day (uBackDim)
+vec3 backdrop(vec3 rd){
+  float u=.5+atan(rd.x,rd.z)/2.2; u=1.-abs(mod(u,2.)-1.);
+  float v=clamp(uBackHz-asin(clamp(rd.y,-1.,1.))/.917,0.,1.);
+  return pow(texture(uBack,vec2(u,v)).rgb,vec3(2.2))*uBackDim;
+}
 vec3 mistyNebula(vec3 rd,float s){
   vec2 p=vec2(atan(rd.x,rd.z)*1.5,rd.y*2.5-1.22);
   float wide=mix(.62,1.12,uWeather);
@@ -672,7 +681,7 @@ vec3 mistySky(vec3 rd,vec2 sv){
   float ridgeD=abs(rd.y-top);
   c+=uEdge*exp(-pow(ridgeD/.016,1.8))*a*1.35*smoothstep(-.02,.01,rd.y);
   mistySkyTrail=exp(-pow(ridgeD/.022,1.8))*a*.4*smoothstep(-.02,.01,rd.y);
-  return c;
+  return uBackOn>.001?mix(c,backdrop(rd),uBackOn):c;
 }
 vec4 mistyWorld(vec3 ro,vec3 rd,vec2 sv){
   mistySkyTrail=0.;
@@ -846,13 +855,16 @@ vec3 sky(vec3 rd,vec2 sv){
     float scanline=.55+.45*smoothstep(-.2,.2,sin(rd.y*240.));
     c+=mix(vec3(1.,.36,.04),vec3(0.,.88,1.),clamp((rd.y-.04)*12.,0.,1.))*sunDisk*scanline*1.35*uTron;
   }
+  // the rider's own scenery replaces the sky gradient, the clouds and the far range
+  float keep=1.-uBackOn;
+  if(uBackOn>.001)c=mix(c,backdrop(rd),uBackOn);
   // cloud deck
-  if(rd.y>.004){
+  if(rd.y>.004&&keep>.001){
     vec2 cp=rd.xz/(rd.y+.13)*1.25+vec2(uT*.006,uCam.z*.0009);
     float cl=fbm4(cp);
     float cov=smoothstep(.57,.88,cl)*(1.-uTron*.85);
     vec3 cc=mix(uFog*.9,uSunC*1.02,.3+.55*pow(s,3.));
-    c=mix(c,cc,cov*.62*smoothstep(.004,.13,rd.y));
+    c=mix(c,cc,cov*.62*smoothstep(.004,.13,rd.y)*keep);
   }
   if(uNebula>.002)c+=mistyNebula(rd,s)*uNebula*smoothstep(-.01,.12,rd.y);
   if(uBreathOn>.002)c+=uSunC*pow(s,mix(190.,44.,uBreath))*(.2+.62*uBreath)*uBreathOn;
@@ -873,10 +885,10 @@ vec3 sky(vec3 rd,vec2 sv){
   float top=.006+jag+a*.17;
   float edge=smoothstep(0.,.0028,top-rd.y);
   vec3 ridge=mix(uFog*.42,uSkyTop*.6,.35)+uEdge*a*.5*smoothstep(top-.05,top,rd.y);
-  c=mix(c,ridge,edge*smoothstep(-.03,.0,rd.y));
+  c=mix(c,ridge,edge*smoothstep(-.03,.0,rd.y)*keep);
   float ridgeD=abs(rd.y-top);
-  c+=uEdge*exp(-pow(ridgeD/.016,1.8))*a*1.35*smoothstep(-.02,.01,rd.y);
-  skyTrail=exp(-pow(ridgeD/.022,1.8))*a*.22*smoothstep(-.02,.01,rd.y);
+  c+=uEdge*exp(-pow(ridgeD/.016,1.8))*a*1.35*smoothstep(-.02,.01,rd.y)*keep;
+  skyTrail=exp(-pow(ridgeD/.022,1.8))*a*.22*smoothstep(-.02,.01,rd.y)*keep;
   return c;
 }
 // A sky-fixed star field and original ringed planet. No animated sparkle or
@@ -942,7 +954,7 @@ vec3 orbitSky(vec3 rd){
     vec3 lensC=mix(vec3(.26,.56,1.),vec3(.88,.52,.96),smoothstep(.18,.26,lensR));
     c=c*darkCore+lensC*(einstein*.85+exp(-lensR*lensR*28.)*.5);
   }
-  return c;
+  return uBackOn>.001?mix(c,backdrop(rd),uBackOn):c;
 }
 vec3 orbitRainbow(float x){
   float s=clamp(x,0.,.9999)*6.,i=floor(s),f=s-i;
@@ -1084,7 +1096,8 @@ vec3 snakeSky(vec3 ro,vec3 rd){
       c=mix(cloud,vec3(.74,.4,.16),smoothstep(180.,1250.,t));
     }
   }
-  return c*(1.-uDusk*.35);
+  c*=1.-uDusk*.35;
+  return uBackOn>.001?mix(c,backdrop(rd),uBackOn):c;
 }
 vec3 snakeWorld(vec3 ro,vec3 rd){
   vec3 clouds=snakeSky(ro,rd),c=clouds;

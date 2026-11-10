@@ -169,6 +169,7 @@ body[data-app="biofeedback-path-cockpit"] .intro { top: 37%; }
   #new-route { order: 2; }
   .scene-row > .seg:nth-child(2) { order: 3; }
   #auto-scene { order: 4; }
+  #scenery-button { order: 5; }
   #frames-button { order: 6; }
   body[data-app="biofeedback-path-cockpit"] .intro .eyebrow { display: none; }
   body[data-app="biofeedback-path-cockpit"] .intro { top: 46%; }
@@ -212,3 +213,19 @@ body[data-app="biofeedback-path-cockpit"] .intro { top: 37%; }
   .scene-row { gap: 4px; }
   .seg { padding: 2px; }
 }
+
+/* Customize scenery: the button lights while your painting is in use; the sheet holds the box and your paintings */
+#scenery-button::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--faint); vertical-align: 1px; }
+#scenery-button[data-active="true"] { color: var(--ink); }
+#scenery-button[data-active="true"]::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+#scenery-sheet h2 { font-family: var(--sans); font-weight: 500; letter-spacing: -0.4px; }
+.scenery-form { display: flex; gap: 8px; margin: 4px 0 6px; }
+.scenery-form input { flex: 1; min-width: 0; padding: 9px 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--ink); }
+.scenery-form input::placeholder { color: var(--faint); }
+.scenery-status { min-height: 1.45em; margin: 0 0 8px; color: var(--muted); font-size: 12px; }
+.scenery-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.scenery-list:empty { display: none; }
+.scenery-item { position: relative; display: block; padding: 0; aspect-ratio: 12 / 5; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #0b0f16; cursor: pointer; }
+.scenery-item img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.scenery-item span { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 7px; font-size: 10px; text-align: left; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.72)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scenery-item[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: -2px; }
