@@ -53,10 +53,6 @@
       <label class="field"><div class="row"><span>Wildness, warp and color split</span><b id="wild-v"></b></div><input type="range" id="wild" min="0" max="100"></label>
     </div></details>
 
-    <details><summary>Rainbow orbit</summary><div class="controls-grid" style="padding:10px 0 0">
-      <label class="check"><input type="checkbox" id="space-lattice"> Space corridor frames on Rainbow orbit</label>
-      <p class="note" style="margin:0">Echoes Autonomic Console's Rest light frames along the floating track. Off by default to keep the road calm.</p>
-    </div></details>
 
     <details id="mapping"><summary>Cadence to motion</summary><div class="controls-grid" style="padding:10px 0 0">
       <label class="field"><div class="row"><span>Idle cadence, no motion below</span><b id="v-idle"></b></div><input type="range" id="m-idle" min="0" max="60"></label>
@@ -92,6 +88,8 @@
         <button class="seg-solo" id="auto-scene" aria-pressed="true" aria-label="Auto scenery: new scenery every mile" title="A new scene blends in after each mile you ride"><span class="long">New scenery every mile</span><span class="short">Auto scenery</span></button>
         <button class="seg-solo" id="new-route" title="Generate a new procedural road layout (Keys: R / B for next scene · Middle-click for random combo)">New route</button>
         <button class="seg-solo" id="custom-button" data-active="false" aria-haspopup="dialog" aria-expanded="false" title="Set the hills, bends and width of the road you ride">Customize route</button>
+        <button class="seg-solo" id="scenery-button" data-active="false" aria-haspopup="dialog" aria-expanded="false" hidden title="Describe the scenery you want; your Mac paints it, offline">Customize scenery</button>
+        <button class="seg-solo" id="frames-button" aria-pressed="false" hidden title="Light frames along the Rainbow orbit track">Light frames</button>
       </div>
     </div>`;
 
@@ -180,6 +178,14 @@
       <div class="sig-title"><span>Bends ahead · from above</span><span>faint: the landscape's own</span></div>
       <canvas class="sig-canvas" id="cr-top" width="880" height="120" role="img" aria-label="The road's line seen from above over the next 1.4 km: the landscape's own road and yours"></canvas>
       <div class="row-actions"><button class="pill" id="cr-new">New route</button><button class="pill" id="cr-own">This landscape's own road</button></div>
+    </dialog>
+    <dialog class="sheet" id="scenery-sheet" aria-labelledby="scenery-title" tabindex="-1">
+      <div class="sheet-head"><h2 id="scenery-title">Customize scenery</h2><button class="close" data-close aria-label="Close customize scenery"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <p class="sheet-intro">Describe what you want to see around the road. Your Mac paints it with its own image model, offline, in about 15 seconds. The road stays yours.</p>
+      <form class="scenery-form" id="scenery-form"><input type="text" id="scenery-text" maxlength="300" autocomplete="off" spellcheck="true" placeholder="Describe the scenery" aria-label="Describe the scenery"><button class="pill" id="scenery-paint" type="submit">Paint it</button></form>
+      <p class="scenery-status" id="scenery-status" role="status" aria-live="polite"></p>
+      <div class="scenery-list" id="scenery-list" role="group" aria-label="Your scenery"></div>
+      <div class="row-actions"><button class="pill" id="scenery-off">This landscape's own sky</button></div>
     </dialog>`;
   document.body.insertAdjacentHTML('beforeend', customSheet);
   const ride = createRide();
@@ -225,7 +231,7 @@
       { id: 'session', label: 'Session', icon: 'session', title: 'Keep what you rode.', intro: 'A ride file holds your cadence, scene and route over time. Nothing leaves this computer unless you share the file.', html: sessionHtml },
       { id: 'about', label: 'About', icon: 'about', title: 'What drives what.', html: aboutHtml },
     ],
-    onOpenSheet: (name) => { if (name === 'route') { drawElStrip(); drawCurve(); } else if (name === 'custom') { syncCustom(); drawCustom(); } },
+    onOpenSheet: (name) => { if (name === 'route') { drawElStrip(); drawCurve(); } else if (name === 'custom') { syncCustom(); drawCustom(); } else if (name === 'scenery') { renderSceneryList(); setTimeout(() => $('scenery-text').focus(), 60); } },
     toggleDemo,
     onKey: (e, key) => {
       if (key >= '1' && key <= '9') {
@@ -343,16 +349,18 @@
 
   /* ---- scenery: eight scenes, the time of day and a look, all on the main screen, and remembered ---- */
   const SAVE_KEY = 'endless-cockpit-scenery';
-  const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ b: S.biomeNext, custom: S.custom, tod: S.tod, look: S.look, dream: S.dream, wild: S.wild, auto: S.autoScene })); } catch (e) { /* storage can be off */ } };
+  const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ b: S.biomeNext, custom: S.custom, tod: S.tod, look: S.look, dream: S.dream, wild: S.wild, auto: S.autoScene, frames: S.spaceLattice, scenery: S.scenery ? S.scenery.id : null })); } catch (e) { /* storage can be off */ } };
   const pressOnly = (sel, on) => document.querySelectorAll(sel).forEach((b) => b.setAttribute('aria-pressed', String(on(b))));
   function setBiome(i, instant) {
     if (!BIOMES[i] || (i === S.biomeNext && !instant)) return;
+    if (!instant && S.scenery) dropScenery();
     S.fromMix = instant ? null : sceneNow();
     S.biome = instant ? i : S.biomeNext; S.biomeNext = i; S.biomeT = instant ? 1 : 0; S.blendMs = 6000;
     ride.noteLane('biome', i);
     pressOnly('.scene-tile', (b) => +b.dataset.b === i);
     document.body.style.setProperty('--accent', BIOMES[i].edge);
     markCustom();
+    syncFrames();
     save();
   }
   // A ride file or saved visit is outside data: keep only values in range, and null for anything else.
@@ -376,12 +384,13 @@
     const i = S.biomeNext, b = BIOMES[i];
     document.body.style.setProperty('--accent', b.edge);
     $('custom-button').dataset.active = String(customOn());
-    if (!customOn()) { $('route-caption').textContent = b.description; return; }
+    const yours = S.scenery ? `Your scenery · ${S.scenery.prompt}` : '';
+    if (!customOn()) { $('route-caption').textContent = yours || b.description; return; }
     const a = RS.actual(i, asShape(S.custom)), said = [];
     if (S.custom.grade != null) said.push(`steepest ${pct(a.grade)}`);
     if (S.custom.curv != null) said.push(Number.isFinite(a.radius) ? `bends to ${metres(a.radius)}` : 'straight');
     if (S.custom.width != null) said.push(`${(2 * a.width).toFixed(1)} m wide`);
-    $('route-caption').textContent = `${b.name} · your route: ${said.join(', ')}`;
+    $('route-caption').textContent = `${yours || b.name} · your route: ${said.join(', ')}`;
   }
   // The panel's sliders and readouts: your setting where you made one, the landscape's own value elsewhere.
   function syncCustom() {
@@ -474,11 +483,116 @@
   bind('dream', () => S.dream * 100, (v) => { S.dream = v / 100; }, (v) => `${Math.round(v)}%`, 'dream-v');
   bind('wild', () => S.wild * 100, (v) => { S.wild = v / 100; }, (v) => `${Math.round(v)}%`, 'wild-v');
   ['dream', 'wild'].forEach((id) => $(id).addEventListener('input', () => { S.look = null; pressOnly('[data-look]', () => false); save(); }));
-  const spaceLatCheck = $('space-lattice');
-  if (spaceLatCheck) {
-    spaceLatCheck.checked = !!S.spaceLattice;
-    spaceLatCheck.addEventListener('change', (e) => { S.spaceLattice = e.target.checked; save(); });
+  // Rainbow orbit's light frames: the switch shows only while that landscape is chosen.
+  function syncFrames() {
+    const b = $('frames-button'); if (!b) return;
+    b.hidden = BIOMES[S.biomeNext].id !== 'rainbow-orbit';
+    b.setAttribute('aria-pressed', String(!!S.spaceLattice));
   }
+  $('frames-button').addEventListener('click', () => { S.spaceLattice = !S.spaceLattice; syncFrames(); save(); });
+  /* ---- Customize scenery: the rider describes the scenery and the desktop app paints it with its local image model
+     (window.nativeScenery, from the app's window program; a browser has none, so the button stays hidden there).
+     The painting becomes the distant scenery and sky (uBack in the scene shader), and its colours tint the sky,
+     fog, ground and rock through the same time-of-day looks as every landscape. ---- */
+  const SCENERY_KEY = 'endless-cockpit-sceneries', SCENERY_MAX = 6, SCENERY_HZ = 0.8;
+  const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  S.scenery = null; S.sceneryShown = null; S.backT = 0; S.painting = false;
+  let sceneryTex = null, sceneryList = [];
+  try { sceneryList = JSON.parse(localStorage.getItem(SCENERY_KEY) || '[]').filter((e) => e && e.id && e.url && e.palette); } catch (e) { sceneryList = []; }
+  function saveSceneries() {
+    for (let n = Math.min(SCENERY_MAX, sceneryList.length); n >= 0; n--) {   // storage full: keep fewer, newest first
+      try { localStorage.setItem(SCENERY_KEY, JSON.stringify(sceneryList.slice(0, n))); sceneryList = sceneryList.slice(0, n); return; } catch (e) { /* try fewer */ }
+    }
+  }
+  function paletteOf(img) {   // mean linear colour of bands of the painting: sky, horizon, fog, rock, near ground
+    const w = 48, h = 20, cv2 = document.createElement('canvas'); cv2.width = w; cv2.height = h;
+    const g = cv2.getContext('2d'); g.drawImage(img, 0, 0, w, h);
+    const d = g.getImageData(0, 0, w, h).data, lin = (v) => Math.pow(v / 255, 2.2);
+    const band = (y0, y1) => {
+      const s = [0, 0, 0]; let n = 0;
+      for (let y = Math.floor(y0 * h); y < Math.ceil(y1 * h); y++) for (let x = 0; x < w; x++) {
+        const k = (y * w + x) * 4; s[0] += lin(d[k]); s[1] += lin(d[k + 1]); s[2] += lin(d[k + 2]); n++;
+      }
+      return s.map((v) => v / Math.max(1, n));
+    };
+    return { skyTop: band(0, 0.15), skyHz: band(0.62, 0.8), fog: band(0.55, 0.8), rock: band(0.66, 0.82), ground: band(0.84, 1) };
+  }
+  function sceneryBiome(entry) {   // the chosen landscape's road and terrain, in the painting's colours
+    const b = sceneAt(S.biomeNext), p = entry.palette;
+    return { ...b, c: { ...b.c, skyTop: p.skyTop, skyHz: p.skyHz, fog: p.fog, rock: p.rock, ground: p.ground } };
+  }
+  function useScenery(entry, instant) {
+    const img = new Image();
+    img.onload = function upload() {
+      if (!gl) { setTimeout(upload, 120); return; }
+      if (!sceneryTex) sceneryTex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, sceneryTex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      S.scenery = entry; S.sceneryShown = entry;
+      if (instant) S.backT = 1;
+      if (S.autoScene) setAuto(false);   // a new landscape every mile would take your scenery away
+      markScenery(); save();
+    };
+    img.src = entry.url;
+  }
+  function dropScenery() { S.scenery = null; markScenery(); }
+  function markScenery() {
+    const b = $('scenery-button'); if (b) b.dataset.active = String(!!S.scenery);
+    markCustom(); renderSceneryList();
+  }
+  function renderSceneryList() {
+    const box = $('scenery-list'); if (!box) return;
+    box.replaceChildren(...sceneryList.map((e) => {
+      const b = document.createElement('button'), im = document.createElement('img'), t = document.createElement('span');
+      b.type = 'button'; b.className = 'scenery-item'; b.title = e.prompt;
+      b.setAttribute('aria-pressed', String(!!S.scenery && S.scenery.id === e.id));
+      im.alt = ''; im.src = e.url; t.textContent = e.prompt;
+      b.append(im, t); b.addEventListener('click', () => useScenery(e));
+      return b;
+    }));
+    $('scenery-off').disabled = !S.scenery;
+  }
+  function paintScenery(text) {
+    const ns = window.nativeScenery; text = String(text || '').trim().replace(/\s+/g, ' ');
+    if (!ns || !text || S.painting) return;
+    S.painting = true; S.paintText = text; S.paintT0 = performance.now(); S.paintJob = null;
+    $('scenery-paint').disabled = true;
+    $('scenery-status').textContent = `Painting “${text}”… about 15 seconds.`;
+    ns.generate(text, (job) => { S.paintJob = job; });
+  }
+  function onPainted(job, url, err) {
+    if (!S.painting || (S.paintJob && job !== S.paintJob)) return;
+    S.painting = false; $('scenery-paint').disabled = false;
+    if (err || !url) { $('scenery-status').textContent = `That painting did not work: ${err || 'no picture came back'}`; return; }
+    const img = new Image();
+    img.onload = () => {
+      const entry = { id: job, prompt: S.paintText, url, palette: paletteOf(img), at: Date.now() };
+      sceneryList = [entry, ...sceneryList.filter((e) => e.id !== job)];
+      saveSceneries();
+      $('scenery-status').textContent = `Painted in ${Math.round((performance.now() - S.paintT0) / 1000)} s.`;
+      useScenery(entry);
+    };
+    img.src = url;
+  }
+  function sceneryReady() {
+    const ns = window.nativeScenery; if (!ns || sceneryReady.done) return;
+    sceneryReady.done = true;
+    ns.available((ok) => {
+      if (!ok) return;
+      ns.done.connect(onPainted);
+      $('scenery-button').hidden = false;
+      renderSceneryList();
+    });
+  }
+  addEventListener('nativescenery', sceneryReady); sceneryReady();
+  $('scenery-button').addEventListener('click', () => shell.openSheet('scenery'));
+  $('scenery-form').addEventListener('submit', (e) => { e.preventDefault(); paintScenery($('scenery-text').value); });
+  $('scenery-off').addEventListener('click', () => { dropScenery(); save(); });
+
   // A visit picks up where the last one left off.
   (() => {
     let v = null;
@@ -490,6 +604,9 @@
     if (LOOKS[v.look]) setLook(v.look, true);
     else if (typeof v.dream === 'number' && typeof v.wild === 'number') { setLook('dreamy', true); S.look = null; S.dream = clamp(v.dream, 0, 1); S.wild = clamp(v.wild, 0, 1); pressOnly('[data-look]', () => false); ['dream', 'wild'].forEach((id) => { const r = $(id); r.value = Math.round(S[id] * 100); shell.syncRange(r); $(`${id}-v`).textContent = `${r.value}%`; }); }
     if (typeof v.auto === 'boolean') setAuto(v.auto);
+    S.spaceLattice = v.frames === true; syncFrames();
+    const mine = v.scenery && sceneryList.find((e) => e.id === v.scenery);
+    if (mine) useScenery(mine, true);
   })();
   bind('m-idle', () => S.map.idle, (v) => { S.map.idle = v; }, (v) => `${v} rpm`, 'v-idle');
   bind('m-max', () => S.map.max, (v) => { S.map.max = v; }, (v) => `${v} rpm`, 'v-max');
@@ -866,7 +983,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
     BIOMES.forEach((b0, i) => {
       const b = sceneAt(i), cam = camAt(z, 0, b);
       G.into(thumbHDR); G.bindTex(0, tNoise); G.bindTex(1, tSpec);
-      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uTravelSpeed: 0, uLattice: S.spaceLattice ? 1.0 : 0.0 }, landAt(b, b, 1, td)));
+      G.use(pScene, Object.assign({ uN: 0, uS: 1, uRes: [TW, TH], uT: now / 1000, uFocal: 1.08, uBeat: 6, uSeed: S.seed, uCam: [cam.cx, cam.cy, z], uRight: cam.right, uUp: cam.up, uFwd: cam.fwd, uSpark: 0, uTravelSpeed: 0, uLattice: S.spaceLattice ? 1.0 : 0.0, uBackOn: 0 }, landAt(b, b, 1, td)));
       G.draw();
       G.into(thumbLDR); G.bindTex(0, thumbHDR.tex);
       G.use(pThumb, { uScene: 0, uExposure: 0.98 + td * 0.25 });
@@ -927,10 +1044,10 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       if (frameMs > 120) stalled++; else stalled = 0;
       if (frameMs > 26) slow++; else if (frameMs < 20) fast++;
       frameIdx++;
-      if (stalled >= 2 && lastScale > minScale) {
+      if (stalled >= 2 && lastScale > minScale && !S.painting) {
         lastScale = Math.max(minScale, lastScale * .5); resize();
         stalled = 0; slow = 0; fast = 0;
-      } else if (frameIdx % 15 === 0 && slow > 10 && lastScale > minScale) {
+      } else if (frameIdx % 15 === 0 && slow > 10 && lastScale > minScale && !S.painting) {
         lastScale = Math.max(minScale, lastScale * .75); resize();
         slow = 0; fast = 0;
       } else if (frameIdx % 90 === 0) {
@@ -940,6 +1057,15 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
 
       /* uniforms */
       let land = landAt(S.fromMix || sceneAt(S.biome), sceneAt(S.biomeNext), S.biomeT, S.dusk);
+      S.backT = clamp(S.backT + (S.scenery ? 1 : -1) * dtMs / 1500, 0, 1);
+      if (!S.scenery && S.backT === 0) S.sceneryShown = null;
+      let backOn = 0, backDim = 1;
+      if (S.sceneryShown && S.backT > 0) {   // your scenery: the painting fades in, its colours through the time of day
+        const sb = sceneryBiome(S.sceneryShown), own = landAt(sb, sb, 1, S.dusk), day = landAt(sb, sb, 1, 0);
+        backOn = S.backT * S.backT * (3 - 2 * S.backT);
+        land = CyclingScene.blendLand(land, own, backOn);
+        backDim = clamp(lum(own.uSkyHz) / Math.max(1e-4, lum(day.uSkyHz)), 0.06, 1);   // the painting darkens with the hour, as the land does
+      }
       if (S.lookFrom && S.lookT < 1) {
         S.lookT = Math.min(1, S.lookT + dtMs / TOD_BLEND_MS);
         land = CyclingScene.blendLand(S.lookFrom, land, S.lookT * S.lookT * (3 - 2 * S.lookT));
@@ -969,12 +1095,12 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
       /* scene */
       gl.disable(gl.BLEND);
       G.into(scene);
-      G.bindTex(0, tNoise); G.bindTex(1, tSpec);
+      G.bindTex(0, tNoise); G.bindTex(1, tSpec); G.bindTex(2, sceneryTex || tNoise);
       G.use(pScene, Object.assign({
         uN: 0, uS: 1, uRes: [rw, rh], uT: now / 1000, uFocal: focal, uBeat: beatLen, uSeed: S.seed,
         uCam: [camX, camY, z], uRight: right, uUp: up, uFwd: fwd,
         uSpark: 0.12 * motion01(S.rpm), uTravelSpeed: S.speed,
-      }, land, { uLattice: S.spaceLattice ? 1.0 : 0.0 }));
+      }, land, { uLattice: S.spaceLattice ? 1.0 : 0.0, uBack: 2, uBackOn: sceneryTex ? backOn : 0, uBackDim: backDim, uBackHz: SCENERY_HZ }));
       G.draw();
 
       /* motes */
@@ -1063,7 +1189,7 @@ void main(){ vec3 c=aces(texture(uScene,vUv).rgb*uExposure); vec2 q=vUv-.5; c*=1
 
   /* for the checks: read what is really on the canvas and in the engine */
   window.__app = {
-    S, ride, BIOMES, RS, sceneAt, setCustom, pathX, roadY, gradeAt, motion01, step, sceneNow, recordLuma, setBiome, nextBiome, setTod, setLook, setAuto, drawThumbs,
+    S, ride, BIOMES, RS, sceneAt, setCustom, useScenery, paintScenery, get sceneryList() { return sceneryList; }, pathX, roadY, gradeAt, motion01, step, sceneNow, recordLuma, setBiome, nextBiome, setTod, setLook, setAuto, drawThumbs,
     get renderInfo() { return { softwareRenderer, width: rw, height: rh, pixelBudget: sceneBudget * lastScale }; },
     pixel() {
       const c = document.createElement('canvas'); c.width = 32; c.height = 18;

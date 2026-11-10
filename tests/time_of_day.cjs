@@ -3,7 +3,9 @@
    (CyclingScene.blendLand), never by easing the time value through the hours in between. Run: node tests/time_of_day.cjs */
 'use strict';
 const path = require('node:path');
-globalThis.window = globalThis; globalThis.GLKit = { FS_HEAD: '', srgb: () => [0, 0, 0] };
+globalThis.window = globalThis;
+// the page's own colour conversion (gl.js srgb), so brightness comparisons use the real colours
+globalThis.GLKit = { FS_HEAD: '', srgb: (hex) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => Math.pow(v / 255, 2.2)); } };
 require(path.join(__dirname, '../src/cyclingscene.js'));
 const CS = globalThis.CyclingScene;
 const TIMES = { 'Golden hour': 0.18, Sunset: 0.36, Dusk: 0.55, Night: 1 };
@@ -13,10 +15,23 @@ const ok = (cond, msg) => { checks++; if (!cond) { fails++; console.log('FAIL', 
 
 for (const b of CS.BIOMES) {
   const look = (d) => CS.landAt(b, b, 1, d);
-  // Why: easing the time value itself from Dusk to Night lifts the sun far above both ends on most landscapes.
-  let rise = 0;
-  for (let d = 0.55; d <= 1.0001; d += 0.01) rise = Math.max(rise, look(d).uSunDir[1] - Math.max(look(0.55).uSunDir[1], look(1).uSunDir[1]));
-  if (b.id === 'golden-coast') ok(rise > 0.2, `${b.name}: the old path did climb (rise ${rise.toFixed(3)}), so this test can see the fault`);
+  // The whole day, as the Moving cycle and Biofeedback's weather run it: the sun never rises on the way to night.
+  // (Before the fix, reading the weights between held times lifted it: Golden coast, dusk to night, 0.038 up to 0.396.)
+  let rise = 0, prev = Infinity;
+  for (let k = 0; k <= 1000; k++) { const e = look(k / 1000).uSunDir[1]; rise = Math.max(rise, e - prev); prev = e; }
+  ok(rise <= 1e-12, `${b.name}: over the whole day the sun never rises (largest rise ${rise.toExponential(1)})`);
+  // Between two neighbouring held times every colour stays between those two times' colours: no detour.
+  const held = Object.values(TIMES); held.unshift(0);
+  for (let i = 0; i + 1 < held.length; i++) {
+    const A = look(held[i]), B = look(held[i + 1]);
+    let inside = true;
+    for (let k = 1; k < 50; k++) {
+      const L = look(held[i] + (held[i + 1] - held[i]) * k / 50);
+      for (const f of ['uSkyTop', 'uSkyHz', 'uSunC', 'uFog', 'uGround', 'uRock'])
+        L[f].forEach((v, j) => { if (v < Math.min(A[f][j], B[f][j]) - 1e-12 || v > Math.max(A[f][j], B[f][j]) + 1e-12) inside = false; });
+    }
+    ok(inside, `${b.name}: between ${held[i]} and ${held[i + 1]} every colour stays between those two times`);
+  }
   const names = Object.keys(TIMES);
   for (let i = 0; i + 1 < names.length; i++) {
     for (const [p, q] of [[names[i], names[i + 1]], [names[i + 1], names[i]]]) {
