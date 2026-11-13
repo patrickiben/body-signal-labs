@@ -39,7 +39,7 @@ Over the last 32 seconds: at least 20 intervals. Intervals outside 333 to 1500 m
 
 ## The index
 
-The index is Autonomic Telemetry's engine, `multivariate-1`, copied unchanged into `src/vendor/autonomic/` from autonomic-telemetry at 8a2f1c9. Its rules are in [Autonomic's methods](https://github.com/patrickiben/autonomic-telemetry/blob/main/docs/METHODS.md): a personal reference from 120 seconds of quiet data, fixed coverage, a five-second median, and tiers at 25, 46 and 68. With a strap that reports beat intervals the profile is heart rate, pulse RMSSD and pulse SDNN, 75 of 100 nominal points. With a rate-only sensor it is the explicitly limited heart-rate profile.
+The index is Autonomic Telemetry's engine, `multivariate-1`, copied unchanged into `src/vendor/autonomic/` from autonomic-telemetry at 8a2f1c9. Its rules are in [Autonomic's methods](../autonomic/docs/METHODS.md): a personal reference from 120 seconds of quiet data, fixed coverage, a five-second median, and tiers at 25, 46 and 68. With a strap that reports beat intervals the profile is heart rate, pulse RMSSD and pulse SDNN, 75 of 100 nominal points. With a rate-only sensor it is the explicitly limited heart-rate profile.
 
 Pedaling raises heart rate on its own, so any cadence above 15 rpm is passed to the engine as movement, and the engine withholds the heart shift rather than reading exercise as one. Waiting, stale and held estimates take the index off the sky, which drifts back to ambient.
 

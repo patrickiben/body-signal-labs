@@ -2,7 +2,7 @@
 
 | Page | What it reads |
 |---|---|
-| Autonomic Telemetry | Heart, pulse, breath and brain signals through its Mac bridge, or a labeled synthetic demo. See [its own guide](https://github.com/patrickiben/autonomic-telemetry/blob/main/docs/BRIDGE.md) |
+| Autonomic Telemetry | Heart, pulse, breath and brain signals through its Mac bridge, or a labeled synthetic demo. See [its own guide](../autonomic/docs/BRIDGE.md) |
 | Endless Cockpit | Your cadence: a Bluetooth cadence sensor or smart trainer, the pedal button or Space, or a steady setting |
 | Biofeedback Path Cockpit | Heart rate from a Bluetooth strap, cadence from a sensor/trainer/manual controls, or optional Muse S EEG drive in Ride |
 
