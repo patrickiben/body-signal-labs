@@ -1,24 +1,23 @@
 # Muse S Athena brainwaves in Biofeedback Path Cockpit
 
-Brainwaves lets a Muse S Athena drive an experimental visual game without a heart-rate sensor, Hume band or cadence sensor. The optional Python launcher connects to the headband through the existing [Autonomic Telemetry bridge](https://github.com/patrickiben/autonomic-telemetry/tree/main/bridge), including its Athena transport. It serves a local copy of the Body app and relays the bridge's gated EEG features to that page. It does not copy or replace the Muse protocol implementation.
+Brainwaves lets a Muse S Athena drive an experimental visual game without a heart-rate sensor, Hume band or cadence sensor. The optional Python launcher connects to the headband through the existing [Autonomic Telemetry bridge](https://github.com/patrickiben/body-signal-labs/tree/main/autonomic/bridge) in `autonomic/bridge/`, including its Athena transport. It serves a local copy of the Body app and relays the bridge's gated EEG features to that page. It does not copy or replace the Muse protocol implementation.
 
 The EEG feedback is a game proxy based on a personal spectral reference. It is **not a validated measure of clarity, calm, focus or mental health**. Eye closure, muscle tension, headband contact and movement can affect the signal even when software gates pass. Use the initial reference with your eyes open and the same posture you intend to keep while playing.
 
 ## Install once on your Mac
 
-Use Python 3.10 or newer. Keep both complete repositories beside one another; if Body Signal Labs is already cloned, reuse that checkout:
+Use Python 3.10 or newer. The bridge ships with Body Signal Labs, so this one repository is all you need; if it is already cloned, reuse that checkout:
 
 ```sh
 git clone https://github.com/patrickiben/body-signal-labs.git
-git clone https://github.com/patrickiben/autonomic-telemetry.git
 cd body-signal-labs
 python3 -m venv .venv-eeg
-.venv-eeg/bin/python -m pip install -r ../autonomic-telemetry/bridge/requirements.txt
+.venv-eeg/bin/python -m pip install -r autonomic/bridge/requirements.txt
 ```
 
 Installing the existing bridge requirements needs internet access. Subsequent local use needs neither an account nor a cloud relay. The built `biofeedback-path-cockpit.html` is included in Body Signal Labs. If working from changed source, rebuild it with `python3 build.py` first.
 
-If your Autonomic checkout is elsewhere, use its absolute path for both the requirements file and `--autonomic-root`. The selected checkout must include `bridge/server.py`, `bridge/features.py` and `bridge/muse.py`; an old static export is insufficient.
+To use a different copy of the bridge, pass the folder that contains its `bridge/` with `--autonomic-root`, and install that copy's `bridge/requirements.txt`. The folder must include `bridge/server.py`, `bridge/features.py` and `bridge/muse.py`; an old static export is insufficient.
 
 ## Connect and calibrate
 
@@ -28,11 +27,11 @@ From the Body Signal Labs directory:
 .venv-eeg/bin/python brainwave_bridge.py --open
 ```
 
-For a checkout in another folder:
+For a bridge copy in another folder:
 
 ```sh
 .venv-eeg/bin/python brainwave_bridge.py \
-  --autonomic-root /absolute/path/to/autonomic-telemetry --open
+  --autonomic-root /absolute/path/to/folder-with-bridge --open
 ```
 
 1. Keep the Terminal window open. The launcher prints a fresh private address and, with `--open`, opens it in your browser. Starting the launcher does not scan or connect to a wearable.
@@ -53,12 +52,12 @@ The public GitHub Pages app and a directly opened HTML file cannot start Python 
 
 `--host 0.0.0.0` explicitly permits other devices on your local network to reach the server. Use the Mac's local IPv4 address with the same printed port and private path. This optional transport uses unencrypted HTTP; use a trusted private network and do not expose the port through a router. Mac-only use is the default.
 
-Muse Classic and Athena handling comes from the chosen Autonomic checkout. This launcher does not establish hardware or firmware compatibility; no physical Muse test is claimed by its automated checks. See Autonomic's [device notes](https://github.com/patrickiben/autonomic-telemetry/blob/main/docs/DEVICES.md) for the upstream test scope.
+Muse Classic and Athena handling comes from the bridge in `autonomic/bridge/` (or the folder given with `--autonomic-root`). This launcher does not establish hardware or firmware compatibility; no physical Muse test is claimed by its automated checks. See Autonomic's [device notes](../autonomic/docs/DEVICES.md) for their test scope.
 
 ## Troubleshooting and synthetic transport test
 
-- If the checkout is missing, pass the complete repository folder with `--autonomic-root`.
-- If Bleak is missing, install that checkout's `bridge/requirements.txt` with the same Python interpreter used to run the launcher. The error prints the command.
+- If the bridge is missing, use a complete Body Signal Labs checkout, or pass a folder that contains `bridge/` with `--autonomic-root`.
+- If Bleak is missing, install `autonomic/bridge/requirements.txt` (or the chosen copy's) with the same Python interpreter used to run the launcher. The error prints the command.
 - If scanning fails, turn Bluetooth on and allow the Python host app in macOS System Settings → Privacy & Security → Bluetooth. Keep the headband nearby and disconnect competing apps.
 - If calibration stalls, inspect the quality message, improve contact and keep your eyes open and still. Receiving packets alone is insufficient; the extractor requires eligible EEG from at least two standard channels and its motion/timing gates.
 - If the launcher restarts, open its new private link. An older tab belongs to the previous session.
@@ -71,13 +70,12 @@ python3 brainwave_bridge.py --simulate --open
 
 Select the synthetic Muse after Connect. The unchanged upstream simulator sends a single EEG channel and does **not** satisfy the multi-channel calibration gates. It is a transport check, not a pretend successful calibration or proof of device compatibility. Both the launcher and page label simulated data as synthetic. Use the app's **Try demo** option for a separately labeled preview of brainwave-driven scenery.
 
-Run the automated HTTP checks against your installed bridge checkout:
+Run the automated HTTP checks. They use `autonomic/bridge/` unless `AUTONOMIC_ROOT` names another copy:
 
 ```sh
-AUTONOMIC_ROOT=/absolute/path/to/autonomic-telemetry \
-  python3 -m unittest discover -s tests -p test_brainwave_bridge.py -v
+python3 -m unittest discover -s tests -p test_brainwave_bridge.py -v
 ```
 
-These checks cover early configuration injection, private paths, allowed files, Host/Origin denial, same-session event delivery and explicit synthetic start. They never scan or connect to physical hardware. Without the optional checkout, HTTP integration checks explicitly skip while standalone launcher checks still run.
+These checks cover early configuration injection, private paths, allowed files, Host/Origin denial, same-session event delivery and explicit synthetic start. They never scan or connect to physical hardware. If the bridge folder is incomplete, the HTTP integration checks skip with a stated reason while the standalone launcher checks still run.
 
-All 14 launcher checks passed against Autonomic Telemetry commit `6c3ce294a1623649593f2871b364a9053c719ec0` on November 4, 2026. This is software and synthetic-transport validation, not a physical Athena test.
+All 14 launcher checks passed against Autonomic Telemetry commit `6c3ce294a1623649593f2871b364a9053c719ec0` on November 4, 2026. On November 13, 2026, after the launcher moved to this repository's own `autonomic/bridge/`, all 16 launcher checks passed against it, and a synthetic run served the built pages with their Autonomic links pointing at the public site and no page errors. Both are software and synthetic-transport validation, not a physical Athena test.
