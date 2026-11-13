@@ -1,12 +1,12 @@
 # Body Signal Labs
 
-**[Open the home page](https://patrickiben.github.io/body-signal-labs/)** · [Autonomic Telemetry](https://patrickiben.github.io/autonomic-telemetry/) · [Endless Cockpit](https://patrickiben.github.io/body-signal-labs/endless-cockpit.html) · [Biofeedback Path Cockpit](https://patrickiben.github.io/body-signal-labs/biofeedback-path-cockpit.html) · [Field guide](https://patrickiben.github.io/body-signal-labs/field-guide.html)
+**[Open the home page](https://patrickiben.github.io/body-signal-labs/)** · [Autonomic Telemetry](https://patrickiben.github.io/body-signal-labs/autonomic/Autonomic_Telemetry_Console.html) · [Endless Cockpit](https://patrickiben.github.io/body-signal-labs/endless-cockpit.html) · [Biofeedback Path Cockpit](https://patrickiben.github.io/body-signal-labs/biofeedback-path-cockpit.html) · [Field guide](https://patrickiben.github.io/body-signal-labs/field-guide.html)
 
 Immersive scenes that follow signals from your body, in the browser. Each page reads a signal from you and says plainly what it measured and what it inferred. No page here is a medical device.
 
 ![Autonomic Telemetry during its labeled synthetic demo](docs/autonomic-telemetry.jpg)
 
-**Autonomic Telemetry** is a galaxy whose extent, brightness and warmth follow a personal, experimental estimate of arousal, inferred from heart rate and pulse variability, with EEG shown as context. Work keeps watch, and Rest adds paced breathing. A labeled demo runs in any browser, and live signals come through a small bridge on a Mac. It lives in [its own repository](https://github.com/patrickiben/autonomic-telemetry).
+**Autonomic Telemetry** is a galaxy whose extent, brightness and warmth follow a personal, experimental estimate of arousal, inferred from heart rate and pulse variability, with EEG shown as context. Work keeps watch, and Rest adds paced breathing. A labeled demo runs in any browser, and live signals come through a small bridge on a Mac. It lives in [`autonomic/`](autonomic/).
 
 ![Endless Cockpit on the Autumn Lake lakeside road](docs/new-england-autumn.jpg)
 
@@ -45,7 +45,7 @@ python3 -m http.server 8090
 
 For Muse S Brainwaves drive, use the [optional bridge launcher](docs/EEG_SETUP.md), which serves the cockpit and EEG stream from the same private local address. The static page alone does not connect to Muse.
 
-Edit `src/`, then run `python3 build.py`, which inlines everything into the pages. The suite bar links to Autonomic Telemetry by a relative path, so a clone of [autonomic-telemetry](https://github.com/patrickiben/autonomic-telemetry) beside this one makes the bar work on disk too.
+Edit `src/`, then run `python3 build.py`, which inlines everything into the pages. The suite bar links to Autonomic Telemetry in `autonomic/` by a relative path, so the bar works on disk too.
 
 ## Read more
 

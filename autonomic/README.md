@@ -1,6 +1,6 @@
 # Autonomic Telemetry
 
-**[Open the experience](https://patrickiben.github.io/autonomic-telemetry/)** · [Field guide](https://patrickiben.github.io/body-signal-labs/field-guide.html#autonomic)
+**[Open the experience](https://patrickiben.github.io/body-signal-labs/autonomic/Autonomic_Telemetry_Console.html)** · [Field guide](https://patrickiben.github.io/body-signal-labs/field-guide.html#autonomic)
 
 An immersive canvas with a personal, experimental **shift from your first two minutes**, named by the signals that feed it. Live, those are heart rate from the Hume band (or the Muse's optical pulse), pulse variability (RMSSD, SDNN) from the Muse's optical sensor, and EEG beta/alpha from the Muse; with the Hume band alone it is heart rate only. The bridge supplies no respiration, so breathing counts only in the demo or a recording that includes it. The restored multivariate model combines those channels and regularized covariance distance, with temporal modifiers and causal prediction-error event detection. Available channels form a fixed two-minute personal reference; missing inputs stay explicit. The one-sided 0–100 scale starts at zero at the reference means. It is a custom physiological-pattern model, not a direct measure of sympathetic activity or a mental-state diagnosis.
 
@@ -81,7 +81,7 @@ python3 -m venv .venv-bridge
 
 ## GitHub Pages
 
-The public experience is hosted at [patrickiben.github.io/autonomic-telemetry](https://patrickiben.github.io/autonomic-telemetry/). To publish reviewed changes after pushing, use **Actions → Deploy GitHub Pages (manual) → Run workflow**. For a fork, enable **Settings → Pages → GitHub Actions** first. The Python bridge runs on your Mac, not on Pages.
+The public experience is hosted with Body Signal Labs at [patrickiben.github.io/body-signal-labs/autonomic](https://patrickiben.github.io/body-signal-labs/autonomic/Autonomic_Telemetry_Console.html). To publish reviewed changes after pushing, run Body Signal Labs' **Actions → Deploy GitHub Pages (manual) → Run workflow**. For a fork, enable **Settings → Pages → GitHub Actions** first. The Python bridge runs on your Mac, not on Pages.
 
 ## Reuse
 
