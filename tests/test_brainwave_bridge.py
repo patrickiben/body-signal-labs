@@ -1,10 +1,10 @@
 """Optional bridge checks. No physical Bluetooth, pairing or device reads.
 
-AUTONOMIC_ROOT=/path/to/autonomic-telemetry python3 -m unittest discover \
-    -s tests -p test_brainwave_bridge.py -v
+python3 -m unittest discover -s tests -p test_brainwave_bridge.py -v
 
-The HTTP checks exercise the actual external bridge handler; they are skipped
-with an explicit reason when that optional checkout is absent.
+The HTTP checks exercise Autonomic's actual bridge handler from autonomic/
+(or AUTONOMIC_ROOT, if set); they are skipped with an explicit reason when
+that folder is incomplete.
 """
 import http.client
 import importlib.util
@@ -44,6 +44,11 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIn("\\u003c/script\\u003e", result)
         self.assertIn('"simulated":false', result)
 
+    def test_default_bridge_is_this_repositorys_autonomic_copy(self):
+        self.assertEqual(launcher.DEFAULT_AUTONOMIC_ROOT, ROOT / "autonomic")
+        self.assertTrue((ROOT / "autonomic/bridge/server.py").is_file())
+        self.assertNotIn("autonomic-telemetry", str(launcher.DEFAULT_AUTONOMIC_ROOT))
+
     def test_missing_checkout_is_actionable(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaisesRegex(launcher.SetupError, "--autonomic-root"):
@@ -73,10 +78,10 @@ class HTTPTests(unittest.TestCase):
         try:
             cls.runtime = launcher.load_runtime(AUTONOMIC_ROOT)
         except launcher.SetupError as error:
-            raise unittest.SkipTest(f"Optional HTTP integration needs AUTONOMIC_ROOT: {error}")
+            raise unittest.SkipTest(f"HTTP integration needs Autonomic's bridge (autonomic/bridge/ or AUTONOMIC_ROOT): {error}")
         cls.directory = tempfile.TemporaryDirectory()
         cls.body_root = Path(cls.directory.name)
-        siblings = "<a href='../autonomic-telemetry/'>Autonomic</a><script>const sibling='../generative-av-labs/index.html';</script>"
+        siblings = "<a href='autonomic/Autonomic_Telemetry_Console.html'>Autonomic</a><script>const sibling='../generative-av-labs/index.html';</script>"
         (cls.body_root / launcher.APP).write_text("<!doctype html><html><body><script>window.appBoot=true;</script>" + siblings + "</body></html>", encoding="utf-8")
         (cls.body_root / "index.html").write_text("<!doctype html><title>Body Signal Labs</title><a href='biofeedback-path-cockpit.html'>Biofeedback</a>" + siblings, encoding="utf-8")
         (cls.body_root / "docs").mkdir()
@@ -126,15 +131,16 @@ class HTTPTests(unittest.TestCase):
 
     def test_sibling_links_work_in_app_home_and_field_guide_without_other_checkouts(self):
         guide = self.body_root / "field-guide.html"
-        original = "<a href='../autonomic-telemetry/docs/METHODS.md'>Methods</a><script>const href='../generative-av-labs/';</script><a href='biofeedback-path-cockpit.html'>Local cockpit</a>"
+        original = "<a href='autonomic/docs/METHODS.md'>Methods</a><script>const href='../generative-av-labs/';</script><a href='biofeedback-path-cockpit.html'>Local cockpit</a>"
         guide.write_text(original, encoding="utf-8")
         try:
             for name in (launcher.APP, "", "field-guide.html"):
                 code, headers, body = self.request(self.prefix + name)
                 self.assertEqual(code, 200)
-                self.assertNotIn(b"../autonomic-telemetry/", body)
+                self.assertNotIn(b"'autonomic/", body)
+                self.assertNotIn(b"autonomic-telemetry", body)
                 self.assertNotIn(b"../generative-av-labs/", body)
-                self.assertIn(b"https://patrickiben.github.io/autonomic-telemetry/", body)
+                self.assertIn(b"https://patrickiben.github.io/body-signal-labs/autonomic/", body)
                 self.assertIn(b"https://patrickiben.github.io/generative-av-labs/", body)
                 self.assertEqual(headers["Referrer-Policy"], "no-referrer")
             self.assertEqual(guide.read_text(encoding="utf-8"), original)

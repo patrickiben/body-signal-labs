@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Open Body Signal Labs with an optional, local Muse EEG connection.
 
-The existing Autonomic Telemetry bridge owns Bluetooth, Muse decoding,
+Autonomic Telemetry's bridge, in this repository's autonomic/bridge/, owns
+Bluetooth, Muse decoding,
 feature extraction and the HTTP event/control API. This launcher supplies
 only the Body page and its same-origin relay configuration. Nothing scans
 or pairs until the user requests it in the page.
@@ -23,9 +24,9 @@ import webbrowser
 
 ROOT = Path(__file__).resolve().parent
 APP = "biofeedback-path-cockpit.html"
-DEFAULT_AUTONOMIC_ROOT = ROOT.parent / "autonomic-telemetry"
+DEFAULT_AUTONOMIC_ROOT = ROOT / "autonomic"
 # The built pages have inline assets. Never expose Python, app source, a
-# directory listing, or arbitrary files from either checkout.
+# directory listing, or arbitrary files.
 STATIC_FILES = frozenset({
     "index.html", "field-guide.html", "endless-cockpit.html",
     "docs/EEG_SETUP.md", "docs/BIOFEEDBACK.md", "docs/METHODS.md",
@@ -46,12 +47,12 @@ def load_runtime(autonomic_root):
     required = ("__init__.py", "server.py", "features.py", "muse.py", "requirements.txt")
     if any(not (package / name).is_file() for name in required):
         raise SetupError(
-            f"Autonomic bridge not found at {root}. Clone the complete "
-            "https://github.com/patrickiben/autonomic-telemetry repository beside "
-            "body-signal-labs, or pass --autonomic-root /path/to/autonomic-telemetry. "
-            "The checkout must include bridge/server.py, features.py and muse.py."
+            f"Autonomic bridge not found at {root}. It ships in this repository's "
+            "autonomic/bridge/; use a complete body-signal-labs checkout, or pass "
+            "--autonomic-root /path/to/a/folder/that/contains/bridge. "
+            "The folder must include bridge/server.py, features.py and muse.py."
         )
-    # Keep the reused checkout read-only, including on later Muse imports.
+    # Keep the bridge folder read-only, including on later Muse imports.
     sys.dont_write_bytecode = True
     name = "_body_autonomic_" + hashlib.sha256(str(root).encode()).hexdigest()[:16]
     try:
@@ -96,10 +97,11 @@ def inject_config(html, hub, token):
 
 def public_sibling_links(html):
     # The private server contains only Body's files. Preserve the family's
-    # navigation without leaking the private path or serving other checkouts.
-    for repository in ("autonomic-telemetry", "generative-av-labs"):
-        html = html.replace(f"../{repository}/", f"https://patrickiben.github.io/{repository}/")
-    return html
+    # navigation without leaking the private path or serving other pages:
+    # Autonomic (autonomic/ here) and Generative AV Labs open on the public site.
+    for quote in ("'", '"', "`"):
+        html = html.replace(f"{quote}autonomic/", f"{quote}https://patrickiben.github.io/body-signal-labs/autonomic/")
+    return html.replace("../generative-av-labs/", "https://patrickiben.github.io/generative-av-labs/")
 
 
 def handler_for(runtime, hub, engine, token, body_root=ROOT):
@@ -184,7 +186,7 @@ def create_server(runtime, host="127.0.0.1", port=8765, simulated=False, body_ro
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--autonomic-root", type=Path, default=DEFAULT_AUTONOMIC_ROOT, help="Autonomic Telemetry checkout (default: sibling autonomic-telemetry)")
+    parser.add_argument("--autonomic-root", type=Path, default=DEFAULT_AUTONOMIC_ROOT, help="Folder that contains Autonomic's bridge/ (default: autonomic/ in this repository)")
     parser.add_argument("--host", default="127.0.0.1", help="IPv4 bind address; default: this Mac only (127.0.0.1)")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--open", action="store_true", help="Open the private Body page in your browser")
